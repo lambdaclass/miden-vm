@@ -38,6 +38,7 @@ pub const NUM_RAND_ROWS: usize = 1;
 // VM EXECUTION TRACE
 // ================================================================================================
 
+#[derive(Clone)]
 pub struct AuxTraceHints {
     pub(crate) decoder: DecoderAuxTraceHints,
     pub(crate) stack: StackAuxTraceBuilder,
@@ -52,14 +53,15 @@ pub struct AuxTraceHints {
 ///   components.
 /// - Hints used during auxiliary trace segment construction.
 /// - Metadata needed by the STARK prover.
+#[derive(Clone)]
 pub struct ExecutionTrace {
-    meta: Vec<u8>,
-    layout: TraceLayout,
-    main_trace: ColMatrix<Felt>,
-    aux_trace_hints: AuxTraceHints,
-    program_info: ProgramInfo,
-    stack_outputs: StackOutputs,
-    trace_len_summary: TraceLenSummary,
+    pub meta: Vec<u8>,
+    pub layout: TraceLayout,
+    pub main_trace: ColMatrix<Felt>,
+    pub aux_trace_hints: AuxTraceHints,
+    pub program_info: ProgramInfo,
+    pub stack_outputs: StackOutputs,
+    pub trace_len_summary: TraceLenSummary,
 }
 
 impl ExecutionTrace {
