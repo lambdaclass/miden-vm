@@ -43,6 +43,7 @@ pub use winter_air::FieldExtension;
 // ================================================================================================
 
 /// TODO: add docs
+#[derive(Clone)]
 pub struct ProcessorAir {
     context: AirContext<Felt>,
     stack_inputs: StackInputs,
@@ -250,7 +251,7 @@ impl Air for ProcessorAir {
 // PUBLIC INPUTS
 // ================================================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PublicInputs {
     program_info: ProgramInfo,
     stack_inputs: StackInputs,
