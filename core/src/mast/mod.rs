@@ -21,7 +21,7 @@ use winter_utils::{ByteWriter, DeserializationError, Serializable};
 
 use crate::{AdviceMap, Decorator, DecoratorList, Felt, Operation};
 
-mod serialization;
+pub mod serialization;
 
 mod merger;
 pub(crate) use merger::MastForestMerger;
@@ -102,6 +102,13 @@ impl MastForest {
         self.nodes.push(node);
 
         Ok(new_node_id)
+    }
+    pub fn set_before_enter(&mut self, node_id: MastNodeId, decorator_ids: Vec<DecoratorId>) {
+        self[node_id].set_before_enter(decorator_ids)
+    }
+
+    pub fn set_after_exit(&mut self, node_id: MastNodeId, decorator_ids: Vec<DecoratorId>) {
+        self[node_id].set_after_exit(decorator_ids)
     }
 
     /// Adds a basic block node to the forest, and returns the [`MastNodeId`] associated with it.

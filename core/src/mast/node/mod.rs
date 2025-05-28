@@ -143,6 +143,32 @@ impl MastNode {
         }
     }
 
+    /// Sets the list of decorators to be executed before this node.
+    pub fn set_before_enter(&mut self, decorator_ids: Vec<DecoratorId>) {
+        match self {
+            MastNode::Block(node) => node.prepend_decorators(&decorator_ids),
+            MastNode::Join(node) => node.set_before_enter(decorator_ids),
+            MastNode::Split(node) => node.set_before_enter(decorator_ids),
+            MastNode::Loop(node) => node.set_before_enter(decorator_ids),
+            MastNode::Call(node) => node.set_before_enter(decorator_ids),
+            MastNode::Dyn(node) => node.set_before_enter(decorator_ids),
+            MastNode::External(node) => node.set_before_enter(decorator_ids),
+        }
+    }
+
+    /// Sets the list of decorators to be executed after this node.
+    pub fn set_after_exit(&mut self, decorator_ids: Vec<DecoratorId>) {
+        match self {
+            MastNode::Block(node) => node.append_decorators(&decorator_ids),
+            MastNode::Join(node) => node.set_after_exit(decorator_ids),
+            MastNode::Split(node) => node.set_after_exit(decorator_ids),
+            MastNode::Loop(node) => node.set_after_exit(decorator_ids),
+            MastNode::Call(node) => node.set_after_exit(decorator_ids),
+            MastNode::Dyn(node) => node.set_after_exit(decorator_ids),
+            MastNode::External(node) => node.set_after_exit(decorator_ids),
+        }
+    }
+
     /// Remap the node children to their new positions indicated by the given [`Remapping`].
     pub fn remap_children(&self, remapping: &Remapping) -> Self {
         use MastNode::*;

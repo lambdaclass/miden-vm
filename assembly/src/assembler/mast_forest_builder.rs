@@ -91,6 +91,18 @@ impl MastForestBuilder {
             ..Self::default()
         })
     }
+    pub fn set_before_enter(&mut self, node_id: MastNodeId, decorator_ids: Vec<DecoratorId>) {
+        self.mast_forest[node_id].set_before_enter(decorator_ids);
+
+        let new_node_fingerprint = self.fingerprint_for_node(&self[node_id]);
+        self.hash_by_node_id.insert(node_id, new_node_fingerprint);
+    }
+    pub fn set_after_exit(&mut self, node_id: MastNodeId, decorator_ids: Vec<DecoratorId>) {
+        self.mast_forest[node_id].set_after_exit(decorator_ids);
+
+        let new_node_fingerprint = self.fingerprint_for_node(&self[node_id]);
+        self.hash_by_node_id.insert(node_id, new_node_fingerprint);
+    }
 
     /// Removes the unused nodes that were created as part of the assembly process, and returns the
     /// resulting MAST forest.
