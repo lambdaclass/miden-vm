@@ -43,6 +43,7 @@ impl BasicBlockDataBuilder {
 // BASIC BLOCK DATA DECODER
 // ================================================================================================
 
+#[derive(Debug)]
 pub struct BasicBlockDataDecoder<'a> {
     node_data: &'a [u8],
 }

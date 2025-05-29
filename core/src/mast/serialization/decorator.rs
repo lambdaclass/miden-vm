@@ -44,15 +44,15 @@ impl DecoratorInfo {
             SliceReader::new(&decorator_data[self.decorator_data_offset as usize..]);
         match self.variant {
             EncodedDecoratorVariant::AssemblyOp => {
-                let num_cycles = data_reader.read_u8()?;
-                let should_break = data_reader.read_bool()?;
+                let num_cycles = data_reader.read_u8().unwrap();
+                let should_break = data_reader.read_bool().unwrap();
 
                 // source location
-                let location = if data_reader.read_bool()? {
-                    let str_index_in_table = data_reader.read_usize()?;
-                    let path = string_table.read_arc_str(str_index_in_table)?;
-                    let start = data_reader.read_u32()?;
-                    let end = data_reader.read_u32()?;
+                let location = if data_reader.read_bool().unwrap() {
+                    let str_index_in_table = data_reader.read_usize().unwrap();
+                    let path = string_table.read_arc_str(str_index_in_table).unwrap();
+                    let start = data_reader.read_u32().unwrap();
+                    let end = data_reader.read_u32().unwrap();
                     Some(crate::debuginfo::Location {
                         path,
                         start: start.into(),
@@ -63,13 +63,13 @@ impl DecoratorInfo {
                 };
 
                 let context_name = {
-                    let str_index_in_table = data_reader.read_usize()?;
-                    string_table.read_string(str_index_in_table)?
+                    let str_index_in_table = data_reader.read_usize().unwrap();
+                    string_table.read_string(str_index_in_table).unwrap()
                 };
 
                 let op = {
-                    let str_index_in_table = data_reader.read_usize()?;
-                    string_table.read_string(str_index_in_table)?
+                    let str_index_in_table = data_reader.read_usize().unwrap();
+                    string_table.read_string(str_index_in_table).unwrap()
                 };
 
                 Ok(Decorator::AsmOp(AssemblyOp::new(
@@ -84,7 +84,7 @@ impl DecoratorInfo {
                 Ok(Decorator::Debug(DebugOptions::StackAll))
             },
             EncodedDecoratorVariant::DebugOptionsStackTop => {
-                let value = data_reader.read_u8()?;
+                let value = data_reader.read_u8().unwrap();
 
                 Ok(Decorator::Debug(DebugOptions::StackTop(value)))
             },
@@ -92,20 +92,20 @@ impl DecoratorInfo {
                 Ok(Decorator::Debug(DebugOptions::MemAll))
             },
             EncodedDecoratorVariant::DebugOptionsMemInterval => {
-                let start = data_reader.read_u32()?;
-                let end = data_reader.read_u32()?;
+                let start = data_reader.read_u32().unwrap();
+                let end = data_reader.read_u32().unwrap();
 
                 Ok(Decorator::Debug(DebugOptions::MemInterval(start, end)))
             },
             EncodedDecoratorVariant::DebugOptionsLocalInterval => {
-                let start = data_reader.read_u16()?;
-                let second = data_reader.read_u16()?;
-                let end = data_reader.read_u16()?;
+                let start = data_reader.read_u16().unwrap();
+                let second = data_reader.read_u16().unwrap();
+                let end = data_reader.read_u16().unwrap();
 
                 Ok(Decorator::Debug(DebugOptions::LocalInterval(start, second, end)))
             },
             EncodedDecoratorVariant::Trace => {
-                let value = data_reader.read_u32()?;
+                let value = data_reader.read_u32().unwrap();
 
                 Ok(Decorator::Trace(value))
             },
@@ -124,8 +124,8 @@ impl Serializable for DecoratorInfo {
 
 impl Deserializable for DecoratorInfo {
     fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
-        let variant = source.read()?;
-        let decorator_data_offset = source.read()?;
+        let variant = source.read().unwrap();
+        let decorator_data_offset = source.read().unwrap();
 
         Ok(Self { variant, decorator_data_offset })
     }

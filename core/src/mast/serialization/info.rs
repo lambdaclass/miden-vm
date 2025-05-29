@@ -45,34 +45,35 @@ impl MastNodeInfo {
     ) -> Result<MastNode, DeserializationError> {
         match self.ty {
             MastNodeType::Block { ops_offset } => {
-                let operations = basic_block_data_decoder.decode_operations(ops_offset)?;
+                std::println!("ops offset: {}", ops_offset);
+                let operations = basic_block_data_decoder.decode_operations(ops_offset).unwrap();
                 let block = BasicBlockNode::new_unsafe(operations, Vec::new(), self.digest);
                 Ok(MastNode::Block(block))
             },
             MastNodeType::Join { left_child_id, right_child_id } => {
-                let left_child = MastNodeId::from_u32_with_node_count(left_child_id, node_count)?;
-                let right_child = MastNodeId::from_u32_with_node_count(right_child_id, node_count)?;
+                let left_child = MastNodeId::from_u32_with_node_count(left_child_id, node_count).unwrap();
+                let right_child = MastNodeId::from_u32_with_node_count(right_child_id, node_count).unwrap();
                 let join = JoinNode::new_unsafe([left_child, right_child], self.digest);
                 Ok(MastNode::Join(join))
             },
             MastNodeType::Split { if_branch_id, else_branch_id } => {
-                let if_branch = MastNodeId::from_u32_with_node_count(if_branch_id, node_count)?;
-                let else_branch = MastNodeId::from_u32_with_node_count(else_branch_id, node_count)?;
+                let if_branch = MastNodeId::from_u32_with_node_count(if_branch_id, node_count).unwrap();
+                let else_branch = MastNodeId::from_u32_with_node_count(else_branch_id, node_count).unwrap();
                 let split = SplitNode::new_unsafe([if_branch, else_branch], self.digest);
                 Ok(MastNode::Split(split))
             },
             MastNodeType::Loop { body_id } => {
-                let body_id = MastNodeId::from_u32_with_node_count(body_id, node_count)?;
+                let body_id = MastNodeId::from_u32_with_node_count(body_id, node_count).unwrap();
                 let loop_node = LoopNode::new_unsafe(body_id, self.digest);
                 Ok(MastNode::Loop(loop_node))
             },
             MastNodeType::Call { callee_id } => {
-                let callee_id = MastNodeId::from_u32_with_node_count(callee_id, node_count)?;
+                let callee_id = MastNodeId::from_u32_with_node_count(callee_id, node_count).unwrap();
                 let call = CallNode::new_unsafe(callee_id, self.digest);
                 Ok(MastNode::Call(call))
             },
             MastNodeType::SysCall { callee_id } => {
-                let callee_id = MastNodeId::from_u32_with_node_count(callee_id, node_count)?;
+                let callee_id = MastNodeId::from_u32_with_node_count(callee_id, node_count).unwrap();
                 let syscall = CallNode::new_syscall_unsafe(callee_id, self.digest);
                 Ok(MastNode::Call(syscall))
             },
@@ -94,8 +95,8 @@ impl Serializable for MastNodeInfo {
 
 impl Deserializable for MastNodeInfo {
     fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
-        let ty = Deserializable::read_from(source)?;
-        let digest = RpoDigest::read_from(source)?;
+        let ty = Deserializable::read_from(source).unwrap();
+        let digest = RpoDigest::read_from(source).unwrap();
 
         Ok(Self { ty, digest })
     }
@@ -249,7 +250,7 @@ impl MastNodeType {
 impl Deserializable for MastNodeType {
     fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
         let (discriminant, payload) = {
-            let value = source.read_u64()?;
+            let value = source.read_u64().unwrap();
 
             // 4 bits
             let discriminant = (value >> 60) as u8;
@@ -269,19 +270,19 @@ impl Deserializable for MastNodeType {
                 Ok(Self::Split { if_branch_id, else_branch_id })
             },
             LOOP => {
-                let body_id = Self::decode_u32_payload(payload)?;
+                let body_id = Self::decode_u32_payload(payload).unwrap();
                 Ok(Self::Loop { body_id })
             },
             BLOCK => {
-                let ops_offset = Self::decode_u32_payload(payload)?;
+                let ops_offset = Self::decode_u32_payload(payload).unwrap();
                 Ok(Self::Block { ops_offset })
             },
             CALL => {
-                let callee_id = Self::decode_u32_payload(payload)?;
+                let callee_id = Self::decode_u32_payload(payload).unwrap();
                 Ok(Self::Call { callee_id })
             },
             SYSCALL => {
-                let callee_id = Self::decode_u32_payload(payload)?;
+                let callee_id = Self::decode_u32_payload(payload).unwrap();
                 Ok(Self::SysCall { callee_id })
             },
             DYN => Ok(Self::Dyn),
