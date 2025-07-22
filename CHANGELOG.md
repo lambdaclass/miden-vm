@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.4 (2025-07-25)
+
+- [BREAKING] Made `AdviceInputs` field public and removed redundant accessors ([#2009](https://github.com/0xMiden/miden-vm/pull/2009)).
+
 ## 0.16.3 (2025-07-18)
 
 - Add `new_dummy` method on `ExecutionProof` ([#2007](https://github.com/0xMiden/miden-vm/pull/2007)).
