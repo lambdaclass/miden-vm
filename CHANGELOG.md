@@ -24,6 +24,7 @@
 ## 0.16.4 (2025-07-24)
 
 - Made `AdviceInputs` field public.
+- [BREAKING] `FastProcessor::execute()` now also returns the `AdviceProvider` ([#2026](https://github.com/0xMiden/miden-vm/pull/2026))
 
 ## 0.16.3 (2025-07-18)
 
