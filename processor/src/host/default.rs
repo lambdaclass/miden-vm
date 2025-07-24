@@ -1,6 +1,9 @@
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
 use miden_core::{DebugOptions, Felt, Word, mast::MastForest};
+use miden_debug_types::{
+    DefaultSourceManager, Location, SourceFile, SourceManager, SourceManagerSync, SourceSpan,
+};
 
 use crate::{
     AdviceMutation, AsyncHost, BaseHost, DebugHandler, EventHandler, EventHandlerRegistry,
@@ -12,10 +15,14 @@ use crate::{
 
 /// A default Host implementation that provides the essential functionality required by the VM.
 #[derive(Debug)]
-pub struct DefaultHost<D: DebugHandler = DefaultDebugHandler> {
+pub struct DefaultHost<
+    D: DebugHandler = DefaultDebugHandler,
+    S: SourceManager = DefaultSourceManager,
+> {
     store: MemMastForestStore,
     event_handlers: EventHandlerRegistry,
     debug_handler: D,
+    source_manager: Arc<S>,
 }
 
 impl Default for DefaultHost {
@@ -24,11 +31,30 @@ impl Default for DefaultHost {
             store: MemMastForestStore::default(),
             event_handlers: EventHandlerRegistry::default(),
             debug_handler: DefaultDebugHandler,
+            source_manager: Arc::new(DefaultSourceManager::default()),
         }
     }
 }
 
-impl<D: DebugHandler> DefaultHost<D> {
+impl<D, S> DefaultHost<D, S>
+where
+    D: DebugHandler,
+    S: SourceManager,
+{
+    /// Use the given source manager implementation instead of the default one
+    /// [`DefaultSourceManager`].
+    pub fn with_source_manager<O>(self, source_manager: Arc<O>) -> DefaultHost<D, O>
+    where
+        O: SourceManager,
+    {
+        DefaultHost::<D, O> {
+            store: self.store,
+            event_handlers: self.event_handlers,
+            debug_handler: self.debug_handler,
+            source_manager,
+        }
+    }
+
     /// Loads a [`HostLibrary`] containing a [`MastForest`] with its list of event handlers.
     pub fn load_library(&mut self, library: impl Into<HostLibrary>) -> Result<(), ExecutionError> {
         let library = library.into();
@@ -74,16 +100,30 @@ impl<D: DebugHandler> DefaultHost<D> {
     }
 
     /// Replace the current [`DebugHandler`] with a custom one.
-    pub fn with_debug_handler<H: DebugHandler>(self, handler: H) -> DefaultHost<H> {
-        DefaultHost {
+    pub fn with_debug_handler<H: DebugHandler>(self, handler: H) -> DefaultHost<H, S> {
+        DefaultHost::<H, S> {
             store: self.store,
             event_handlers: self.event_handlers,
             debug_handler: handler,
+            source_manager: self.source_manager,
         }
     }
 }
 
-impl BaseHost for DefaultHost {
+impl<D, S> BaseHost for DefaultHost<D, S>
+where
+    D: DebugHandler,
+    S: SourceManager,
+{
+    fn get_label_and_source_file(
+        &self,
+        location: &Location,
+    ) -> (SourceSpan, Option<Arc<SourceFile>>) {
+        let maybe_file = self.source_manager.get_by_uri(location.uri());
+        let span = self.source_manager.location_to_span(location.clone()).unwrap_or_default();
+        (span, maybe_file)
+    }
+
     fn on_debug(
         &mut self,
         process: &mut ProcessState,
@@ -104,7 +144,11 @@ impl BaseHost for DefaultHost {
     fn on_assert_failed(&mut self, _process: &ProcessState, _err_code: Felt) {}
 }
 
-impl SyncHost for DefaultHost {
+impl<D, S> SyncHost for DefaultHost<D, S>
+where
+    D: DebugHandler,
+    S: SourceManager,
+{
     fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
         self.store.get(node_digest)
     }
@@ -128,7 +172,11 @@ impl SyncHost for DefaultHost {
     }
 }
 
-impl AsyncHost for DefaultHost {
+impl<D, S> AsyncHost for DefaultHost<D, S>
+where
+    D: DebugHandler,
+    S: SourceManagerSync,
+{
     async fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
         self.store.get(node_digest)
     }
