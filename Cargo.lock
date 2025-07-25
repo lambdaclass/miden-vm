@@ -803,9 +803,9 @@ dependencies = [
 
 [[package]]
 name = "io-uring"
-version = "0.7.8"
+version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b86e202f00093dcba4275d4636b93ef9dd75d025ae560d2521b45ea28ab49013"
+checksum = "d93587f37623a1a17d94ef2bc9ada592f5465fe7732084ab7beefabe5c77c0c4"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -1113,9 +1113,9 @@ dependencies = [
 
 [[package]]
 name = "miden-crypto"
-version = "0.15.8"
+version = "0.15.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c58d9b9ae3867b5b5111876165c23008e934871bd3ea46a8919ea10a1ab04e8"
+checksum = "e4329275a11c7d8328b14a7129b21d40183056dcd0d871c3069be6e550d6ca40"
 dependencies = [
  "blake3",
  "cc",
