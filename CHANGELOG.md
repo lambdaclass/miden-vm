@@ -11,6 +11,7 @@
 - Add `AdviceProvider::into_parts()` method ([#2024](https://github.com/0xMiden/miden-vm/pull/2024)).
 - Move `fn with_source_manager` from `Process` to the `host` [#2019](https://github.com/0xMiden/miden-vm/pull/2019).
 - Move the `SourceManager` from the processor to the host [#2019](https://github.com/0xMiden/miden-vm/pull/2019).
+- Add `AdviceProvider::into_parts()` method ([#2024](https://github.com/0xMiden/miden-vm/pull/2024)).
 
 #### Changes
 
@@ -22,7 +23,12 @@
 - [BREAKING] Implemented custom Event handlers ([#1584](https://github.com/0xMiden/miden-vm/pull/1584)).
 - Converted `FastProcessor::execute()` from recursive to iterative execution ([#1989](https://github.com/0xMiden/miden-vm/issues/1989)).
 - [BREAKING] made `AdviceInputs` field public and removed redundant accessors ([#2009](https://github.com/0xMiden/miden-vm/pull/2009)).
+- Enhancement for all benchmarks (incl. `program_execution_fast`) are built and run in a new CI job with required feature flags [(#https://github.com/0xMiden/miden-vm/issues/1964)](https://github.com/0xMiden/miden-vm/issues/1964)
 - [BREAKING] `FastProcessor::execute()` now also returns the `AdviceProvider` ([#2026](https://github.com/0xMiden/miden-vm/pull/2026))
+
+## 0.16.4 (2025-07-24)
+
+- Made `AdviceInputs` field public.
 
 ## 0.16.3 (2025-07-18)
 
