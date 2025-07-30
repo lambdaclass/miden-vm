@@ -28,11 +28,24 @@ pub use mast_forest_store::{MastForestStore, MemMastForestStore};
 /// Any possible way an event can modify the advice map
 #[derive(Debug, PartialEq, Eq)]
 pub enum AdviceMutation {
-    ExtendStack { iter: Vec<Felt> },
+    ExtendStack { values: Vec<Felt> },
     ExtendMap { other: AdviceMap },
-    ExtendMerkleStore { iter: Vec<InnerNodeInfo> },
+    ExtendMerkleStore { infos: Vec<InnerNodeInfo> },
 }
 
+impl AdviceMutation {
+    pub fn extend_stack(iter: impl IntoIterator<Item = Felt>) -> Self {
+        Self::ExtendStack { values: Vec::from_iter(iter) }
+    }
+
+    pub fn extend_map(other: AdviceMap) -> Self {
+        Self::ExtendMap { other }
+    }
+
+    pub fn extend_merkle_store(infos: impl IntoIterator<Item = InnerNodeInfo>) -> Self {
+        Self::ExtendMerkleStore { infos: Vec::from_iter(infos) }
+    }
+}
 // HOST TRAIT
 // ================================================================================================
 
@@ -111,10 +124,7 @@ pub trait AsyncHost: BaseHost {
 
     /// Returns MAST forest corresponding to the specified digest, or None if the MAST forest for
     /// this digest could not be found in this [AsyncHost].
-    fn get_mast_forest(
-        &self,
-        node_digest: &Word,
-    ) -> impl Future<Output = Option<Arc<MastForest>>> + Send;
+    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>>;
 
     /// Handles the event emitted from the VM and provides advice mutations to be applied to
     /// the advice provider.
@@ -122,5 +132,22 @@ pub trait AsyncHost: BaseHost {
         &mut self,
         process: &ProcessState<'_>,
         event_id: u32,
-    ) -> impl Future<Output = Result<Vec<AdviceMutation>, EventError>> + Send;
+    ) -> impl AsyncHostFuture<Result<Vec<AdviceMutation>, EventError>>;
 }
+
+/// Alias for a `Future`
+///
+/// If feature `std` is enabled, we add `Send` to the required bounds,
+/// otherwise we do not. This impacts usability with a multithreaded
+/// executor.
+#[cfg(not(feature = "std"))]
+pub trait AsyncHostFuture<O>: Future<Output = O> {}
+
+#[cfg(not(feature = "std"))]
+impl<T, O> AsyncHostFuture<O> for T where T: Future<Output = O> {}
+
+#[cfg(feature = "std")]
+pub trait AsyncHostFuture<O>: Future<Output = O> + Send {}
+
+#[cfg(feature = "std")]
+impl<T, O> AsyncHostFuture<O> for T where T: Future<Output = O> + Send {}

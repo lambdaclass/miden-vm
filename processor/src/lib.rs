@@ -55,7 +55,8 @@ use range::RangeChecker;
 
 mod host;
 pub use host::{
-    AdviceMutation, AsyncHost, BaseHost, MastForestStore, MemMastForestStore, SyncHost,
+    AdviceMutation, AsyncHost, AsyncHostFuture, BaseHost, MastForestStore, MemMastForestStore,
+    SyncHost,
     advice::{AdviceError, AdviceInputs, AdviceProvider},
     default::{DefaultDebugHandler, DefaultHost, HostLibrary},
     handlers::{DebugHandler, EventError, EventHandler, EventHandlerRegistry},
@@ -70,7 +71,7 @@ use trace::TraceFragment;
 pub use trace::{ChipletsLengths, ExecutionTrace, NUM_RAND_ROWS, TraceLenSummary};
 
 mod errors;
-pub use errors::{ErrorContext, ExecutionError};
+pub use errors::{ErrorContext, ErrorContextImpl, ExecutionError};
 
 pub mod utils;
 

@@ -292,7 +292,7 @@ impl<S> AsyncHost for ConsistencyHost<S>
 where
     S: SourceManagerSync,
 {
-    async fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
+    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
         self.store.get(node_digest)
     }
 
