@@ -115,7 +115,7 @@ pub struct ProgramFile<S: SourceManager = DefaultSourceManager> {
 impl ProgramFile {
     /// Reads the masm file at the specified path and parses it into a [ProgramFile].
     pub fn read(path: impl AsRef<Path>) -> Result<Self, Report> {
-        let source_manager = Arc::new(miden_debug_types::DefaultSourceManager::default());
+        let source_manager = Arc::new(miden_assembly::DefaultSourceManager::default());
         Self::read_with(path, source_manager)
     }
 }

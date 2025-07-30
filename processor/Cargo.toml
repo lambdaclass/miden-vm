@@ -42,9 +42,7 @@ miden-utils-diagnostics.workspace = true
 tracing.workspace = true
 thiserror.workspace = true
 # For `testing`
-tokio = { version = "1.46", default-features = false, features = [
-    "rt",
-], optional = true }
+tokio = { version = "1.46", default-features = false, features = ["rt"], optional = true }
 winter-prover.workspace = true
 
 [dev-dependencies]
