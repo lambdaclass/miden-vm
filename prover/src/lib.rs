@@ -57,13 +57,14 @@ pub use winter_prover::{Proof, crypto::MerkleTree as MerkleTreeVC};
 /// # Errors
 /// Returns an error if program execution or STARK proof generation fails for any reason.
 #[instrument("prove_program", skip_all)]
-pub async fn prove(
+#[maybe_async]
+pub fn prove(
     program: &Program,
     stack_inputs: StackInputs,
     advice_inputs: AdviceInputs,
     host: &mut impl SyncHost,
     options: ProvingOptions,
-) -> impl Future<Output = Result<(StackOutputs, ExecutionProof), ExecutionError>> + Send {
+) -> Result<(StackOutputs, ExecutionProof), ExecutionError> {
     // execute the program to create an execution trace
     #[cfg(feature = "std")]
     let now = Instant::now();
@@ -87,51 +88,49 @@ pub async fn prove(
     let stack_outputs = trace.stack_outputs().clone();
     let hash_fn = options.hash_fn();
 
-    async move {
-        // generate STARK proof
-        let proof = match hash_fn {
-            HashFunction::Blake3_192 => {
-                let prover = ExecutionProver::<Blake3_192, WinterRandomCoin<_>>::new(
-                    options,
-                    stack_inputs,
-                    stack_outputs.clone(),
-                );
-                prover.prove(trace).await
-            },
-            HashFunction::Blake3_256 => {
-                let prover = ExecutionProver::<Blake3_256, WinterRandomCoin<_>>::new(
-                    options,
-                    stack_inputs,
-                    stack_outputs.clone(),
-                );
-                prover.prove(trace).await
-            },
-            HashFunction::Rpo256 => {
-                let prover = ExecutionProver::<Rpo256, RpoRandomCoin>::new(
-                    options,
-                    stack_inputs,
-                    stack_outputs.clone(),
-                );
-                #[cfg(all(feature = "metal", target_arch = "aarch64", target_os = "macos"))]
-                let prover = gpu::metal::MetalExecutionProver::new(prover, HashFn::Rpo256);
-                prover.prove(trace).await
-            },
-            HashFunction::Rpx256 => {
-                let prover = ExecutionProver::<Rpx256, RpxRandomCoin>::new(
-                    options,
-                    stack_inputs,
-                    stack_outputs.clone(),
-                );
-                #[cfg(all(feature = "metal", target_arch = "aarch64", target_os = "macos"))]
-                let prover = gpu::metal::MetalExecutionProver::new(prover, HashFn::Rpx256);
-                prover.prove(trace).await
-            },
-        }
-        .map_err(ExecutionError::ProverError)?;
-        let proof = ExecutionProof::new(proof, hash_fn);
-
-        Ok((stack_outputs, proof))
+    // generate STARK proof
+    let proof = match hash_fn {
+        HashFunction::Blake3_192 => {
+            let prover = ExecutionProver::<Blake3_192, WinterRandomCoin<_>>::new(
+                options,
+                stack_inputs,
+                stack_outputs.clone(),
+            );
+            maybe_await!(prover.prove(trace))
+        },
+        HashFunction::Blake3_256 => {
+            let prover = ExecutionProver::<Blake3_256, WinterRandomCoin<_>>::new(
+                options,
+                stack_inputs,
+                stack_outputs.clone(),
+            );
+            maybe_await!(prover.prove(trace))
+        },
+        HashFunction::Rpo256 => {
+            let prover = ExecutionProver::<Rpo256, RpoRandomCoin>::new(
+                options,
+                stack_inputs,
+                stack_outputs.clone(),
+            );
+            #[cfg(all(feature = "metal", target_arch = "aarch64", target_os = "macos"))]
+            let prover = gpu::metal::MetalExecutionProver::new(prover, HashFn::Rpo256);
+            maybe_await!(prover.prove(trace))
+        },
+        HashFunction::Rpx256 => {
+            let prover = ExecutionProver::<Rpx256, RpxRandomCoin>::new(
+                options,
+                stack_inputs,
+                stack_outputs.clone(),
+            );
+            #[cfg(all(feature = "metal", target_arch = "aarch64", target_os = "macos"))]
+            let prover = gpu::metal::MetalExecutionProver::new(prover, HashFn::Rpx256);
+            maybe_await!(prover.prove(trace))
+        },
     }
+    .map_err(ExecutionError::ProverError)?;
+    let proof = ExecutionProof::new(proof, hash_fn);
+
+    Ok((stack_outputs, proof))
 }
 
 // PROVER
