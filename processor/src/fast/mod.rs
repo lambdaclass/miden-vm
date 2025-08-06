@@ -93,12 +93,6 @@ const DOUBLE_WORD_SIZE: Felt = Felt::new(8);
 ///   by 1 for every row that `Process` adds to the main trace.
 ///     - It is important to do so because the clock cycle is used to determine the context ID for
 ///       new execution contexts when using `call` or `dyncall`.
-/// - When executing a basic block, the clock cycle is not incremented for every individual
-///   operation for performance reasons.
-///     - Rather, we use `clk + operation_index` to determine the clock cycle when needed.
-///     - However this performance improvement is slightly offset by the need to parse operation
-///       batches exactly the same as `Process`. We will be able to recover the performance loss by
-///       redesigning the `BasicBlockNode`.
 #[derive(Debug)]
 pub struct FastProcessor {
     /// The stack is stored in reverse order, so that the last element is at the top of the stack.
@@ -112,10 +106,6 @@ pub struct FastProcessor {
     bounds_check_counter: usize,
 
     /// The current clock cycle.
-    ///
-    /// However, when we are in a basic block, this corresponds to the clock cycle at which the
-    /// basic block was entered. Hence, given an operation, we need to add its index in the
-    /// block to this value to get the clock cycle.
     pub(super) clk: RowIndex,
 
     /// The current context ID.
@@ -843,9 +833,6 @@ impl FastProcessor {
             batch_offset_in_block += op_batch.ops().len();
         }
 
-        // update clock with all the operations that executed
-        self.clk += batch_offset_in_block as u32;
-
         // Corresponds to the row inserted for the END operation added to the trace.
         self.clk += 1_u32;
 
@@ -857,7 +844,7 @@ impl FastProcessor {
             let decorator = program
                 .get_decorator_by_id(decorator_id)
                 .ok_or(ExecutionError::DecoratorNotFoundInForest { decorator_id })?;
-            self.execute_decorator(decorator, 0, host)?;
+            self.execute_decorator(decorator, host)?;
         }
 
         self.execute_after_exit_decorators(node_id, program, host)
@@ -891,7 +878,7 @@ impl FastProcessor {
                 let decorator = program
                     .get_decorator_by_id(decorator_id)
                     .ok_or(ExecutionError::DecoratorNotFoundInForest { decorator_id })?;
-                self.execute_decorator(decorator, op_idx_in_batch, host)?;
+                self.execute_decorator(decorator, host)?;
             }
 
             // decode and execute the operation
@@ -904,9 +891,7 @@ impl FastProcessor {
             // whereas all the other operations are synchronous (resulting in a significant
             // performance improvement).
             match op {
-                Operation::Emit(event_id) => {
-                    self.op_emit(*event_id, op_idx_in_block, host, &err_ctx).await?
-                },
+                Operation::Emit(event_id) => self.op_emit(*event_id, host, &err_ctx).await?,
                 _ => {
                     // if the operation is not an Emit, we execute it normally
                     self.execute_op(op, op_idx_in_block, program, host, &err_ctx)?;
@@ -939,6 +924,8 @@ impl FastProcessor {
             } else {
                 op_idx_in_group += 1;
             }
+
+            self.clk += 1_u32;
         }
 
         // make sure we execute the required number of operation groups; this would happen when the
@@ -963,7 +950,7 @@ impl FastProcessor {
             .expect("internal error: node id {node_id} not found in current forest");
 
         for &decorator_id in node.before_enter() {
-            self.execute_decorator(&current_forest[decorator_id], 0, host)?;
+            self.execute_decorator(&current_forest[decorator_id], host)?;
         }
 
         Ok(())
@@ -981,7 +968,7 @@ impl FastProcessor {
             .expect("internal error: node id {node_id} not found in current forest");
 
         for &decorator_id in node.after_exit() {
-            self.execute_decorator(&current_forest[decorator_id], 0, host)?;
+            self.execute_decorator(&current_forest[decorator_id], host)?;
         }
 
         Ok(())
@@ -991,13 +978,12 @@ impl FastProcessor {
     fn execute_decorator(
         &mut self,
         decorator: &Decorator,
-        op_idx_in_batch: usize,
         host: &mut impl AsyncHost,
     ) -> Result<(), ExecutionError> {
         match decorator {
             Decorator::Debug(options) => {
                 if self.in_debug_mode {
-                    let process = &mut self.state(op_idx_in_batch);
+                    let process = &mut self.state();
                     host.on_debug(process, options)?;
                 }
             },
@@ -1005,7 +991,7 @@ impl FastProcessor {
                 // do nothing
             },
             Decorator::Trace(id) => {
-                let process = &mut self.state(op_idx_in_batch);
+                let process = &mut self.state();
                 host.on_trace(process, *id)?;
             },
         };
@@ -1040,14 +1026,12 @@ impl FastProcessor {
             Operation::Noop => {
                 // do nothing
             },
-            Operation::Assert(err_code) => {
-                self.op_assert(*err_code, op_idx, host, program, err_ctx)?
-            },
+            Operation::Assert(err_code) => self.op_assert(*err_code, host, program, err_ctx)?,
             Operation::FmpAdd => self.op_fmpadd(),
             Operation::FmpUpdate => self.op_fmpupdate()?,
             Operation::SDepth => self.op_sdepth(),
             Operation::Caller => self.op_caller()?,
-            Operation::Clk => self.op_clk(op_idx)?,
+            Operation::Clk => self.op_clk()?,
             Operation::Emit(_event_id) => {
                 panic!("emit instruction requires async, so is not supported by execute_op()")
             },
@@ -1071,7 +1055,7 @@ impl FastProcessor {
             Operation::Add => self.op_add()?,
             Operation::Neg => self.op_neg()?,
             Operation::Mul => self.op_mul()?,
-            Operation::Inv => self.op_inv(op_idx, err_ctx)?,
+            Operation::Inv => self.op_inv(err_ctx)?,
             Operation::Incr => self.op_incr()?,
             Operation::And => self.op_and(err_ctx)?,
             Operation::Or => self.op_or(err_ctx)?,
@@ -1088,7 +1072,7 @@ impl FastProcessor {
             Operation::U32sub => self.op_u32sub(op_idx, err_ctx)?,
             Operation::U32mul => self.op_u32mul(err_ctx)?,
             Operation::U32madd => self.op_u32madd(err_ctx)?,
-            Operation::U32div => self.op_u32div(op_idx, err_ctx)?,
+            Operation::U32div => self.op_u32div(err_ctx)?,
             Operation::U32and => self.op_u32and(err_ctx)?,
             Operation::U32xor => self.op_u32xor(err_ctx)?,
             Operation::U32assert2(err_code) => self.op_u32assert2(*err_code, err_ctx)?,
@@ -1132,23 +1116,23 @@ impl FastProcessor {
 
             // ----- input / output ---------------------------------------------------------------
             Operation::Push(element) => self.op_push(*element),
-            Operation::AdvPop => self.op_advpop(op_idx, err_ctx)?,
-            Operation::AdvPopW => self.op_advpopw(op_idx, err_ctx)?,
-            Operation::MLoadW => self.op_mloadw(op_idx, err_ctx)?,
-            Operation::MStoreW => self.op_mstorew(op_idx, err_ctx)?,
+            Operation::AdvPop => self.op_advpop(err_ctx)?,
+            Operation::AdvPopW => self.op_advpopw(err_ctx)?,
+            Operation::MLoadW => self.op_mloadw(err_ctx)?,
+            Operation::MStoreW => self.op_mstorew(err_ctx)?,
             Operation::MLoad => self.op_mload(err_ctx)?,
             Operation::MStore => self.op_mstore(err_ctx)?,
-            Operation::MStream => self.op_mstream(op_idx, err_ctx)?,
-            Operation::Pipe => self.op_pipe(op_idx, err_ctx)?,
+            Operation::MStream => self.op_mstream(err_ctx)?,
+            Operation::Pipe => self.op_pipe(err_ctx)?,
 
             // ----- cryptographic operations -----------------------------------------------------
             Operation::HPerm => self.op_hperm(),
             Operation::MpVerify(err_code) => self.op_mpverify(*err_code, program, err_ctx)?,
             Operation::MrUpdate => self.op_mrupdate(err_ctx)?,
             Operation::FriE2F4 => self.op_fri_ext2fold4()?,
-            Operation::HornerBase => self.op_horner_eval_base(op_idx, err_ctx)?,
-            Operation::HornerExt => self.op_horner_eval_ext(op_idx, err_ctx)?,
-            Operation::EvalCircuit => self.op_eval_circuit(op_idx, err_ctx)?,
+            Operation::HornerBase => self.op_horner_eval_base(err_ctx)?,
+            Operation::HornerExt => self.op_horner_eval_ext(err_ctx)?,
+            Operation::EvalCircuit => self.op_eval_circuit(err_ctx)?,
         }
 
         Ok(())
@@ -1370,14 +1354,12 @@ impl FastProcessor {
 #[derive(Debug)]
 pub struct FastProcessState<'a> {
     pub(super) processor: &'a mut FastProcessor,
-    /// the index of the operation in its basic block
-    pub(super) op_idx: usize,
 }
 
 impl FastProcessor {
     #[inline(always)]
-    pub fn state(&mut self, op_idx: usize) -> ProcessState<'_> {
-        ProcessState::Fast(FastProcessState { processor: self, op_idx })
+    pub fn state(&mut self) -> ProcessState<'_> {
+        ProcessState::Fast(FastProcessState { processor: self })
     }
 }
 
