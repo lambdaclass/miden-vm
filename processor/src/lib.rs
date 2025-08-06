@@ -833,7 +833,7 @@ impl<'a> ProcessState<'a> {
     pub fn clk(&self) -> RowIndex {
         match self {
             ProcessState::Slow(state) => state.system.clk(),
-            ProcessState::Fast(state) => state.processor.clk + state.op_idx,
+            ProcessState::Fast(state) => state.processor.clk,
         }
     }
 
