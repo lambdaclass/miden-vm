@@ -133,14 +133,22 @@ pub trait AsyncHost: BaseHost {
 
 /// Alias for a `Future`
 ///
-/// If feature `std` is enabled, we add `Send` to the required bounds, otherwise we do not. This
-/// impacts usability with a multithreaded executor.
+/// Unless the compilation target family is `wasm`, we add `Send` to the required bounds. For
+/// `wasm` compilation targets there is no `Send` bound.
+///
+/// We also provide a blank implementation of this trait for all features.
 #[cfg(target_family = "wasm")]
 pub trait FutureMaybeSend<O>: Future<Output = O> {}
 
 #[cfg(target_family = "wasm")]
 impl<T, O> FutureMaybeSend<O> for T where T: Future<Output = O> {}
 
+/// Alias for a `Future`
+///
+/// Unless the compilation target family is `wasm`, we add `Send` to the required bounds. For
+/// `wasm` compilation targets there is no `Send` bound.
+///
+/// We also provide a blank implementation of this trait for all features.
 #[cfg(not(target_family = "wasm"))]
 pub trait FutureMaybeSend<O>: Future<Output = O> + Send {}
 
