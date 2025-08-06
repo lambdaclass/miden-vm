@@ -23,6 +23,11 @@ pub struct TestHost {
 }
 
 impl BaseHost for TestHost {
+    fn get_mast_forest(&self, _node_digest: &Word) -> Option<Arc<MastForest>> {
+        // Empty MAST forest store
+        None
+    }
+
     fn get_label_and_source_file(
         &self,
         location: &Location,
@@ -52,11 +57,6 @@ impl BaseHost for TestHost {
 }
 
 impl SyncHost for TestHost {
-    fn get_mast_forest(&self, _node_digest: &Word) -> Option<Arc<MastForest>> {
-        // Empty MAST forest store
-        None
-    }
-
     fn on_event(
         &mut self,
         _process: &ProcessState,
@@ -68,11 +68,6 @@ impl SyncHost for TestHost {
 }
 
 impl AsyncHost for TestHost {
-    fn get_mast_forest(&self, _node_digest: &Word) -> Option<Arc<MastForest>> {
-        // Empty MAST forest store
-        None
-    }
-
     fn on_event(
         &mut self,
         _process: &ProcessState<'_>,

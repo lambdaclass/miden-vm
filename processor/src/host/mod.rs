@@ -60,6 +60,10 @@ pub trait BaseHost {
     // REQUIRED METHODS
     // --------------------------------------------------------------------------------------------
 
+    /// Returns MAST forest corresponding to the specified digest, or None if the MAST forest for
+    /// this digest could not be found in this host.
+    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>>;
+
     /// Returns the [`SourceSpan`] and optional [`SourceFile`] for the provided location.
     fn get_label_and_source_file(
         &self,
@@ -99,10 +103,6 @@ pub trait SyncHost: BaseHost {
     // REQUIRED METHODS
     // --------------------------------------------------------------------------------------------
 
-    /// Returns MAST forest corresponding to the specified digest, or None if the MAST forest for
-    /// this digest could not be found in this [SyncHost].
-    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>>;
-
     /// Handles the event emitted from the VM.
     fn on_event(
         &mut self,
@@ -118,10 +118,6 @@ pub trait SyncHost: BaseHost {
 pub trait AsyncHost: BaseHost {
     // REQUIRED METHODS
     // --------------------------------------------------------------------------------------------
-
-    /// Returns MAST forest corresponding to the specified digest, or None if the MAST forest for
-    /// this digest could not be found in this [AsyncHost].
-    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>>;
 
     // Note: we don't use the `async` keyword in both of these methods, since we need to specify the
     // `+ Send` bound to the returned Future, and `async` doesn't allow us to do that.

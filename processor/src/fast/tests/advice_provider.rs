@@ -250,6 +250,10 @@ impl<S> BaseHost for ConsistencyHost<S>
 where
     S: SourceManager,
 {
+    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
+        self.store.get(node_digest)
+    }
+
     fn get_label_and_source_file(
         &self,
         location: &Location,
@@ -275,10 +279,6 @@ impl<S> SyncHost for ConsistencyHost<S>
 where
     S: SourceManager,
 {
-    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
-        self.store.get(node_digest)
-    }
-
     fn on_event(
         &mut self,
         _process: &ProcessState<'_>,
@@ -292,10 +292,6 @@ impl<S> AsyncHost for ConsistencyHost<S>
 where
     S: SourceManagerSync,
 {
-    fn get_mast_forest(&self, node_digest: &Word) -> Option<Arc<MastForest>> {
-        self.store.get(node_digest)
-    }
-
     // Note: clippy complains about this not using the `async` keyword, but if we use `async`, it
     // doesn't compile.
     #[allow(clippy::manual_async_fn)]
