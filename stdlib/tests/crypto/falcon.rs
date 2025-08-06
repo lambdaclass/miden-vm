@@ -4,12 +4,12 @@ use miden_air::{Felt, ProvingOptions, RowIndex};
 use miden_assembly::{Assembler, utils::Serializable};
 use miden_core::{StarkField, ZERO};
 use miden_processor::{
-    AdviceInputs, AdviceMutation, EventError, ExecutionError, ProcessState, Program, ProgramInfo,
-    StackInputs, crypto::RpoRandomCoin,
+    AdviceInputs, AdviceMutation, DefaultHost, EventError, ExecutionError, ProcessState, Program,
+    ProgramInfo, StackInputs, crypto::RpoRandomCoin,
 };
 use miden_stdlib::{StdLibrary, falcon_sign};
 use miden_utils_testing::{
-    TestHost, Word,
+    Word,
     crypto::{
         MerkleStore, Rpo256,
         rpo_falcon512::{Polynomial, SecretKey},
@@ -284,7 +284,7 @@ fn falcon_prove_verify() {
 
     let stack_inputs = StackInputs::try_from_ints(op_stack).expect("failed to create stack inputs");
     let advice_inputs = AdviceInputs::default().with_map(advice_map);
-    let mut host = TestHost::default();
+    let mut host = DefaultHost::default();
     host.load_library(&StdLibrary::default()).expect("failed to load mast forest");
     host.load_handler(EVENT_FALCON_SIG_TO_STACK, push_falcon_signature).unwrap();
 

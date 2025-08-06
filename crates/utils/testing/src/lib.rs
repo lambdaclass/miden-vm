@@ -31,9 +31,7 @@ pub use miden_processor::{
     AdviceInputs, AdviceProvider, BaseHost, ContextId, ExecutionError, ExecutionOptions,
     ExecutionTrace, Process, ProcessState, VmStateIterator,
 };
-use miden_processor::{
-    AdviceMutation, DefaultDebugHandler, DefaultHost, EventError, Program, fast::FastProcessor,
-};
+use miden_processor::{AdviceMutation, DefaultHost, EventError, Program, fast::FastProcessor};
 use miden_prover::utils::range;
 pub use miden_prover::{MerkleTreeVC, ProvingOptions, prove};
 pub use miden_verifier::{AcceptableOptions, VerifierError, verify};
@@ -55,8 +53,6 @@ pub mod serde {
 }
 
 pub mod crypto;
-
-pub type TestHost<D = DefaultDebugHandler, S = DefaultSourceManager> = DefaultHost<D, S>;
 
 #[cfg(not(target_family = "wasm"))]
 pub mod rand;
@@ -373,11 +369,7 @@ impl Test {
 
     /// Compiles the test's source to a Program and executes it with the tests inputs. Returns the
     /// process once execution is finished.
-    #[allow(clippy::type_complexity)]
-    pub fn execute_process(
-        &self,
-    ) -> Result<(Process, TestHost<DefaultDebugHandler, DefaultSourceManager>), ExecutionError>
-    {
+    pub fn execute_process(&self) -> Result<(Process, DefaultHost), ExecutionError> {
         let (program, host) = self.get_program_and_host();
         let mut host = host.with_source_manager(self.source_manager.clone());
 
@@ -468,9 +460,9 @@ impl Test {
     ///
     /// The host is initialized with the advice inputs provided in the test, as well as the kernel
     /// and library MAST forests.
-    fn get_program_and_host(&self) -> (Program, TestHost) {
+    fn get_program_and_host(&self) -> (Program, DefaultHost) {
         let (program, kernel) = self.compile().expect("Failed to compile test source.");
-        let mut host = TestHost::default();
+        let mut host = DefaultHost::default();
         if let Some(kernel) = kernel {
             host.load_library(kernel.mast_forest().clone()).unwrap();
         }
