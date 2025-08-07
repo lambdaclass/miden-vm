@@ -14,6 +14,7 @@
 - Added `AdviceProvider::into_parts()` method ([#2024](https://github.com/0xMiden/miden-vm/pull/2024)).
 - Added type information to procedures in the AST, `Library`, and `PackageExport` types ([#2028](https://github.com/0xMiden/miden-vm/pull/2028)).
 - Added `drop_stack_top` procedure in `std::sys` ([#2031](https://github.com/0xMiden/miden-vm/pull/2031)).
+- Added slicing for the word constants ([#2057](https://github.com/0xMiden/miden-vm/pull/2057)).
 
 #### Changes
 
