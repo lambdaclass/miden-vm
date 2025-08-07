@@ -308,7 +308,7 @@ where
         | MTreeVerifyWithError(code) => visitor.visit_immediate_error_message(code),
         AddImm(imm) | SubImm(imm) | MulImm(imm) | DivImm(imm) | ExpImm(imm) | EqImm(imm)
         | NeqImm(imm) => visitor.visit_immediate_felt(imm),
-        Push(imm) => visitor.visit_immediate_int_value(imm),
+        Push(imm) | PushWordSlice(imm, _) => visitor.visit_immediate_int_value(imm),
         U32WrappingAddImm(imm)
         | U32OverflowingAddImm(imm)
         | U32WrappingSubImm(imm)
@@ -740,7 +740,7 @@ where
         | MTreeVerifyWithError(code) => visitor.visit_mut_immediate_error_message(code),
         AddImm(imm) | SubImm(imm) | MulImm(imm) | DivImm(imm) | ExpImm(imm) | EqImm(imm)
         | NeqImm(imm) => visitor.visit_mut_immediate_felt(imm),
-        Push(imm) => visitor.visit_mut_immediate_hex(imm),
+        Push(imm) | PushWordSlice(imm, _) => visitor.visit_mut_immediate_hex(imm),
         U32WrappingAddImm(imm)
         | U32OverflowingAddImm(imm)
         | U32WrappingSubImm(imm)

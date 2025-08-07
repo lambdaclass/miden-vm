@@ -283,6 +283,13 @@ pub enum ParsingError {
         #[label]
         span: SourceSpan,
     },
+    #[error("invalid slice constant")]
+    #[diagnostic()]
+    InvalidSliceConstant {
+        #[label("slicing could be applied only to the word constants")]
+        #[label]
+        span: SourceSpan,
+    },
 }
 
 impl ParsingError {

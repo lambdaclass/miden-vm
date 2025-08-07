@@ -355,6 +355,9 @@ impl Assembler {
             Instruction::PushU32(imm) => env_ops::push_one(*imm, block_builder),
             Instruction::PushFelt(imm) => env_ops::push_one(*imm, block_builder),
             Instruction::PushWord(imms) => env_ops::push_many(&imms.0, block_builder),
+            Instruction::PushWordSlice(imm, range) => {
+                env_ops::push_word_slice(imm, range, block_builder)?
+            },
             Instruction::PushU8List(imms) => env_ops::push_many(imms, block_builder),
             Instruction::PushU16List(imms) => env_ops::push_many(imms, block_builder),
             Instruction::PushU32List(imms) => env_ops::push_many(imms, block_builder),

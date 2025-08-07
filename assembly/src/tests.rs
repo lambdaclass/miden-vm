@@ -1313,6 +1313,55 @@ fn const_conversion_failed_to_u32() -> TestResult {
     Ok(())
 }
 
+#[test]
+fn test_push_word_slice() -> TestResult {
+    let context = TestContext::default();
+    let source = source_file!(
+        &context,
+        "\
+    const.SAMPLE_WORD=[2, 3, 4, 5]
+
+    begin
+        push.SAMPLE_WORD[1..3]
+        push.SAMPLE_WORD[0]
+    end
+    "
+    );
+    let program = context.assemble(source)?;
+
+    let expected = "\
+begin
+    basic_block push(3) push(4) push(2) end
+end";
+    assert_str_eq!(format!("{program}"), expected);
+    Ok(())
+}
+
+#[test]
+fn test_push_word_slice_invalid() -> TestResult {
+    let context = TestContext::default();
+    let source_invalid_range = source_file!(
+        &context,
+        format!(
+            "\
+    const.SAMPLE_WORD=[2, 3, 4, 5]
+
+    begin
+        push.SAMPLE_WORD[6..3]
+    end
+    "
+        )
+    );
+    let program = context.assemble(source_invalid_range)?;
+
+    let expected = "\
+begin
+    basic_block noop end
+end";
+    assert_str_eq!(format!("{program}"), expected);
+    Ok(())
+}
+
 // DECORATORS
 // ================================================================================================
 
