@@ -1,5 +1,4 @@
-use alloc::{boxed::Box, sync::Arc};
-use core::error::Error;
+use alloc::sync::Arc;
 
 use miden_air::RowIndex;
 use miden_core::{
@@ -8,13 +7,15 @@ use miden_core::{
     stack::MIN_STACK_DEPTH,
     utils::to_hex,
 };
-use miden_debug_types::{SourceFile, SourceManager, SourceSpan};
+use miden_debug_types::{SourceFile, SourceSpan};
 use miden_utils_diagnostics::{Diagnostic, miette};
 use winter_prover::ProverError;
 
-use super::system::{FMP_MAX, FMP_MIN};
-use crate::{MemoryError, host::advice::AdviceError};
-
+use crate::{
+    BaseHost, EventError, MemoryError,
+    host::advice::AdviceError,
+    system::{FMP_MAX, FMP_MIN},
+};
 // EXECUTION ERROR
 // ================================================================================================
 
@@ -64,16 +65,19 @@ pub enum ExecutionError {
         source_file: Option<Arc<SourceFile>>,
         digest: Word,
     },
-    #[error("error during processing of event in on_event handler")]
+    #[error("error during processing of event with id {event_id} in on_event handler")]
     #[diagnostic()]
     EventError {
         #[label]
         label: SourceSpan,
         #[source_code]
         source_file: Option<Arc<SourceFile>>,
+        event_id: u32,
         #[source]
-        error: Box<dyn Error + Send + Sync + 'static>,
+        error: EventError,
     },
+    #[error("attempted to add event handler with previously inserted id: {id}")]
+    DuplicateEventHandler { id: u32 },
     #[error("assertion failed at clock cycle {clk} with error {}",
       match err_msg {
         Some(msg) => format!("message: {msg}"),
@@ -293,13 +297,10 @@ impl ExecutionError {
         Self::DynamicNodeNotFound { label, source_file, digest }
     }
 
-    pub fn event_error(
-        error: Box<dyn Error + Send + Sync + 'static>,
-        err_ctx: &impl ErrorContext,
-    ) -> Self {
+    pub fn event_error(error: EventError, event_id: u32, err_ctx: &impl ErrorContext) -> Self {
         let (label, source_file) = err_ctx.label_and_source_file();
 
-        Self::EventError { label, source_file, error }
+        Self::EventError { label, source_file, event_id, error }
     }
 
     pub fn failed_assertion(
@@ -453,16 +454,11 @@ pub enum AceError {
 #[cfg(not(feature = "no_err_ctx"))]
 #[macro_export]
 macro_rules! err_ctx {
-    ($mast_forest:expr, $node:expr, $source_manager:expr) => {
-        $crate::errors::ErrorContextImpl::new($mast_forest, $node, $source_manager)
+    ($mast_forest:expr, $node:expr, $host:expr) => {
+        $crate::errors::ErrorContextImpl::new($mast_forest, $node, $host)
     };
-    ($mast_forest:expr, $node:expr, $source_manager:expr, $op_idx:expr) => {
-        $crate::errors::ErrorContextImpl::new_with_op_idx(
-            $mast_forest,
-            $node,
-            $source_manager,
-            $op_idx,
-        )
+    ($mast_forest:expr, $node:expr, $host:expr, $op_idx:expr) => {
+        $crate::errors::ErrorContextImpl::new_with_op_idx($mast_forest, $node, $host, $op_idx)
     };
 }
 
@@ -479,8 +475,8 @@ macro_rules! err_ctx {
 #[cfg(feature = "no_err_ctx")]
 #[macro_export]
 macro_rules! err_ctx {
-    ($mast_forest:expr, $node:expr, $source_manager:expr) => {{ () }};
-    ($mast_forest:expr, $node:expr, $source_manager:expr, $op_idx:expr) => {{ () }};
+    ($mast_forest:expr, $node:expr, $host:expr) => {{ () }};
+    ($mast_forest:expr, $node:expr, $host:expr, $op_idx:expr) => {{ () }};
 }
 
 /// Trait defining the interface for error context providers.
@@ -495,63 +491,50 @@ pub trait ErrorContext {
 }
 
 /// Context information to be used when reporting errors.
-#[derive(Debug)]
-pub struct ErrorContextImpl<'a, N: MastNodeExt> {
-    mast_forest: &'a MastForest,
-    node: &'a N,
-    source_manager: Arc<dyn SourceManager>,
-    op_idx: Option<usize>,
+pub struct ErrorContextImpl {
+    label: SourceSpan,
+    source_file: Option<Arc<SourceFile>>,
 }
 
-impl<'a, N: MastNodeExt> ErrorContextImpl<'a, N> {
+impl ErrorContextImpl {
     #[allow(dead_code)]
-    pub fn new(
-        mast_forest: &'a MastForest,
-        node: &'a N,
-        source_manager: Arc<dyn SourceManager>,
-    ) -> Self {
-        Self {
-            mast_forest,
-            node,
-            source_manager,
-            op_idx: None,
-        }
+    pub fn new(mast_forest: &MastForest, node: &impl MastNodeExt, host: &impl BaseHost) -> Self {
+        let (label, source_file) =
+            Self::precalc_label_and_source_file(None, mast_forest, node, host);
+        Self { label, source_file }
     }
 
     #[allow(dead_code)]
     pub fn new_with_op_idx(
-        mast_forest: &'a MastForest,
-        node: &'a N,
-        source_manager: Arc<dyn SourceManager>,
+        mast_forest: &MastForest,
+        node: &impl MastNodeExt,
+        host: &impl BaseHost,
         op_idx: usize,
     ) -> Self {
-        Self {
-            mast_forest,
-            node,
-            source_manager,
-            op_idx: Some(op_idx),
-        }
+        let op_idx = op_idx.into();
+        let (label, source_file) =
+            Self::precalc_label_and_source_file(op_idx, mast_forest, node, host);
+        Self { label, source_file }
     }
 
-    pub fn label_and_source_file(&self) -> (SourceSpan, Option<Arc<SourceFile>>) {
-        self.node
-            .get_assembly_op(self.mast_forest, self.op_idx)
+    fn precalc_label_and_source_file(
+        op_idx: Option<usize>,
+        mast_forest: &MastForest,
+        node: &impl MastNodeExt,
+        host: &impl BaseHost,
+    ) -> (SourceSpan, Option<Arc<SourceFile>>) {
+        node.get_assembly_op(mast_forest, op_idx)
             .and_then(|assembly_op| assembly_op.location())
             .map_or_else(
                 || (SourceSpan::UNKNOWN, None),
-                |location| {
-                    (
-                        self.source_manager.location_to_span(location.clone()).unwrap_or_default(),
-                        self.source_manager.get_by_uri(&location.uri),
-                    )
-                },
+                |location| host.get_label_and_source_file(location),
             )
     }
 }
 
-impl<'a, N: MastNodeExt> ErrorContext for ErrorContextImpl<'a, N> {
+impl ErrorContext for ErrorContextImpl {
     fn label_and_source_file(&self) -> (SourceSpan, Option<Arc<SourceFile>>) {
-        self.label_and_source_file()
+        (self.label, self.source_file.clone())
     }
 }
 

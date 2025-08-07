@@ -311,24 +311,17 @@ fn execute(
         assembler.link_dynamic_library(library).map_err(|err| format!("{err}"))?;
     }
 
-    let source_manager = assembler.source_manager();
     let program = assembler.assemble_program(program).map_err(|err| format!("{err}"))?;
 
     let stack_inputs = StackInputs::default();
     let advice_inputs = AdviceInputs::default();
     let mut host = DefaultHost::default();
     for library in provided_libraries {
-        host.load_mast_forest(library.mast_forest().clone())
-            .map_err(|err| format!("{err}"))?;
+        host.load_library(library.mast_forest()).map_err(|err| format!("{err}"))?;
     }
 
-    let state_iter = miden_processor::execute_iter(
-        &program,
-        stack_inputs,
-        advice_inputs,
-        &mut host,
-        source_manager,
-    );
+    let state_iter =
+        miden_processor::execute_iter(&program, stack_inputs, advice_inputs, &mut host);
     let (system, _, stack, chiplets, err) = state_iter.into_parts();
     if let Some(err) = err {
         return Err(format!("{err}"));

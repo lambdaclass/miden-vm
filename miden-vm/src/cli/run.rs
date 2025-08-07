@@ -1,10 +1,7 @@
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{path::PathBuf, time::Instant};
 
 use clap::Parser;
-use miden_assembly::{
-    DefaultSourceManager,
-    diagnostics::{IntoDiagnostic, Report, WrapErr},
-};
+use miden_assembly::diagnostics::{IntoDiagnostic, Report, WrapErr};
 use miden_processor::{DefaultHost, ExecutionOptions, ExecutionTrace};
 use miden_stdlib::StdLibrary;
 use miden_vm::internal::InputFile;
@@ -35,7 +32,7 @@ pub struct RunCmd {
     library_paths: Vec<PathBuf>,
 
     /// Maximum number of cycles a program is allowed to consume
-    #[arg(short = 'm', long = "max-cycles", default_value = "4294967295")]
+    #[arg(short = 'm', long = "max-cycles", default_value_t = ExecutionOptions::MAX_CYCLES)]
     max_cycles: u32,
 
     /// Number of outputs
@@ -135,8 +132,7 @@ fn run_masp_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
 
     let stack_inputs = input_data.parse_stack_inputs().map_err(Report::msg)?;
     let advice_inputs = input_data.parse_advice_inputs().map_err(Report::msg)?;
-    let mut host = DefaultHost::default();
-    host.load_mast_forest(StdLibrary::default().mast_forest().clone()).unwrap();
+    let mut host = DefaultHost::default().with_library(&StdLibrary::default())?;
 
     let execution_options = ExecutionOptions::new(
         Some(params.max_cycles),
@@ -148,9 +144,6 @@ fn run_masp_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
 
     let program_hash: [u8; 32] = program.hash().into();
 
-    // Packages don't ship with sources, so we use a default source manager.
-    let source_manager = Arc::new(DefaultSourceManager::default());
-
     // execute program and generate outputs
     let trace = miden_processor::execute(
         &program,
@@ -158,7 +151,6 @@ fn run_masp_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
         advice_inputs,
         &mut host,
         execution_options,
-        source_manager,
     )
     .wrap_err("Failed to generate execution trace")?;
 
@@ -193,10 +185,10 @@ fn run_masm_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
     // fetch the stack and program inputs from the arguments
     let stack_inputs = input_data.parse_stack_inputs().map_err(Report::msg)?;
     let advice_inputs = input_data.parse_advice_inputs().map_err(Report::msg)?;
-    let mut host = DefaultHost::default();
-    host.load_mast_forest(StdLibrary::default().mast_forest().clone()).unwrap();
+    let mut host = DefaultHost::default().with_source_manager(source_manager);
+    host.load_library(&StdLibrary::default()).unwrap();
     for lib in libraries.libraries {
-        host.load_mast_forest(lib.mast_forest().clone()).unwrap();
+        host.load_library(lib.mast_forest()).unwrap();
     }
 
     let program_hash: [u8; 32] = program.hash().into();
@@ -207,7 +199,6 @@ fn run_masm_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
         advice_inputs,
         &mut host,
         execution_options,
-        source_manager,
     )
     .wrap_err("Failed to generate execution trace")?;
 
