@@ -41,15 +41,16 @@ where
 }
 
 /// Appends `PUSH` operations to the basic block using the [Felt]s obtained from the Word value
-/// using the provided range. If the range in malformed or empty, no operations will be appended to
-/// the basic block.
+/// using the provided range.
 ///
 /// In cases when the immediate value is 0, `PUSH` operation is replaced with `PAD`. Also, in cases
 /// when immediate value is 1, `PUSH` operation is replaced with `PAD INCR` because in most cases
 /// this will be more efficient than doing a `PUSH`.
 ///
 /// # Errors
-/// Returns an error if the provided [`IntValue`] is not a [`IntValue::Word`].
+/// Returns an error if:
+/// - The provided [`IntValue`] is not a [`IntValue::Word`].
+/// - The provided range is malformed or empty.
 pub fn push_word_slice(
     imm: &Immediate<IntValue>,
     range: &Range<usize>,
@@ -57,7 +58,9 @@ pub fn push_word_slice(
 ) -> Result<(), Report> {
     if let IntValue::Word(v) = imm.expect_value() {
         if let Some(values) = v.0.get(range.clone()) {
-            push_many(values, block_builder)
+            push_many(values, block_builder);
+        } else {
+            return Err(Report::new(ParsingError::InvalidWordSliceRange { span: imm.span() }));
         }
     } else {
         return Err(Report::new(ParsingError::InvalidSliceConstant { span: imm.span() }));
