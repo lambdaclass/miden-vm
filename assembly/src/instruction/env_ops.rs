@@ -15,7 +15,7 @@ use crate::ProcedureContext;
 // CONSTANT INPUTS
 // ================================================================================================
 
-/// Appends `PUSH` operation to the span block to push provided constant value onto the stack.
+/// Appends `PUSH` operation to the basic block to push provided constant value onto the stack.
 ///
 /// In cases when the immediate value is 0, `PUSH` operation is replaced with `PAD`. Also, in cases
 /// when immediate value is 1, `PUSH` operation is replaced with `PAD INCR` because in most cases
@@ -27,7 +27,7 @@ where
     push_felt(block_builder, imm.into());
 }
 
-/// Appends `PUSH` operations to the span block to push two or more provided constant values onto
+/// Appends `PUSH` operations to the basic block to push two or more provided constant values onto
 /// the stack, up to a maximum of 16 values.
 ///
 /// In cases when the immediate value is 0, `PUSH` operation is replaced with `PAD`. Also, in cases
@@ -40,9 +40,9 @@ where
     imms.iter().for_each(|imm| push_felt(block_builder, (*imm).into()));
 }
 
-/// Appends `PUSH` operations to the span block using the [Felt]s obtained from the Word value using
-/// the provided range. If the range in malformed or empty, no operations will be appended to the
-/// span block.
+/// Appends `PUSH` operations to the basic block using the [Felt]s obtained from the Word value
+/// using the provided range. If the range in malformed or empty, no operations will be appended to
+/// the basic block.
 ///
 /// In cases when the immediate value is 0, `PUSH` operation is replaced with `PAD`. Also, in cases
 /// when immediate value is 1, `PUSH` operation is replaced with `PAD INCR` because in most cases
