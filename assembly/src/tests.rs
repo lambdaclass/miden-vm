@@ -1320,11 +1320,16 @@ fn test_push_word_slice() -> TestResult {
         &context,
         "\
     const.SAMPLE_WORD=[2, 3, 4, 5]
+    const.SAMPLE_HEX_WORD=0x0600000000000000070000000000000008000000000000000900000000000000
 
     begin
         push.SAMPLE_WORD[1..3]
         push.SAMPLE_WORD[0]
         push.SAMPLE_WORD[2..2]
+        push.[10, 11, 12, 13][1..3]
+
+        push.SAMPLE_HEX_WORD[2..4]
+        push.0x0600000000000000070000000000000008000000000000000900000000000000[0..2]
     end
     "
     );
@@ -1332,7 +1337,17 @@ fn test_push_word_slice() -> TestResult {
 
     let expected = "\
 begin
-    basic_block push(3) push(4) push(2) end
+    basic_block
+        push(3)
+        push(4)
+        push(2)
+        push(11)
+        push(12)
+        push(8)
+        push(9)
+        push(6)
+        push(7)
+    end
 end";
     assert_str_eq!(format!("{program}"), expected);
     Ok(())
@@ -1362,6 +1377,18 @@ fn test_push_word_slice_invalid() -> TestResult {
     const.SAMPLE_VALUE=6
     begin
         push.SAMPLE_VALUE[1..3]
+    end
+    "
+        )
+    );
+    assert!(context.assemble(source_invalid_constant_type).is_err());
+
+    let source_invalid_constant_type = source_file!(
+        &context,
+        format!(
+            "\
+    begin
+        push.5[0..2]
     end
     "
         )

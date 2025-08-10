@@ -1258,21 +1258,21 @@ InstWithBitSizeImmediate: Instruction = {
 }
 
 Push: SmallOpsVec = {
-    <l:@L> "push" "." <name:ConstantName> "[" <i:uint> "]" <r:@R> => {
+    <l:@L> "push" "." <imm_value:IntOrHexImm> "[" <i:uint> "]" <r:@R> => {
         smallvec![Op::Inst(Span::new(
             span!(source_file.id(), l, r),
             Instruction::PushWordSlice(
-                Immediate::Constant(name),
+                imm_value,
                 Range { start: i as usize, end: i as usize + 1 }
             )
         ))]
     },
 
-    <l:@L> "push" "." <name:ConstantName> "[" <l_range:uint>  "." "." <r_range:uint> "]" <r:@R> => {
+    <l:@L> "push" "." <imm_value:IntOrHexImm> "[" <l_range:uint> "." "." <r_range:uint> "]" <r:@R> => {
         smallvec![Op::Inst(Span::new(
             span!(source_file.id(), l, r),
             Instruction::PushWordSlice(
-                Immediate::Constant(name),
+                imm_value,
                 Range { start: l_range as usize, end: r_range as usize }
             )
         ))]
