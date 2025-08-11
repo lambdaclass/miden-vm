@@ -1325,7 +1325,6 @@ fn test_push_word_slice() -> TestResult {
     begin
         push.SAMPLE_WORD[1..3]
         push.SAMPLE_WORD[0]
-        push.SAMPLE_WORD[2..2]
         push.[10, 11, 12, 13][1..3]
 
         push.SAMPLE_HEX_WORD[2..4]
@@ -1369,6 +1368,20 @@ fn test_push_word_slice_invalid() -> TestResult {
         )
     );
     assert!(context.assemble(source_invalid_range).is_err());
+
+    let source_empty_range = source_file!(
+        &context,
+        format!(
+            "\
+    const.SAMPLE_WORD=[2, 3, 4, 5]
+
+    begin
+        push.SAMPLE_WORD[2..2]
+    end
+    "
+        )
+    );
+    assert!(context.assemble(source_empty_range).is_err());
 
     let source_invalid_constant_type = source_file!(
         &context,

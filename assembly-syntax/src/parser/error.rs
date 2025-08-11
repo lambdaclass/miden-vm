@@ -293,9 +293,10 @@ pub enum ParsingError {
     #[error("invalid word slice range")]
     #[diagnostic()]
     InvalidWordSliceRange {
-        #[label("range used for the word constant slice is malformed of empty")]
+        #[label("range used for the word constant slice is malformed or empty: `{range:?}`")]
         #[label]
         span: SourceSpan,
+        range: Range<usize>,
     },
 }
 
