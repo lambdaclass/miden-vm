@@ -46,6 +46,7 @@ extern {
         "@" => Token::At,
         "[" => Token::Lbracket,
         "]" => Token::Rbracket,
+        ".." => Token::Range,
         "add" => Token::Add,
         "adv" => Token::Adv,
         "adv_map" => Token::AdvMap,
@@ -1261,17 +1262,17 @@ Push: SmallOpsVec = {
     <l:@L> "push" "." <imm_value:IntOrHexImm> "[" <i:uint> "]" <r:@R> => {
         smallvec![Op::Inst(Span::new(
             span!(source_file.id(), l, r),
-            Instruction::PushWordSlice(
+            Instruction::PushSlice(
                 imm_value,
                 Range { start: i as usize, end: i as usize + 1 }
             )
         ))]
     },
 
-    <l:@L> "push" "." <imm_value:IntOrHexImm> "[" <l_range:uint> "." "." <r_range:uint> "]" <r:@R> => {
+    <l:@L> "push" "." <imm_value:IntOrHexImm> "[" <l_range:uint> ".." <r_range:uint> "]" <r:@R> => {
         smallvec![Op::Inst(Span::new(
             span!(source_file.id(), l, r),
-            Instruction::PushWordSlice(
+            Instruction::PushSlice(
                 imm_value,
                 Range { start: l_range as usize, end: r_range as usize }
             )

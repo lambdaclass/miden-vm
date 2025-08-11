@@ -58,9 +58,16 @@ pub fn push_word_slice(
 ) -> Result<(), Report> {
     if let IntValue::Word(v) = imm.expect_value() {
         match v.0.get(range.clone()) {
-            // invalid range case (i.e. [8..5]) or empty range case (i.e. [2..2])
-            None | Some([]) => {
-                return Err(Report::new(ParsingError::InvalidWordSliceRange {
+            // invalid range case (i.e. [8..5])
+            None => {
+                return Err(Report::new(ParsingError::InvalidRange {
+                    span: imm.span(),
+                    range: range.clone(),
+                }));
+            },
+            // empty range case (i.e. [2..2])
+            Some([]) => {
+                return Err(Report::new(ParsingError::EmptySlice {
                     span: imm.span(),
                     range: range.clone(),
                 }));

@@ -212,7 +212,7 @@ begin
 end
 ```
 
-#### Word constant slices
+#### Constant slices
 
 It is possible to get just some part of a word constant using slice notation. This could be done by specifying a range in square brackets right after the constant's name. Attempt to get slices from constants which don't represent words will result in errors. 
 

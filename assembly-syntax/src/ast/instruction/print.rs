@@ -218,11 +218,15 @@ impl PrettyPrint for Instruction {
             Self::PushFelt(value) => {
                 inst_with_felt_imm("push", &Immediate::Value(Span::unknown(*value)))
             },
-            Self::PushWord(value) => flatten(const_text("push.") + value.render()),
-            Self::PushWordSlice(value, range) => flatten(
+            Self::PushWord(value) => flatten(const_text("push") + const_text(".") + value.render()),
+            Self::PushSlice(value, range) => flatten(
                 const_text("push.")
                     + value.render()
-                    + text(format!("[{}..{}]", range.start, range.end)),
+                    + const_text("[")
+                    + display(range.start)
+                    + const_text("..")
+                    + display(range.end)
+                    + const_text("]"),
             ),
             Self::PushFeltList(values) => inst_with_pretty_felt_params("push", values),
             Self::Locaddr(value) => inst_with_imm("locaddr", value),

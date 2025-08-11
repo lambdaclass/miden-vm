@@ -286,14 +286,22 @@ pub enum ParsingError {
     #[error("invalid slice constant")]
     #[diagnostic()]
     InvalidSliceConstant {
-        #[label("slicing could be applied only to the word constants")]
+        #[label("slices are only supported over word-sized constants")]
         #[label]
         span: SourceSpan,
     },
-    #[error("invalid word slice range")]
+    #[error("invalid slice: expected valid range")]
     #[diagnostic()]
-    InvalidWordSliceRange {
-        #[label("range used for the word constant slice is malformed or empty: `{range:?}`")]
+    InvalidRange {
+        #[label("range used for the word constant slice is malformed: `{range:?}`")]
+        #[label]
+        span: SourceSpan,
+        range: Range<usize>,
+    },
+    #[error("invalid slice: expected non-empty range")]
+    #[diagnostic()]
+    EmptySlice {
+        #[label("range used for the word constant slice is empty: `{range:?}`")]
         #[label]
         span: SourceSpan,
         range: Range<usize>,

@@ -212,7 +212,7 @@ pub enum Instruction {
     PushU32(u32),
     PushFelt(Felt),
     PushWord(WordValue),
-    PushWordSlice(Immediate<IntValue>, Range<usize>),
+    PushSlice(Immediate<IntValue>, Range<usize>),
     PushFeltList(Vec<Felt>),
     Locaddr(ImmU16),
     Sdepth,
