@@ -306,6 +306,13 @@ pub enum ParsingError {
         span: SourceSpan,
         range: Range<usize>,
     },
+    // #[error("")]
+    // #[diagnostic()]
+    //  {
+    //     #[label("")]
+    //     #[label]
+    //     span: SourceSpan,
+    // },
 }
 
 impl ParsingError {
