@@ -1323,7 +1323,7 @@ fn const_word_from_string() -> TestResult {
         &context,
         format!(
             r#"
-    const.SAMPLE_WORD=word("{sample_source_string}")
+    const.SAMPLE_WORD=to_word("{sample_source_string}")
 
     begin
         push.SAMPLE_WORD
