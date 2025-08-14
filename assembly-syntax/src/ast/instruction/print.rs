@@ -219,11 +219,16 @@ impl PrettyPrint for Instruction {
                 inst_with_felt_imm("push", &Immediate::Value(Span::unknown(*value)))
             },
             Self::PushWord(value) => flatten(const_text("push") + const_text(".") + value.render()),
-            Self::PushU8List(values) => inst_with_pretty_params("push", values),
-            Self::PushU16List(values) => inst_with_pretty_params("push", values),
-            Self::PushU32List(values) => inst_with_pretty_params("push", values),
+            Self::PushSlice(value, range) => flatten(
+                const_text("push.")
+                    + value.render()
+                    + const_text("[")
+                    + display(range.start)
+                    + const_text("..")
+                    + display(range.end)
+                    + const_text("]"),
+            ),
             Self::PushFeltList(values) => inst_with_pretty_felt_params("push", values),
-
             Self::Locaddr(value) => inst_with_imm("locaddr", value),
             Self::Sdepth => const_text("sdepth"),
             Self::Caller => const_text("caller"),
@@ -373,25 +378,6 @@ fn inst_with_pretty_felt_params(inst: &'static str, params: &[crate::Felt]) -> D
         .iter()
         .copied()
         .map(|v| text(inst) + const_text(".") + display(v))
-        .reduce(|acc, doc| acc + nl() + doc)
-        .unwrap_or_default();
-    single_line | multi_line
-}
-
-fn inst_with_pretty_params<P: PrettyPrint>(inst: &'static str, params: &[P]) -> Document {
-    use crate::prettier::*;
-
-    let single_line = text(inst)
-        + const_text(".")
-        + params
-            .iter()
-            .map(|p| p.render())
-            .reduce(|acc, doc| acc + const_text(".") + doc)
-            .unwrap_or_default();
-
-    let multi_line = params
-        .iter()
-        .map(|v| text(inst) + const_text(".") + v.render())
         .reduce(|acc, doc| acc + nl() + doc)
         .unwrap_or_default();
     single_line | multi_line
