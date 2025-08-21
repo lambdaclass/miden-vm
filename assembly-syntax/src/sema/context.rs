@@ -4,7 +4,10 @@ use alloc::{
     vec::Vec,
 };
 
-use miden_core::{Word, crypto::hash::Blake3_256};
+use miden_core::{
+    Word,
+    crypto::hash::{Blake3_256, Blake3Digest},
+};
 use miden_debug_types::{SourceFile, Span, Spanned};
 use miden_utils_diagnostics::{Diagnostic, Severity};
 
@@ -77,16 +80,13 @@ impl AnalysisContext {
 
     fn const_eval(&self, value: &ConstantExpr) -> Result<ConstantExpr, SemanticAnalysisError> {
         match value {
-            ConstantExpr::Literal(_) | ConstantExpr::String(_) | ConstantExpr::Word(_) => {
-                Ok((*value).clone())
-            },
+            ConstantExpr::FeltLiteral(_)
+            | ConstantExpr::String(_)
+            | ConstantExpr::WordLiteral(_) => Ok((*value).clone()),
             ConstantExpr::Var(name) => self.get_constant(name).cloned(),
-            ConstantExpr::HashWord(string, _) => {
-                let digest_bytes: [u8; 32] = Blake3_256::hash(string.as_bytes()).into();
-                let hash_word = Word::try_from(digest_bytes)
-                    .expect("conversion of the Blake3_256 hash into the Word has failed");
-
-                Ok(ConstantExpr::HashWord(string.clone(), WordValue(*hash_word)))
+            ConstantExpr::WordHash(string, _) => {
+                let hash_word = blake3_digest_to_word(Blake3_256::hash(string.as_bytes()));
+                Ok(ConstantExpr::WordHash(string.clone(), WordValue(*hash_word)))
             },
             ConstantExpr::BinaryOp { op, lhs, rhs, .. } => {
                 let rhs = self.const_eval(rhs)?.expect_literal();
@@ -98,7 +98,7 @@ impl AnalysisContext {
                     ConstantOp::Div => lhs / rhs,
                     ConstantOp::IntDiv => Felt::new(lhs.as_int() / rhs.as_int()),
                 };
-                Ok(ConstantExpr::Literal(Span::unknown(felt)))
+                Ok(ConstantExpr::FeltLiteral(Span::unknown(felt)))
             },
         }
     }
@@ -179,4 +179,19 @@ impl AnalysisContext {
 
     #[cfg(not(feature = "std"))]
     fn emit_warnings(self) {}
+}
+
+// HELPER FUNCTIONS
+// ================================================================================================
+
+/// Converts the digest obtained from the [`Blake3_256::hash`] procedure into the [`Word`].
+fn blake3_digest_to_word(blake3_digest: Blake3Digest<32>) -> Word {
+    let digest_bytes: [u8; 32] = blake3_digest.into();
+    [
+        Felt::new(u64::from_le_bytes(digest_bytes[0..8].try_into().unwrap())),
+        Felt::new(u64::from_le_bytes(digest_bytes[8..16].try_into().unwrap())),
+        Felt::new(u64::from_le_bytes(digest_bytes[16..24].try_into().unwrap())),
+        Felt::new(u64::from_le_bytes(digest_bytes[24..32].try_into().unwrap())),
+    ]
+    .into()
 }

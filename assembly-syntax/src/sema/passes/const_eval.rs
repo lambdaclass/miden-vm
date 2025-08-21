@@ -31,7 +31,7 @@ impl ConstEvalVisitor<'_> {
             Immediate::Constant(name) => {
                 let span = name.span();
                 match self.analyzer.get_constant(name) {
-                    Ok(ConstantExpr::Literal(value)) => match T::try_from(value.as_int()) {
+                    Ok(ConstantExpr::FeltLiteral(value)) => match T::try_from(value.as_int()) {
                         Ok(value) => {
                             *imm = Immediate::Value(Span::new(span, value));
                         },
@@ -86,7 +86,7 @@ impl VisitMut for ConstEvalVisitor<'_> {
             Immediate::Constant(name) => {
                 let span = name.span();
                 match self.analyzer.get_constant(name) {
-                    Ok(ConstantExpr::Literal(value)) => {
+                    Ok(ConstantExpr::FeltLiteral(value)) => {
                         *imm = Immediate::Value(Span::new(span, *value.inner()));
                     },
                     Err(error) => {
@@ -105,13 +105,13 @@ impl VisitMut for ConstEvalVisitor<'_> {
             Immediate::Constant(name) => {
                 let span = name.span();
                 match self.analyzer.get_constant(name) {
-                    Ok(ConstantExpr::Literal(value)) => {
+                    Ok(ConstantExpr::FeltLiteral(value)) => {
                         *imm = Immediate::Value(Span::new(span, IntValue::Felt(*value.inner())));
                     },
-                    Ok(ConstantExpr::Word(value)) => {
+                    Ok(ConstantExpr::WordLiteral(value)) => {
                         *imm = Immediate::Value(Span::new(span, IntValue::Word(*value.inner())));
                     },
-                    Ok(ConstantExpr::HashWord(_, hash_word)) => {
+                    Ok(ConstantExpr::WordHash(_, hash_word)) => {
                         *imm = Immediate::Value(Span::new(span, IntValue::Word(*hash_word)));
                     },
                     Err(error) => {
