@@ -10,7 +10,7 @@ pub use miden_crypto::{
     hash::blake::{Blake3_256, Blake3Digest},
     utils::{
         ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable, SliceReader,
-        collections, uninit_vector,
+        uninit_vector,
     },
 };
 #[cfg(feature = "std")]
