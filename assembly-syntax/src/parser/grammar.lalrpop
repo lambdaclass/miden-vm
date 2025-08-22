@@ -8,7 +8,6 @@ use alloc::{
 use core::{marker::PhantomData, num::NonZeroU32, ops::Range};
 
 use miden_debug_types::{SourceFile, SourceSpan, Span, Spanned};
-use miden_core::ZERO;
 use smallvec::smallvec;
 
 use crate::{LibraryPath, LibraryNamespace, ast::*, Felt, FieldElement, StarkField, Word};
@@ -1830,7 +1829,7 @@ Opcode: &'static str = {
 ConstantExpr: ConstantExpr = {
     <l:@L> "word" "(" <value:string> ")" <r:@R> => {
         let span = span!(source_file.id(), l, r);
-        ConstantExpr::WordHash(Ident::from_raw_parts(Span::new(span, value.into())), WordValue([ZERO; 4]))
+        ConstantExpr::Hash(HashKind::Blake3, Ident::from_raw_parts(Span::new(span, value.into())))
     },
 
     <l:@L> <x:ConstantExpr> "+" <y:ConstantExpr100> <r:@R> =>? {
@@ -1888,11 +1887,11 @@ Term: ConstantExpr = {
 
     <l:@L> <value:IntValue> <r:@R> =>? {
         Ok(match value {
-            IntValue::U8(v) => ConstantExpr::FeltLiteral(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
-            IntValue::U16(v) => ConstantExpr::FeltLiteral(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
-            IntValue::U32(v) => ConstantExpr::FeltLiteral(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
-            IntValue::Felt(v) => ConstantExpr::FeltLiteral(Span::new(span!(source_file.id(), l, r), v)),
-            IntValue::Word(v) => ConstantExpr::WordLiteral(Span::new(span!(source_file.id(), l, r), v))
+            IntValue::U8(v) => ConstantExpr::Felt(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
+            IntValue::U16(v) => ConstantExpr::Felt(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
+            IntValue::U32(v) => ConstantExpr::Felt(Span::new(span!(source_file.id(), l, r), Felt::new(v as u64))),
+            IntValue::Felt(v) => ConstantExpr::Felt(Span::new(span!(source_file.id(), l, r), v)),
+            IntValue::Word(v) => ConstantExpr::Word(Span::new(span!(source_file.id(), l, r), v))
         })
     },
 

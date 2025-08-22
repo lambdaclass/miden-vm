@@ -266,7 +266,7 @@ fn add_advice_map_entry(
     let cst = Constant::new(
         entry.span,
         entry.name.clone(),
-        ConstantExpr::WordLiteral(Span::new(entry.span, WordValue(*key))),
+        ConstantExpr::Word(Span::new(entry.span, WordValue(*key))),
     );
     context.define_constant(cst)?;
     match module.advice_map.get(&key) {

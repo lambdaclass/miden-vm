@@ -88,7 +88,7 @@ impl Spanned for Constant {
 #[derive(Clone)]
 pub enum ConstantExpr {
     /// A literal [`Felt`] value.
-    FeltLiteral(Span<Felt>),
+    Felt(Span<Felt>),
     /// A reference to another constant.
     Var(Ident),
     /// An binary arithmetic operator.
@@ -101,20 +101,21 @@ pub enum ConstantExpr {
     /// A plain spanned string.
     String(Ident),
     /// A literal [`WordValue`].
-    WordLiteral(Span<WordValue>),
-    /// A spanned string along with its hash represented by the [`WordValue`].
-    WordHash(Ident, WordValue),
+    Word(Span<WordValue>),
+    /// A spanned string with a [`HashKind`] showing to which type of value the given string should
+    /// be hashed.
+    Hash(HashKind, Ident),
 }
 
 impl ConstantExpr {
-    /// Unwrap a literal value from this expression or panic.
+    /// Unwrap a [`Felt`] value from this expression or panic.
     ///
-    /// This is used in places where we expect the expression to have been folded to a value,
+    /// This is used in places where we expect the expression to have been folded to a felt value,
     /// otherwise a bug occurred.
     #[track_caller]
-    pub fn expect_literal(&self) -> Felt {
+    pub fn expect_felt(&self) -> Felt {
         match self {
-            Self::FeltLiteral(spanned) => spanned.into_inner(),
+            Self::Felt(spanned) => spanned.into_inner(),
             other => panic!("expected constant expression to be a literal, got {other:#?}"),
         }
     }
@@ -134,11 +135,9 @@ impl ConstantExpr {
     /// Returns an error if an invalid expression is found while folding, such as division by zero.
     pub fn try_fold(self) -> Result<Self, ParsingError> {
         match self {
-            Self::String(_)
-            | Self::FeltLiteral(_)
-            | Self::Var(_)
-            | Self::WordLiteral(_)
-            | Self::WordHash(..) => Ok(self),
+            Self::String(_) | Self::Felt(_) | Self::Var(_) | Self::Word(_) | Self::Hash(..) => {
+                Ok(self)
+            },
             Self::BinaryOp { span, op, lhs, rhs } => {
                 if rhs.is_literal() {
                     let rhs = Self::into_inner(rhs).try_fold()?;
@@ -146,7 +145,7 @@ impl ConstantExpr {
                         Self::String(ident) => {
                             Err(ParsingError::StringInArithmeticExpression { span: ident.span() })
                         },
-                        Self::FeltLiteral(rhs) => {
+                        Self::Felt(rhs) => {
                             let lhs = Self::into_inner(lhs).try_fold()?;
                             match lhs {
                                 Self::String(ident) => {
@@ -154,7 +153,7 @@ impl ConstantExpr {
                                         span: ident.span(),
                                     })
                                 },
-                                Self::FeltLiteral(lhs) => {
+                                Self::Felt(lhs) => {
                                     let lhs = lhs.into_inner();
                                     let rhs = rhs.into_inner();
                                     let is_division =
@@ -165,18 +164,18 @@ impl ConstantExpr {
                                     }
                                     match op {
                                         ConstantOp::Add => {
-                                            Ok(Self::FeltLiteral(Span::new(span, lhs + rhs)))
+                                            Ok(Self::Felt(Span::new(span, lhs + rhs)))
                                         },
                                         ConstantOp::Sub => {
-                                            Ok(Self::FeltLiteral(Span::new(span, lhs - rhs)))
+                                            Ok(Self::Felt(Span::new(span, lhs - rhs)))
                                         },
                                         ConstantOp::Mul => {
-                                            Ok(Self::FeltLiteral(Span::new(span, lhs * rhs)))
+                                            Ok(Self::Felt(Span::new(span, lhs * rhs)))
                                         },
                                         ConstantOp::Div => {
-                                            Ok(Self::FeltLiteral(Span::new(span, lhs / rhs)))
+                                            Ok(Self::Felt(Span::new(span, lhs / rhs)))
                                         },
-                                        ConstantOp::IntDiv => Ok(Self::FeltLiteral(Span::new(
+                                        ConstantOp::IntDiv => Ok(Self::Felt(Span::new(
                                             span,
                                             Felt::new(lhs.as_int() / rhs.as_int()),
                                         ))),
@@ -186,7 +185,7 @@ impl ConstantExpr {
                                     span,
                                     op,
                                     lhs: Box::new(lhs),
-                                    rhs: Box::new(Self::FeltLiteral(rhs)),
+                                    rhs: Box::new(Self::Felt(rhs)),
                                 }),
                             }
                         },
@@ -210,9 +209,7 @@ impl ConstantExpr {
 
     fn is_literal(&self) -> bool {
         match self {
-            Self::FeltLiteral(_) | Self::String(_) | Self::WordLiteral(_) | Self::WordHash(..) => {
-                true
-            },
+            Self::Felt(_) | Self::String(_) | Self::Word(_) | Self::Hash(..) => true,
             Self::Var(_) => false,
             Self::BinaryOp { lhs, rhs, .. } => lhs.is_literal() && rhs.is_literal(),
         }
@@ -230,9 +227,9 @@ impl Eq for ConstantExpr {}
 impl PartialEq for ConstantExpr {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::FeltLiteral(l), Self::FeltLiteral(y)) => l == y,
+            (Self::Felt(l), Self::Felt(y)) => l == y,
             (Self::Var(l), Self::Var(y)) => l == y,
-            (Self::WordHash(l_s, l_h), Self::WordHash(r_s, r_h)) => l_s == r_s && l_h == r_h,
+            (Self::Hash(l_hk, l_i), Self::Hash(r_hk, r_i)) => l_i == r_i && l_hk == r_hk,
             (
                 Self::BinaryOp { op: lop, lhs: llhs, rhs: lrhs, .. },
                 Self::BinaryOp { op: rop, lhs: rlhs, rhs: rrhs, .. },
@@ -246,13 +243,13 @@ impl core::hash::Hash for ConstantExpr {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         core::mem::discriminant(self).hash(state);
         match self {
-            Self::FeltLiteral(value) => value.as_int().hash(state),
+            Self::Felt(value) => value.as_int().hash(state),
             Self::String(value) => value.hash(state),
-            Self::WordLiteral(value) => value.hash(state),
+            Self::Word(value) => value.hash(state),
             Self::Var(value) => value.hash(state),
-            Self::WordHash(string, hash) => {
+            Self::Hash(hash_kind, string) => {
+                hash_kind.hash(state);
                 string.hash(state);
-                hash.hash(state);
             },
             Self::BinaryOp { op, lhs, rhs, .. } => {
                 op.hash(state);
@@ -266,10 +263,10 @@ impl core::hash::Hash for ConstantExpr {
 impl fmt::Debug for ConstantExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::FeltLiteral(lit) => fmt::Debug::fmt(&**lit, f),
-            Self::WordLiteral(w) => fmt::Debug::fmt(&**w, f),
+            Self::Felt(lit) => fmt::Debug::fmt(&**lit, f),
+            Self::Word(w) => fmt::Debug::fmt(&**w, f),
             Self::Var(name) | Self::String(name) => fmt::Debug::fmt(&**name, f),
-            Self::WordHash(str, hash) => fmt::Debug::fmt(&(str, hash), f),
+            Self::Hash(hash_kind, str) => fmt::Debug::fmt(&(str, hash_kind), f),
             Self::BinaryOp { op, lhs, rhs, .. } => {
                 f.debug_tuple(op.name()).field(lhs).field(rhs).finish()
             },
@@ -282,11 +279,11 @@ impl crate::prettier::PrettyPrint for ConstantExpr {
         use crate::prettier::*;
 
         match self {
-            Self::FeltLiteral(literal) => display(literal),
-            Self::WordLiteral(spanned) => spanned.render(),
+            Self::Felt(literal) => display(literal),
+            Self::Word(spanned) => spanned.render(),
             Self::Var(ident) | Self::String(ident) => display(ident),
-            Self::WordHash(str, hash) => {
-                flatten(display(str) + const_text("(") + display(hash) + const_text(")"))
+            Self::Hash(hash_kind, str) => {
+                flatten(display(hash_kind) + const_text("(") + display(str) + const_text(")"))
             },
             Self::BinaryOp { op, lhs, rhs, .. } => {
                 let single_line = lhs.render() + display(op) + rhs.render();
@@ -300,9 +297,9 @@ impl crate::prettier::PrettyPrint for ConstantExpr {
 impl Spanned for ConstantExpr {
     fn span(&self) -> SourceSpan {
         match self {
-            Self::FeltLiteral(spanned) => spanned.span(),
-            Self::WordLiteral(spanned) => spanned.span(),
-            Self::WordHash(spanned, _) => spanned.span(),
+            Self::Felt(spanned) => spanned.span(),
+            Self::Word(spanned) => spanned.span(),
+            Self::Hash(_, spanned) => spanned.span(),
             Self::Var(spanned) | Self::String(spanned) => spanned.span(),
             Self::BinaryOp { span, .. } => *span,
         }
@@ -342,6 +339,30 @@ impl fmt::Display for ConstantOp {
             Self::Mul => f.write_str("*"),
             Self::Div => f.write_str("/"),
             Self::IntDiv => f.write_str("//"),
+        }
+    }
+}
+
+// HASH KIND
+// ================================================================================================
+
+/// Represents the type of the final value to which some string value should be converted.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum HashKind {
+    /// Reduce a string to a single felt value (unused right now)
+    Felt,
+    /// Reduce a string to a word using Blake3 hash function
+    Blake3,
+    /// Reduce a string to event (unused right now)
+    Event,
+}
+
+impl fmt::Display for HashKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Felt => f.write_str("felt"),
+            Self::Blake3 => f.write_str("word"),
+            Self::Event => f.write_str("event"),
         }
     }
 }
