@@ -1821,7 +1821,7 @@ Opcode: &'static str = {
 ConstantExpr: ConstantExpr = {
     <l:@L> "word" "(" <value:string> ")" <r:@R> => {
         let span = span!(source_file.id(), l, r);
-        ConstantExpr::Hash(HashKind::Blake3, Ident::from_raw_parts(Span::new(span, value.into())))
+        ConstantExpr::Hash(HashKind::Word, Ident::from_raw_parts(Span::new(span, value.into())))
     },
 
     <l:@L> <x:ConstantExpr> "+" <y:ConstantExpr100> <r:@R> =>? {

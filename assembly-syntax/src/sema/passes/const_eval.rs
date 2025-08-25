@@ -113,16 +113,13 @@ impl VisitMut for ConstEvalVisitor<'_> {
                         *imm = Immediate::Value(Span::new(span, IntValue::Word(*value.inner())));
                     },
                     Ok(ConstantExpr::Hash(hash_kind, string)) => match hash_kind {
-                        HashKind::Blake3 => {
+                        HashKind::Word => {
                             let hash_word = hash_string_to_word(string.as_str());
                             *imm = Immediate::Value(Span::new(
                                 span,
                                 IntValue::Word(WordValue(*hash_word)),
                             ));
                         },
-                        _ => unimplemented!(
-                            "HashKind variants other than Blake3 have not yet been implemented"
-                        ),
                     },
                     Err(error) => {
                         self.analyzer.error(error);

@@ -45,7 +45,8 @@ impl ToElements for Vec<u64> {
 // TO WORD
 // ================================================================================================
 
-/// Converts the digest obtained from the [`Blake3_256::hash`] procedure into the [`Word`].
+/// Hashes the provided string using the BLAKE3 hash function and converts the resulting digest into
+/// a [`Word`].
 pub fn hash_string_to_word<'a>(value: impl Into<&'a str>) -> Word {
     let digest_bytes: [u8; 32] = Blake3_256::hash(value.into().as_bytes()).into();
     [

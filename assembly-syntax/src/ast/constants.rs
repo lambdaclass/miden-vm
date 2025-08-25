@@ -349,20 +349,14 @@ impl fmt::Display for ConstantOp {
 /// Represents the type of the final value to which some string value should be converted.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum HashKind {
-    /// Reduce a string to a single felt value (unused right now)
-    Felt,
     /// Reduce a string to a word using Blake3 hash function
-    Blake3,
-    /// Reduce a string to event (unused right now)
-    Event,
+    Word,
 }
 
 impl fmt::Display for HashKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Felt => f.write_str("felt"),
-            Self::Blake3 => f.write_str("word"),
-            Self::Event => f.write_str("event"),
+            Self::Word => f.write_str("word"),
         }
     }
 }
