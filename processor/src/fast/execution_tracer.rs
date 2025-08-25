@@ -78,7 +78,7 @@ pub struct ExecutionTracer {
 impl ExecutionTracer {
     /// Convert the `ExecutionTracer` into the list of `TraceFragmentContext` built during
     /// execution.
-    pub fn into_core_trace_states(mut self) -> Vec<TraceFragmentContext> {
+    pub fn into_fragment_contexts(mut self) -> Vec<TraceFragmentContext> {
         // If there is an ongoing trace state being built, finish it
         self.finish_current_fragment_context();
 
