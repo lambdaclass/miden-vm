@@ -9,7 +9,7 @@ use miden_assembly_syntax::{
 use miden_core::{
     Operation, Program, Word, assert_matches,
     mast::{MastNode, MastNodeId},
-    utils::{Deserializable, Serializable, hash_string_to_word},
+    utils::{Deserializable, Serializable, hash_string_to_word, string_to_event_id},
 };
 use miden_mast_package::{MastArtifact, MastForest, Package, PackageExport, PackageManifest};
 use proptest::{
@@ -1250,6 +1250,44 @@ end",
     );
 
     assert_eq!(expected_program, program.to_string());
+
+    Ok(())
+}
+
+/// Check that the event ID conversion during compilation is consistent with
+/// string_to_event_id.
+#[test]
+fn const_event_from_string() -> TestResult {
+    let context = TestContext::default();
+    let sample_event_name = "miden::test::constant";
+    let expected_felt = string_to_event_id(sample_event_name);
+
+    let source1 = source_file!(
+        &context,
+        format!(
+            r#"
+    begin
+        emit.event("{sample_event_name}")
+    end
+    "#
+        )
+    );
+    let source2 = source_file!(
+        &context,
+        format!(
+            r#"
+    begin
+        push.{expected_felt}
+        emit
+        drop
+    end
+    "#
+        )
+    );
+
+    let program1 = context.assemble(source1)?;
+    let program2 = context.assemble(source2)?;
+    assert_eq!(program1.hash(), program2.hash());
 
     Ok(())
 }
@@ -3146,6 +3184,7 @@ fn test_program_serde_simple() {
 fn test_program_serde_with_decorators() {
     let source = "
     const.DEFAULT_CONST=100
+    const.EVENT_CONST=event(\"serde::evt\")
 
     proc.foo
         push.1.2 add
@@ -3153,7 +3192,7 @@ fn test_program_serde_with_decorators() {
     end
 
     begin
-        emit.DEFAULT_CONST
+        emit.EVENT_CONST
 
         exec.foo
 
@@ -3201,6 +3240,48 @@ fn vendoring() -> TestResult {
     };
     assert!(lib == expected_lib);
     Ok(())
+}
+
+// EMIT EVENT SYNTAX VALIDATION
+// ================================================================================================
+
+#[test]
+fn emit_u32_immediate_is_rejected() {
+    let context = TestContext::new();
+    let program_source = r#"
+        begin
+            emit.32
+        end
+    "#;
+    context
+        .assemble(program_source)
+        .expect_err(r#"emit.<u32> should be rejected; only event("...") is allowed"#);
+}
+
+#[test]
+fn emit_const_must_be_event_hash() {
+    let context = TestContext::new();
+    // CONST defined as plain number should not be accepted by emit.CONST
+    let program_source = r#"
+        const.BAD=100
+        begin
+            emit.BAD
+        end
+    "#;
+    context
+        .assemble(program_source)
+        .expect_err(r#"emit.CONST should require const defined via event("...")"#);
+
+    // CONST defined via word("...") should also be rejected by emit.CONST
+    let program_source = r#"
+        const.BADW=word("foo")
+        begin
+            emit.BADW
+        end
+    "#;
+    context
+        .assemble(program_source)
+        .expect_err(r#"emit.CONST should require const defined via event("...")"#);
 }
 
 #[test]
@@ -3491,12 +3572,15 @@ fn emit_instruction_digest() {
     let context = TestContext::new();
 
     let program_source = r#"
+        const.EVT1=event("miden::test::event_one")
+        const.EVT2=event("miden::test::event_two")
+
         proc.foo
-            emit.1
+            emit.EVT1
         end
 
         proc.bar
-            emit.2
+            emit.EVT2
         end
 
         begin
@@ -3525,17 +3609,26 @@ fn emit_instruction_digest() {
 fn emit_syntax_equivalence() {
     let context = TestContext::new();
 
-    // First program uses emit.42
+    // First program uses a constant
     let program1_source = r#"
+        const.EVT=event("miden::test::equiv")
         begin
-            emit.42
+            emit.EVT
         end
     "#;
 
-    // Second program uses push.42 emit drop
+    // Second program uses inline emit.event("...")
     let program2_source = r#"
         begin
-            push.42
+            emit.event("miden::test::equiv")
+        end
+    "#;
+
+    // Third program uses manual emit with constant event name
+    let program3_source = r#"
+        const.EVT=event("miden::test::equiv")
+        begin
+            push.EVT
             emit
             drop
         end
@@ -3543,17 +3636,21 @@ fn emit_syntax_equivalence() {
 
     let program1 = context.assemble(program1_source).unwrap();
     let program2 = context.assemble(program2_source).unwrap();
+    let program3 = context.assemble(program3_source).unwrap();
 
     // Get the MAST forest digests for both programs
     let digest1 = program1.hash();
     let digest2 = program2.hash();
+    let digest3 = program3.hash();
 
     // Both programs should have identical MAST representations
-    assert_eq!(digest1, digest2, "MAST digests differ between emit.42 and push.42 emit drop");
+    assert_eq!(digest1, digest2, "MAST digests differ between programs 1 and 2");
+    assert_eq!(digest1, digest3, "MAST digests differ between programs 1 and 3");
 
     // Verify the procedure count is 1 (just the entrypoint) for both programs
     assert_eq!(program1.num_procedures(), 1);
     assert_eq!(program2.num_procedures(), 1);
+    assert_eq!(program3.num_procedures(), 1);
 }
 
 /// Since `foo` and `bar` have the same body, we only expect them to be added once to the program.
