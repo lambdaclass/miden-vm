@@ -28,11 +28,34 @@ pub struct MidenVmCli {
     behavior: Behavior,
 }
 
-impl From<MidenVmCli> for Cli {
-    fn from(value: MidenVmCli) -> Self {
+impl TryFrom<MidenVmCli> for Cli {
+    type Error = Report;
+
+    fn try_from(value: MidenVmCli) -> Result<Self, Self::Error> {
         match value.behavior {
-            Behavior::MidenVm { cli } => cli,
-            Behavior::External(args) => Cli::parse_from(args).set_external(),
+            Behavior::MidenVm { cli } => Ok(cli),
+            Behavior::External(args) => {
+                let used_alias = args.get(0);
+                let is_known_alias = used_alias
+                    .map(|command_name| *command_name == OsString::from("miden vm"))
+                    // Edge case where the CLI is called under no name.
+                    .unwrap_or(false);
+
+                if !is_known_alias {
+                    let error_message = used_alias
+                        .map(|command_name| {
+                            format!(
+                                "Called the CLI with an unknown alias '{}'",
+                                command_name.clone().into_string().unwrap_or("".to_string())
+                            )
+                        })
+                        .unwrap_or(format!("Called the CLI under an empty alias"));
+
+                    return Err(Report::msg(error_message));
+                }
+
+                Ok(Cli::parse_from(args).set_external())
+            },
         }
     }
 }
@@ -113,7 +136,7 @@ pub fn main() -> Result<(), Report> {
     let cli = <MidenVmCli as clap::CommandFactory>::command();
     let matches = cli.get_matches();
     let parsed = MidenVmCli::from_arg_matches(&matches).unwrap_or_else(|err| err.exit());
-    let cli: Cli = parsed.into();
+    let cli: Cli = parsed.try_into()?;
 
     initialize_diagnostics();
 
