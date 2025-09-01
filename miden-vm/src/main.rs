@@ -37,6 +37,9 @@ impl From<MidenVmCli> for Cli {
     }
 }
 
+/// Wrapper subcommand used by [MidenVmCli]'s multicall functionality to
+/// distinguish when the executable is being called under an alias.
+/// executable name. This is not intended to be visible via the CLI interface.
 #[derive(Debug, Subcommand)]
 #[command(rename_all = "kebab-case")]
 enum Behavior {
@@ -46,7 +49,7 @@ enum Behavior {
         cli: Cli,
     },
 
-    /// Used when the Miden VM CLI is called under a different name, like
+    /// This variant will be matched when the CLI is called under an alias, like
     /// when it is called from [Midenup](https://github.com/0xMiden/midenup).
     /// Vec<OsString> holds the "raw" arguments passed to the command line,
     /// analogous to `argv`.
