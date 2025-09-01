@@ -265,7 +265,8 @@ pub enum Instruction {
     Debug(DebugOptions),
 
     // ----- event decorators --------------------------------------------------------------------
-    Emit(ImmU32),
+    Emit,
+    EmitImm(ImmFelt),
     Trace(ImmU32),
 }
 

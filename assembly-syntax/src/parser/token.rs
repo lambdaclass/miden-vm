@@ -194,6 +194,7 @@ pub enum Token<'input> {
     AdvMap,
     InsertHdword,
     InsertHdwordWithDomain,
+    InsertHqword,
     InsertHperm,
     InsertMem,
     AdvLoadw,
@@ -347,6 +348,8 @@ pub enum Token<'input> {
     U32WrappingSub,
     U32Xor,
     While,
+    Word,
+    Event,
     Xor,
     At,
     Bang,
@@ -385,6 +388,7 @@ impl fmt::Display for Token<'_> {
             Token::AdvStack => write!(f, "adv_stack"),
             Token::InsertHdword => write!(f, "insert_hdword"),
             Token::InsertHdwordWithDomain => write!(f, "insert_hdword_d"),
+            Token::InsertHqword => write!(f, "insert_hqword"),
             Token::InsertHperm => write!(f, "insert_hperm"),
             Token::InsertMem => write!(f, "insert_mem"),
             Token::AdvLoadw => write!(f, "adv_loadw"),
@@ -536,6 +540,8 @@ impl fmt::Display for Token<'_> {
             Token::U32WrappingSub => write!(f, "u32wrapping_sub"),
             Token::U32Xor => write!(f, "u32xor"),
             Token::While => write!(f, "while"),
+            Token::Word => write!(f, "word"),
+            Token::Event => write!(f, "event"),
             Token::Xor => write!(f, "xor"),
             Token::At => write!(f, "@"),
             Token::Bang => write!(f, "!"),
@@ -581,6 +587,7 @@ impl<'input> Token<'input> {
                 | Token::Adv
                 | Token::InsertHdword
                 | Token::InsertHdwordWithDomain
+                | Token::InsertHqword
                 | Token::InsertHperm
                 | Token::InsertMem
                 | Token::AdvLoadw
@@ -731,6 +738,7 @@ impl<'input> Token<'input> {
         ("eval_circuit", Token::EvalCircuit),
         ("insert_hdword", Token::InsertHdword),
         ("insert_hdword_d", Token::InsertHdwordWithDomain),
+        ("insert_hqword", Token::InsertHqword),
         ("insert_hperm", Token::InsertHperm),
         ("insert_mem", Token::InsertMem),
         ("adv_loadw", Token::AdvLoadw),
@@ -882,6 +890,8 @@ impl<'input> Token<'input> {
         ("u32wrapping_sub", Token::U32WrappingSub),
         ("u32xor", Token::U32Xor),
         ("while", Token::While),
+        ("word", Token::Word),
+        ("event", Token::Event),
         ("xor", Token::Xor),
     ];
 

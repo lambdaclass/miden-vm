@@ -322,8 +322,8 @@ where
         | MemLoadWImm(imm)
         | MemStoreImm(imm)
         | MemStoreWImm(imm)
-        | Emit(imm)
         | Trace(imm) => visitor.visit_immediate_u32(imm),
+        EmitImm(imm) => visitor.visit_immediate_felt(imm),
         SysEvent(sys_event) => visitor.visit_system_event(Span::new(span, sys_event)),
         Exec(target) => visitor.visit_exec(target),
         Call(target) => visitor.visit_call(target),
@@ -350,7 +350,7 @@ where
         | Sdepth | Caller | Clk | MemLoad | MemLoadW | MemStore | MemStoreW | MemStream
         | AdvPipe | AdvLoadW | Hash | HMerge | HPerm | MTreeGet | MTreeSet | MTreeMerge
         | MTreeVerify | FriExt2Fold4 | DynExec | DynCall | Breakpoint | HornerBase | HornerExt
-        | EvalCircuit => ControlFlow::Continue(()),
+        | EvalCircuit | Emit => ControlFlow::Continue(()),
     }
 }
 
@@ -753,8 +753,8 @@ where
         | MemLoadWImm(imm)
         | MemStoreImm(imm)
         | MemStoreWImm(imm)
-        | Emit(imm)
         | Trace(imm) => visitor.visit_mut_immediate_u32(imm),
+        EmitImm(imm) => visitor.visit_mut_immediate_felt(imm),
         SysEvent(sys_event) => visitor.visit_mut_system_event(Span::new(span, sys_event)),
         Exec(target) => visitor.visit_mut_exec(target),
         Call(target) => visitor.visit_mut_call(target),
@@ -781,7 +781,7 @@ where
         | Sdepth | Caller | Clk | MemLoad | MemLoadW | MemStore | MemStoreW | MemStream
         | AdvPipe | AdvLoadW | Hash | HMerge | HPerm | MTreeGet | MTreeSet | MTreeMerge
         | MTreeVerify | FriExt2Fold4 | DynExec | DynCall | Breakpoint | HornerBase | HornerExt
-        | EvalCircuit => ControlFlow::Continue(()),
+        | EvalCircuit | Emit => ControlFlow::Continue(()),
     }
 }
 
