@@ -203,7 +203,7 @@ mod test {
             Behavior::MidenVm { cli: Cli { external: false, .. } }
         ));
 
-        let cli: Cli = miden_vm_command.into();
+        let cli: Cli = miden_vm_command.try_into().expect("Failed to turn MidenVmCli into Cli.");
         assert!(matches!(cli, Cli { external: false, .. }));
 
         // External call
@@ -214,7 +214,7 @@ mod test {
 
         assert!(matches!(external.behavior, Behavior::External(_)));
 
-        let cli: Cli = external.into();
+        let cli: Cli = external.try_into().expect("Failed to turn MidenVmCli into Cli.");
         assert!(matches!(cli, Cli { external: true, .. }));
     }
 }
