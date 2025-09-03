@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 
 use clap::{FromArgMatches, Parser, Subcommand};
 use miden_assembly::diagnostics::Report;
@@ -35,9 +35,9 @@ impl TryFrom<MidenVmCli> for Cli {
         match value.behavior {
             Behavior::MidenVm { cli } => Ok(cli),
             Behavior::External(args) => {
-                let used_alias = args.get(0);
+                let used_alias = args.first();
                 let is_known_alias = used_alias
-                    .map(|command_name| *command_name == OsString::from("miden vm"))
+                    .map(|command_name| command_name.as_os_str() == OsStr::new("miden vm"))
                     // Edge case where the CLI is called under no name.
                     .unwrap_or(false);
 
@@ -49,7 +49,7 @@ impl TryFrom<MidenVmCli> for Cli {
                                 command_name.clone().into_string().unwrap_or("".to_string())
                             )
                         })
-                        .unwrap_or(format!("Called the CLI under an empty alias"));
+                        .unwrap_or(String::from("Called the CLI under an empty alias"));
 
                     return Err(Report::msg(error_message));
                 }
