@@ -1,12 +1,11 @@
 use miden_air::RowIndex;
 use miden_core::{Felt, FieldElement, QuadFelt};
 
-use super::{FastProcessor, memory::Memory};
 use crate::{
     ContextId, ExecutionError,
     chiplets::{CircuitEvaluation, MAX_NUM_ACE_WIRES, PTR_OFFSET_ELEM, PTR_OFFSET_WORD},
     errors::{AceError, ErrorContext},
-    fast::tracer::NoopTracer,
+    fast::{FastProcessor, memory::Memory, tracer::NoopTracer},
 };
 
 impl FastProcessor {

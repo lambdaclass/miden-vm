@@ -1,7 +1,9 @@
 use miden_core::{WORD_SIZE, ZERO};
 
-use super::{FastProcessor, tracer::Tracer};
-use crate::{ErrorContext, ExecutionError};
+use crate::{
+    ErrorContext, ExecutionError,
+    fast::{FastProcessor, Tracer},
+};
 
 impl FastProcessor {
     /// Analogous to `Process::op_pad`.

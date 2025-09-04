@@ -3,8 +3,11 @@ use alloc::vec::Vec;
 use miden_core::{Felt, ZERO};
 use paste::paste;
 
-use super::{FastProcessor, tracer::Tracer};
-use crate::{ErrorContext, ExecutionError, utils::split_element};
+use crate::{
+    ErrorContext, ExecutionError,
+    fast::{FastProcessor, Tracer},
+    utils::split_element,
+};
 
 const U32_MAX: u64 = u32::MAX as u64;
 

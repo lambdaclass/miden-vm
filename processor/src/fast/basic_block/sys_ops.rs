@@ -1,9 +1,10 @@
-use miden_core::{Felt, mast::MastForest, sys_events::SystemEvent};
+use miden_core::{Felt, ONE, mast::MastForest, sys_events::SystemEvent};
 
-use super::{ExecutionError, FastProcessor, ONE, tracer::Tracer};
 use crate::{
-    AsyncHost, BaseHost, ErrorContext, FMP_MIN,
-    operations::sys_ops::sys_event_handlers::handle_system_event, system::FMP_MAX,
+    AsyncHost, BaseHost, ErrorContext, ExecutionError, FMP_MIN,
+    fast::{FastProcessor, Tracer},
+    operations::sys_ops::sys_event_handlers::handle_system_event,
+    system::FMP_MAX,
 };
 
 impl FastProcessor {

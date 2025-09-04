@@ -1,7 +1,15 @@
-use super::{
-    DOUBLE_WORD_SIZE, ExecutionError, FastProcessor, Felt, WORD_SIZE_FELT, tracer::Tracer,
+use miden_air::Felt;
+
+use crate::{
+    ErrorContext, ExecutionError,
+    fast::{FastProcessor, Tracer},
 };
-use crate::ErrorContext;
+
+/// WORD_SIZE, but as a `Felt`.
+const WORD_SIZE_FELT: Felt = Felt::new(4);
+
+/// The size of a double-word.
+const DOUBLE_WORD_SIZE: Felt = Felt::new(8);
 
 impl FastProcessor {
     /// Analogous to `Process::op_push`.
