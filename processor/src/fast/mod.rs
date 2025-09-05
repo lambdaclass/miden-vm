@@ -307,11 +307,8 @@ impl FastProcessor {
         self,
         program: &Program,
         host: &mut impl AsyncHost,
-    ) -> Result<(StackOutputs, AdviceProvider), ExecutionError> {
-        let (stack_outputs, advice) =
-            self.execute_with_tracer(program, host, &mut NoopTracer).await?;
-
-        Ok((stack_outputs, advice))
+    ) -> Result<ExecutionOutput, ExecutionError> {
+        self.execute_with_tracer(program, host, &mut NoopTracer).await
     }
 
     /// Executes the given program and returns the stack outputs, the advice provider, and
@@ -320,11 +317,11 @@ impl FastProcessor {
         self,
         program: &Program,
         host: &mut impl AsyncHost,
-    ) -> Result<(StackOutputs, AdviceProvider, Vec<TraceFragmentContext>), ExecutionError> {
+    ) -> Result<(ExecutionOutput, Vec<TraceFragmentContext>), ExecutionError> {
         let mut tracer = ExecutionTracer::default();
-        let (stack_outputs, advice) = self.execute_with_tracer(program, host, &mut tracer).await?;
+        let execution_outputs = self.execute_with_tracer(program, host, &mut tracer).await?;
 
-        Ok((stack_outputs, advice, tracer.into_core_trace_states()))
+        Ok((execution_outputs, tracer.into_core_trace_states()))
     }
 
     /// Executes the given program with the provided tracer and returns the stack outputs, and the
@@ -334,9 +331,14 @@ impl FastProcessor {
         program: &Program,
         host: &mut impl AsyncHost,
         tracer: &mut impl Tracer,
-    ) -> Result<(StackOutputs, AdviceProvider), ExecutionError> {
+    ) -> Result<ExecutionOutput, ExecutionError> {
         let stack_outputs = self.execute_impl(program, host, tracer).await?;
-        Ok((stack_outputs, self.advice))
+
+        Ok(ExecutionOutput {
+            stack: stack_outputs,
+            advice: self.advice,
+            memory: self.memory,
+        })
     }
 
     /// Executes the given program with the provided tracer and returns the stack outputs.
@@ -652,9 +654,9 @@ impl FastProcessor {
         // Create a new Tokio runtime and block on the async execution
         let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
 
-        let (stack_outputs, _advice) = rt.block_on(self.execute(program, host))?;
+        let execution_output = rt.block_on(self.execute(program, host))?;
 
-        Ok(stack_outputs)
+        Ok(execution_output.stack)
     }
 
     /// Convenience sync wrapper to [Self::execute_for_trace] for testing purposes.
@@ -663,7 +665,7 @@ impl FastProcessor {
         self,
         program: &Program,
         host: &mut impl AsyncHost,
-    ) -> Result<(StackOutputs, AdviceProvider, Vec<TraceFragmentContext>), ExecutionError> {
+    ) -> Result<(ExecutionOutput, Vec<TraceFragmentContext>), ExecutionError> {
         // Create a new Tokio runtime and block on the async execution
         let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
 
@@ -683,6 +685,21 @@ impl FastProcessor {
         rt.block_on(self.execute_impl(program, host, &mut NoopTracer))
     }
 }
+
+// EXECUTION OUTPUT
+// ===============================================================================================
+
+/// The output of a program execution, containing the state of the stack, advice provider, and
+/// memory at the end of the execution.
+#[derive(Debug)]
+pub struct ExecutionOutput {
+    pub stack: StackOutputs,
+    pub advice: AdviceProvider,
+    pub memory: Memory,
+}
+
+// FAST PROCESS STATE
+// ===============================================================================================
 
 #[derive(Debug)]
 pub struct FastProcessState<'a> {
