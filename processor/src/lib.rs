@@ -19,7 +19,7 @@ pub use miden_core::{
     StackInputs, StackOutputs, WORD_SIZE, Word, ZERO,
     crypto::merkle::SMT_DEPTH,
     errors::InputError,
-    mast::{MastForest, MastNode, MastNodeId},
+    mast::{MastForest, MastNode, MastNodeExt, MastNodeId},
     sys_events::SystemEvent,
     utils::DeserializationError,
 };
@@ -43,7 +43,7 @@ mod system;
 use system::System;
 pub use system::{ContextId, FMP_MIN, SYSCALL_FMP_MIN};
 
-mod decoder;
+pub(crate) mod decoder;
 use decoder::Decoder;
 
 mod stack;
