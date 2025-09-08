@@ -31,6 +31,7 @@
 - Refactored `MastNode` to eliminate boilerplate dispatch code ([#2127](https://github.com/0xMiden/miden-vm/pull/2127)).
 - Added `multicall` support for the CLI ([#1141](https://github.com/0xMiden/miden-vm/pull/2081))
 - Made `miden-prover`'s metal prover async-compatible. ([#2133](https://github.com/0xMiden/miden-vm/pull/2133)).
+- Abstract away the fast processor's operation execution into a new `Processor` trait ([#2141](https://github.com/0xMiden/miden-vm/pull/2141))
 
 ## 0.17.1 (2025-08-29)
 
