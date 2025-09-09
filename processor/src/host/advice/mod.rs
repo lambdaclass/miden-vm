@@ -369,8 +369,8 @@ impl AdviceProviderInterface for AdviceProvider {
         root: Word,
         depth: &Felt,
         index: &Felt,
-    ) -> Result<MerklePath, AdviceError> {
-        self.get_merkle_path(root, depth, index)
+    ) -> Result<Option<MerklePath>, AdviceError> {
+        self.get_merkle_path(root, depth, index).map(Some)
     }
 
     #[inline(always)]
@@ -380,10 +380,7 @@ impl AdviceProviderInterface for AdviceProvider {
         depth: &Felt,
         index: &Felt,
         value: Word,
-    ) -> Result<(MerklePath, Word), AdviceError> {
-        self.update_merkle_node(root, depth, index, value)
-
-        // TODO(plafer): return error if depth is invalid, equivalent to:
-        // assert_eq!(path.len(), depth.as_int() as usize);
+    ) -> Result<Option<MerklePath>, AdviceError> {
+        self.update_merkle_node(root, depth, index, value).map(|(path, _)| Some(path))
     }
 }

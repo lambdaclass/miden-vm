@@ -214,28 +214,31 @@ pub trait AdviceProviderInterface {
     /// Returns a path to a node at the specified depth and index in a Merkle tree with the
     /// specified root.
     ///
-    /// Note that the returned Merkle path is guaranteed to be provided to [HasherTrait] methods and
-    /// otherwise ignored, and thus an implementation might choose to return a default/invalid
-    /// Merkle path if it is not needed in the [HasherTrait] implementation.
+    /// The returned Merkle path is behind an `Option` to support environments where there is no
+    /// advice provider. The Merkle path is guaranteed to be provided to [HasherInterface] methods
+    /// and otherwise ignored, and therefore `None` can be returned when combined with a
+    /// [HasherInterface] implementation that ignores the Merkle path.
     fn get_merkle_path(
         &self,
         root: Word,
         depth: &Felt,
         index: &Felt,
-    ) -> Result<MerklePath, AdviceError>;
+    ) -> Result<Option<MerklePath>, AdviceError>;
 
     /// Updates a node at the specified depth and index in a Merkle tree with the specified root;
-    /// returns the Merkle path from the updated node to the new root, together with the new root.
+    /// returns the Merkle path from the updated node to the new root.
     ///
-    /// The tree is cloned prior to the update. Thus, the advice provider retains the original and
-    /// the updated tree.
+    /// The returned Merkle path is behind an `Option` to support environments where there is no
+    /// advice provider. The Merkle path is guaranteed to be provided to [HasherInterface] methods
+    /// and otherwise ignored, and therefore `None` can be returned when combined with a
+    /// [HasherInterface] implementation that ignores the Merkle path.
     fn update_merkle_node(
         &mut self,
         root: Word,
         depth: &Felt,
         index: &Felt,
         value: Word,
-    ) -> Result<(MerklePath, Word), AdviceError>;
+    ) -> Result<Option<MerklePath>, AdviceError>;
 }
 
 /// Trait representing the memory subsystem of the processor.
@@ -295,9 +298,9 @@ pub trait HasherInterface {
     /// Returns the address of the computation, defined as the row index of the Hasher chiplet trace
     /// at which the computation started.
     ///
-    /// The Merkle path is guaranteed to be provided by [AdviceProviderTrait::get_merkle_path], and
-    /// thus an implementation might choose to return a default/invalid Merkle path from
-    /// `get_merkle_path`, and ignore it in this method if it is not needed.
+    /// The Merkle path is guaranteed to be provided by [AdviceProviderInterface::get_merkle_path],
+    /// and thus an implementation might choose to return `None` from `get_merkle_path`, and ignore
+    /// it in this method.
     ///
     /// Additionally, the address is only needed for operation helpers in trace generation, and thus
     /// an implementation might choose to return a default/invalid address if it is not needed.
@@ -305,7 +308,7 @@ pub trait HasherInterface {
         &mut self,
         claimed_root: Word,
         value: Word,
-        path: &MerklePath,
+        path: Option<&MerklePath>,
         index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<Felt, ExecutionError>;
@@ -317,9 +320,9 @@ pub trait HasherInterface {
     /// Returns the new root and the address of the computation, defined as the row index of the
     /// Hasher chiplet trace at which the computation started.
     ///
-    /// The Merkle path is guaranteed to be provided by [AdviceProviderTrait::get_merkle_path], and
-    /// thus an implementation might choose to return a default/invalid Merkle path from
-    /// `get_merkle_path`, and ignore it in this method if it is not needed.
+    /// The Merkle path is guaranteed to be provided by [AdviceProviderInterface::get_merkle_path],
+    /// and thus an implementation might choose to return `None` from `get_merkle_path`, and ignore
+    /// it in this method.
     ///
     /// Additionally, the address is only needed for operation helpers in trace generation, and thus
     /// an implementation might choose to return a default/invalid address if it is not needed.
@@ -328,7 +331,7 @@ pub trait HasherInterface {
         claimed_old_root: Word,
         old_value: Word,
         new_value: Word,
-        path: &MerklePath,
+        path: Option<&MerklePath>,
         index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<(Felt, Word), ExecutionError>;

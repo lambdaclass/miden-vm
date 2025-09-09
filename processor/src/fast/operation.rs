@@ -104,10 +104,11 @@ impl HasherInterface for FastProcessor {
         &mut self,
         claimed_root: Word,
         value: Word,
-        path: &MerklePath,
+        path: Option<&MerklePath>,
         index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<Felt, ExecutionError> {
+        let path = path.expect("fast processor expects a valid Merkle path");
         match path.verify(index.as_int(), value, &claimed_root) {
             // Return a default value for the address, as it is not needed in trace generation.
             Ok(_) => Ok(ZERO),
@@ -121,10 +122,12 @@ impl HasherInterface for FastProcessor {
         claimed_old_root: Word,
         old_value: Word,
         new_value: Word,
-        path: &MerklePath,
+        path: Option<&MerklePath>,
         index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<(Felt, Word), ExecutionError> {
+        let path = path.expect("fast processor expects a valid Merkle path");
+
         // Verify the old value against the claimed old root.
         if path.verify(index.as_int(), old_value, &claimed_old_root).is_err() {
             return Err(on_err());

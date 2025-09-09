@@ -350,16 +350,18 @@ impl Tracer for ExecutionTracer {
         self.hasher.record_permute(hashed_state);
     }
 
-    fn record_hasher_build_merkle_root(&mut self, path: &MerklePath, root: Word) {
+    fn record_hasher_build_merkle_root(&mut self, path: Option<&MerklePath>, root: Word) {
+        let path = path.expect("execution tracer expects a valid Merkle path");
         self.hasher.record_build_merkle_root(path, root);
     }
 
     fn record_hasher_update_merkle_root(
         &mut self,
-        path: &MerklePath,
+        path: Option<&MerklePath>,
         old_root: Word,
         new_root: Word,
     ) {
+        let path = path.expect("execution tracer expects a valid Merkle path");
         self.hasher.record_update_merkle_root(path, old_root, new_root);
     }
 

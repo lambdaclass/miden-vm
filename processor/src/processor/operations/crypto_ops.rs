@@ -63,10 +63,10 @@ pub(super) fn op_mpverify<P: Processor>(
         .get_merkle_path(root, &depth, &index)
         .map_err(|err| ExecutionError::advice_error(err, clk, err_ctx))?;
 
-    tracer.record_hasher_build_merkle_root(&path, root);
+    tracer.record_hasher_build_merkle_root(path.as_ref(), root);
 
     // verify the path
-    let addr = processor.hasher().verify_merkle_root(root, node, &path, index, || {
+    let addr = processor.hasher().verify_merkle_root(root, node, path.as_ref(), index, || {
         // If the hasher doesn't compute the same root (using the same path),
         // then it means that `node` is not the value currently in the tree at `index`
         let err_msg = program.resolve_error_message(err_code);
@@ -97,16 +97,21 @@ pub(super) fn op_mrupdate<P: Processor>(
     // get a Merkle path to it. The length of the returned path is expected to match the
     // specified depth. If the new node is the root of a tree, this instruction will append the
     // whole sub-tree to this node.
-    let (path, _) = processor
+    let path = processor
         .advice_provider()
         .update_merkle_node(claimed_old_root, &depth, &index, new_node)
         .map_err(|err| ExecutionError::advice_error(err, clk, err_ctx))?;
+
+    if let Some(path) = &path {
+        // TODO(plafer): return error instead of asserting
+        assert_eq!(path.len(), depth.as_int() as usize);
+    }
 
     let (addr, new_root) = processor.hasher().update_merkle_root(
         claimed_old_root,
         old_node,
         new_node,
-        &path,
+        path.as_ref(),
         index,
         || {
             ExecutionError::merkle_path_verification_failed(
@@ -119,7 +124,7 @@ pub(super) fn op_mrupdate<P: Processor>(
             )
         },
     )?;
-    tracer.record_hasher_update_merkle_root(&path, claimed_old_root, new_root);
+    tracer.record_hasher_update_merkle_root(path.as_ref(), claimed_old_root, new_root);
 
     // Replace the old node value with computed new root; everything else remains the same.
     processor.stack().set_word(0, &new_root);

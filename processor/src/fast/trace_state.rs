@@ -1,8 +1,8 @@
-use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
+use alloc::{collections::VecDeque, sync::Arc};
 
 use miden_air::{RowIndex, trace::chiplets::hasher::HasherState};
 use miden_core::{
-    EMPTY_WORD, Felt, ONE, Word, ZERO,
+    Felt, ONE, Word, ZERO,
     crypto::merkle::MerklePath,
     mast::{MastForest, MastNodeId},
     stack::MIN_STACK_DEPTH,
@@ -613,8 +613,8 @@ impl AdviceProviderInterface for AdviceReplay {
         _root: Word,
         _depth: &Felt,
         _index: &Felt,
-    ) -> Result<MerklePath, AdviceError> {
-        Ok(MerklePath::new(Vec::new()))
+    ) -> Result<Option<MerklePath>, AdviceError> {
+        Ok(None)
     }
 
     /// Returns an empty Merkle path and root, as they are ignored in parallel trace generation.
@@ -624,8 +624,8 @@ impl AdviceProviderInterface for AdviceReplay {
         _depth: &Felt,
         _index: &Felt,
         _value: Word,
-    ) -> Result<(MerklePath, Word), AdviceError> {
-        Ok((MerklePath::new(Vec::new()), EMPTY_WORD))
+    ) -> Result<Option<MerklePath>, AdviceError> {
+        Ok(None)
     }
 }
 
@@ -723,7 +723,7 @@ impl HasherInterface for HasherReplay {
         &mut self,
         claimed_root: Word,
         _value: Word,
-        _path: &MerklePath,
+        _path: Option<&MerklePath>,
         _index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<Felt, ExecutionError> {
@@ -742,7 +742,7 @@ impl HasherInterface for HasherReplay {
         claimed_old_root: Word,
         _old_value: Word,
         _new_value: Word,
-        _path: &MerklePath,
+        _path: Option<&MerklePath>,
         _index: Felt,
         on_err: impl FnOnce() -> ExecutionError,
     ) -> Result<(Felt, Word), ExecutionError> {
