@@ -36,6 +36,8 @@
 - Abstract away the fast processor's operation execution into a new `Processor` trait ([#2141](https://github.com/0xMiden/miden-vm/pull/2141))
 - [BREAKING] Implemented custom section support in package format, and removed `account_component_metadata` field ([#2071](https://github.com/0xMiden/miden-vm/pull/2071))
 - Move `EMIT` flag to degree 5 bucket ([#2043](https://github.com/0xMiden/miden-vm/issues/2043)).
+- [BREAKING] Move `u64_div`, `falcon_div` and `smtpeek` system events to stdlib ([#1582](https://github.com/0xMiden/miden-vm/issues/1582))
+- [BREAKING] Renumber system event IDs ([#2151](https://github.com/0xMiden/miden-vm/issues/2151)).
 - [BREAKING] Move `u64_div`, `falcon_div` and `smtpeek` system events to stdlib ([#1582](https://github.com/0xMiden/miden-vm/issues/1582)).
 - [BREAKING] `MastNode` quality of life improvements ([#2166](https://github.com/0xMiden/miden-vm/pull/2166)).
 
