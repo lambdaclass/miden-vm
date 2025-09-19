@@ -15,6 +15,7 @@
 - Removed all stack underflow error cases from `FastProcessor` ([#2173](https://github.com/0xMiden/miden-vm/pull/2173)).
 - Added `reversew` and `reversedw` instructions for reversing the order of elements in a word and double word on the stack ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
 - Added endianness-aware memory instructions: `mem_loadw_be`, `mem_loadw_le`, `mem_storew_be`, and `mem_storew_le` for explicit control over word element ordering in memory operations ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
+- Added non-deterministic lookup for sorted arrays to stdlib ([#2114](https://github.com/0xMiden/miden-vm/pull/2114)).
 
 #### Changes
 
