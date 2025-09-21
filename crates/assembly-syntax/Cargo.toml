@@ -41,7 +41,6 @@ logging = ["dep:env_logger"]
 # Miden dependencies
 miden-core.workspace = true
 miden-debug-types.workspace = true
-miden-serde-test-macros = { workspace = true }
 miden-utils-diagnostics.workspace = true
 midenc-hir-type.workspace = true
 
@@ -62,6 +61,7 @@ thiserror.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
+miden-serde-test-macros.workspace = true
 proptest.workspace = true
 pretty_assertions = "1.4"
 
