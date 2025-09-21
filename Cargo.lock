@@ -1327,7 +1327,6 @@ dependencies = [
  "miden-assembly-syntax",
  "miden-core",
  "miden-mast-package",
- "miden-stdlib",
  "proptest",
  "smallvec",
  "thiserror",
