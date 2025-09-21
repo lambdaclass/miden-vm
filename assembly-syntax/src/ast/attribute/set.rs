@@ -1,17 +1,21 @@
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::*;
 use crate::ast::Ident;
 
 /// An [AttributeSet] provides storage and access to all of the attributes attached to a Miden
 /// Assembly item, e.g. procedure definition.
 ///
-/// Attributes are uniqued by name, so if you attempt to add multiple attributes with the same name,
+/// Attributes are unique by name, so if you attempt to add multiple attributes with the same name,
 /// the last write wins. In Miden Assembly syntax, multiple key-value attributes are merged
 /// automatically, and a syntax error is only generated when keys conflict. All other attribute
 /// types produce an error if they are declared multiple times on the same item.
 #[derive(Default, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AttributeSet {
     /// The attributes in this set.
     ///
@@ -20,7 +24,7 @@ pub struct AttributeSet {
     /// * We expect attributes to be relatively rare, with no more than a handful on the same item
     ///   at any given time.
     /// * A vector is much more space and time efficient to search for small numbers of items
-    /// * We can acheive map-like semantics without O(N) complexity by keeping the vector sorted by
+    /// * We can achieve map-like semantics without O(N) complexity by keeping the vector sorted by
     ///   the attribute name, and using binary search to search it. This gives us O(1) best-case
     ///   performance, and O(log N) in the worst case.
     attrs: Vec<Attribute>,
@@ -235,5 +239,32 @@ impl AttributeSetVacantEntry<'_> {
         } else {
             self.set.attrs.insert(self.index, attr);
         }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl proptest::arbitrary::Arbitrary for AttributeSet {
+    type Parameters = ();
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        use proptest::{arbitrary::any, strategy::Strategy};
+
+        let items = proptest::collection::vec(any::<Attribute>(), 1..3);
+        items.prop_map(|attrs| Self { attrs }).boxed()
+    }
+
+    type Strategy = proptest::prelude::BoxedStrategy<Self>;
+}
+
+impl Serializable for AttributeSet {
+    fn write_into<W: ByteWriter>(&self, target: &mut W) {
+        self.attrs.write_into(target)
+    }
+}
+
+impl Deserializable for AttributeSet {
+    fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
+        let attrs = Vec::read_from(source)?;
+        Ok(Self { attrs })
     }
 }
