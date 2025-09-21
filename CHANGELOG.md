@@ -54,6 +54,9 @@
 - Introduced new `pub proc` syntax for procedure declarations to replace `export` syntax. This change is backwards-compatible. ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
 - [BREAKING] Disallowed the use of word literals in conjunction with dot-delimited `push` syntax ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
 - fix RawDecoratorIdIterator un-padding off-by-one ([#2193](https://github.com/0xMiden/miden-vm/pull/2193))
+## 0.17.2 (2025-09-17)
+
+- Hotfix: remove all stack underflow errors ([#2182](https://github.com/0xMiden/miden-vm/pull/2182)).
 
 ## 0.17.1 (2025-08-29)
 
