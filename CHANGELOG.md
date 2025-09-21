@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.19.0 (TBD)
+
+#### Changes
+
+- [BREAKING] Incremented MSRV to 1.90.
+
 ## 0.18.0 (2025-09-21)
 
 #### Enhancements
