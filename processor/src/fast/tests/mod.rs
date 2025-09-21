@@ -2,7 +2,8 @@ use alloc::{string::ToString, sync::Arc};
 
 use miden_air::ExecutionOptions;
 use miden_assembly::{Assembler, DefaultSourceManager};
-use miden_core::{Kernel, StackInputs, assert_matches};
+use miden_core::{Kernel, ONE, Operation, StackInputs, assert_matches};
+use miden_utils_testing::build_test;
 use rstest::rstest;
 
 use super::*;
@@ -12,6 +13,82 @@ mod advice_provider;
 mod all_ops;
 mod masm_consistency;
 mod memory;
+
+/// Ensures that the stack is correctly reset in the buffer when the stack is reset in the buffer
+/// as a result of underflow.
+///
+/// Also checks that 0s are correctly pulled from the stack overflow table when it's empty.
+#[test]
+fn test_reset_stack_in_buffer_from_drop() {
+    let asm = format!(
+        "
+    begin
+        repeat.{}
+            movup.15 assertz
+        end
+    end
+    ",
+        INITIAL_STACK_TOP_IDX * 5
+    );
+
+    let initial_stack: [u64; 15] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+    // we expect the final stack to be the initial stack unchanged; we reverse since in
+    // `build_test!`, we call `StackInputs::new()`, which reverses the input stack.
+    let final_stack: Vec<u64> = initial_stack.iter().cloned().rev().collect();
+
+    let test = build_test!(&asm, &initial_stack);
+    test.expect_stack(&final_stack);
+}
+
+/// Similar to `test_reset_stack_in_buffer_from_drop`, but here we test that the stack is correctly
+/// reset in the buffer when the stack is reset in the buffer as a result of an execution context
+/// being restored (and the overflow table restored back in the stack buffer).
+#[test]
+fn test_reset_stack_in_buffer_from_restore_context() {
+    /// Number of values pushed onto the stack initially.
+    const NUM_INITIAL_PUSHES: usize = INITIAL_STACK_TOP_IDX * 2;
+    /// This moves the stack in the stack buffer to the left, close enough to the edge that when we
+    /// restore the context, we will have to copy the overflow table values back into the stack
+    /// buffer.
+    const NUM_DROPS_IN_NEW_CONTEXT: usize = NUM_INITIAL_PUSHES + (INITIAL_STACK_TOP_IDX / 2);
+    /// The called function will have dropped all 16 of the pushed values, so when we return to
+    /// the caller, we expect the overflow table to contain all the original values, except for
+    /// the 16 that were dropped by the callee.
+    const NUM_EXPECTED_VALUES_IN_OVERFLOW: usize = NUM_INITIAL_PUSHES - MIN_STACK_DEPTH;
+
+    let asm = format!(
+        "
+        proc.fn_in_new_context
+            repeat.{NUM_DROPS_IN_NEW_CONTEXT} drop end
+        end
+
+    begin
+        # Create a big overflow table
+        repeat.{NUM_INITIAL_PUSHES} push.42 end
+
+        # Call a proc to create a new execution context
+        call.fn_in_new_context
+
+        # Drop the stack top coming back from the called proc; these should all
+        # be 0s pulled from the overflow table
+        repeat.{MIN_STACK_DEPTH} drop end
+
+        # Make sure that the rest of the pushed values were properly restored
+        repeat.{NUM_EXPECTED_VALUES_IN_OVERFLOW} push.42 assert_eq end
+    end
+    "
+    );
+
+    let initial_stack: [u64; 15] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+    // we expect the final stack to be the initial stack unchanged; we reverse since in
+    // `build_test!`, we call `StackInputs::new()`, which reverses the input stack.
+    let final_stack: Vec<u64> = initial_stack.iter().cloned().rev().collect();
+
+    let test = build_test!(&asm, &initial_stack);
+    test.expect_stack(&final_stack);
+}
 
 #[test]
 fn test_fmp_add() {
