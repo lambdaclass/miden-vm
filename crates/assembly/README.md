@@ -37,7 +37,7 @@ let program1 = assembler.assemble_program("begin push.3 push.5 add end")
 let assembler2 = Assembler::new(Arc::new(DefaultSourceManager::default()));
 
 // Emit a program from some source code on disk (requires the `std` feature)
-let program2 = assembler2.assemble_program(Path::new("../miden-vm/masm-examples/fib/fib.masm"))
+let program2 = assembler2.assemble_program(Path::new("../../miden-vm/masm-examples/fib/fib.masm"))
     .unwrap();
 ```
 
