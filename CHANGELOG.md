@@ -16,8 +16,9 @@
 - Added `reversew` and `reversedw` instructions for reversing the order of elements in a word and double word on the stack ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
 - Added endianness-aware memory instructions: `mem_loadw_be`, `mem_loadw_le`, `mem_storew_be`, and `mem_storew_le` for explicit control over word element ordering in memory operations ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
 - Added non-deterministic lookup for sorted arrays to stdlib ([#2114](https://github.com/0xMiden/miden-vm/pull/2114)).
-- Added `reversew` and `reversedw` instructions for reversing the order of elements in a word and double word on the stack ([#2125](https://github.com/0xMiden/miden-vm/issues/2125))
-- Added endianness-aware memory instructions: `mem_loadw_be`, `mem_loadw_le`, `mem_storew_be`, and `mem_storew_le` for explicit control over word element ordering in memory operations ([#2125](https://github.com/0xMiden/miden-vm/issues/2125))
+- Introduced syntax for expressing type information in MASM ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
+- Added `reversew` and `reversedw` instructions for reversing the order of elements in a word and double word on the stack ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
+- Added endianness-aware memory instructions: `mem_loadw_be`, `mem_loadw_le`, `mem_storew_be`, and `mem_storew_le` for explicit control over word element ordering in memory operations ([#2125](https://github.com/0xMiden/miden-vm/issues/2125)).
 - `FastProcessor::execute_*()` methods now also return the state of the memory in a new `ExecutionOutput` struct ([#2028](https://github.com/0xMiden/miden-vm/pull/2128)).
 - Better document the normalizing behavior of `MastForestMerger::merge` ([#2174](https://github.com/0xMiden/miden-vm/pull/2174)).
 
@@ -49,6 +50,9 @@
 - [BREAKING] Update miden-crypto dependency to v0.17 (#[2168](https://github.com/0xMiden/miden-vm/pull/2168)).
 - [BREAKING] Move `u64_div`, `falcon_div` and `smtpeek` system events to stdlib ([#1582](https://github.com/0xMiden/miden-vm/issues/1582)).
 - [BREAKING] `MastNode` quality of life improvements ([#2166](https://github.com/0xMiden/miden-vm/pull/2166)).
+- Allowed references between constants without requiring them to be declared in a specific order ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
+- Introduced new `pub proc` syntax for procedure declarations to replace `export` syntax. This change is backwards-compatible. ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
+- [BREAKING] Disallowed the use of word literals in conjunction with dot-delimited `push` syntax ([#2120](https://github.com/0xMiden/miden-vm/pull/2120)).
 
 ## 0.17.1 (2025-08-29)
 
