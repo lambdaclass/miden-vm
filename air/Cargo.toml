@@ -37,6 +37,6 @@ winter-air.workspace = true
 winter-prover.workspace = true
 
 [dev-dependencies]
-criterion = "0.6"
+criterion.workspace = true
 proptest.workspace = true
 winter-rand-utils.workspace = true

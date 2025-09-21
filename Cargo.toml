@@ -61,17 +61,20 @@ miden-formatting = { version = "0.1", default-features = false }
 midenc-hir-type = { version = "0.4", default-features = false }
 
 # Third-party crates
+blake3 = "1.8"
+criterion = "0.7"
 env_logger = { version = "0.11" }
 insta = { version = "1.43", default-features = false, features = ["colors"] }
 log = { version = "0.4", default-features = false }
 paste = { version = "1.0", default-features = false }
-proptest = { version = "1.7", default-features = false, features = ["no_std", "alloc"] }
+proptest = { version = "1.8", default-features = false, features = ["no_std", "alloc"] }
 proptest-derive = { version = "0.6", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 serde-untagged = "0.1"
-smallvec = { version = "1.13", default-features = false, features = ["union", "const_generics", "const_new"] }
+smallvec = { version = "1.15", default-features = false, features = ["union", "const_generics", "const_new"] }
 thiserror = { version = "2.0", default-features = false }
+tokio = { version = "1.47", default-features = false }
 tracing = { version = "0.1", default-features = false, features = ["attributes"] }
 winter-air = { version = "0.13", default-features = false }
 winter-fri = "0.13"

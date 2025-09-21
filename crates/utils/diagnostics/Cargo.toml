@@ -25,5 +25,5 @@ miette = { package = "miden-miette", version = "8.0", default-features = false, 
     "derive",
 ] }
 miden-crypto.workspace = true
-paste = "1.0"
+paste.workspace = true
 tracing.workspace = true

@@ -455,9 +455,9 @@ dependencies = [
 
 [[package]]
 name = "criterion"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bf7af66b0989381bd0be551bd7cc91912a655a58c6918420c9527b1fd8b4679"
+checksum = "e1c047a62b0cc3e145fa84415a3191f628e980b194c2755aa12300a4e6cbd928"
 dependencies = [
  "anes",
  "cast",
@@ -479,12 +479,12 @@ dependencies = [
 
 [[package]]
 name = "criterion-plot"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
+checksum = "9b1bcc0dc7dfae599d84ad0b1a55f80cde8af3725da8313b528da95ef783e338"
 dependencies = [
  "cast",
- "itertools 0.10.5",
+ "itertools 0.13.0",
 ]
 
 [[package]]
@@ -1080,15 +1080,6 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
 name = "itertools"
-version = "0.10.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
@@ -1320,7 +1311,7 @@ dependencies = [
  "criterion",
  "miden-core",
  "proptest",
- "thiserror 2.0.16",
+ "thiserror",
  "winter-air",
  "winter-prover",
  "winter-rand-utils",
@@ -1339,7 +1330,7 @@ dependencies = [
  "miden-stdlib",
  "proptest",
  "smallvec",
- "thiserror 2.0.16",
+ "thiserror",
 ]
 
 [[package]]
@@ -1366,7 +1357,7 @@ dependencies = [
  "serde-untagged",
  "serde_json",
  "smallvec",
- "thiserror 2.0.16",
+ "thiserror",
 ]
 
 [[package]]
@@ -1385,7 +1376,7 @@ dependencies = [
  "proptest-derive",
  "serde",
  "serde_json",
- "thiserror 2.0.16",
+ "thiserror",
  "winter-math",
  "winter-rand-utils",
  "winter-utils",
@@ -1413,7 +1404,7 @@ dependencies = [
  "rand_hc",
  "serde",
  "sha3",
- "thiserror 2.0.16",
+ "thiserror",
  "winter-crypto",
  "winter-math",
  "winter-utils",
@@ -1432,7 +1423,7 @@ dependencies = [
  "paste",
  "serde",
  "serde_spanned",
- "thiserror 2.0.16",
+ "thiserror",
 ]
 
 [[package]]
@@ -1466,7 +1457,7 @@ dependencies = [
  "proptest-derive",
  "serde",
  "serde-untagged",
- "thiserror 2.0.16",
+ "thiserror",
 ]
 
 [[package]]
@@ -1495,7 +1486,7 @@ dependencies = [
  "syn 2.0.106",
  "terminal_size",
  "textwrap",
- "thiserror 2.0.16",
+ "thiserror",
  "trybuild",
  "unicode-width 0.1.14",
 ]
@@ -1525,7 +1516,7 @@ dependencies = [
  "paste",
  "pretty_assertions",
  "rstest",
- "thiserror 2.0.16",
+ "thiserror",
  "tokio",
  "tracing",
  "winter-fri",
@@ -1583,7 +1574,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha3",
- "thiserror 2.0.16",
+ "thiserror",
  "winter-air",
  "winter-fri",
 ]
@@ -1633,7 +1624,7 @@ version = "0.18.0"
 dependencies = [
  "miden-air",
  "miden-core",
- "thiserror 2.0.16",
+ "thiserror",
  "tracing",
  "winter-verifier",
 ]
@@ -1681,7 +1672,7 @@ dependencies = [
  "serde",
  "serde_repr",
  "smallvec",
- "thiserror 2.0.16",
+ "thiserror",
 ]
 
 [[package]]
@@ -2256,21 +2247,20 @@ dependencies = [
 
 [[package]]
 name = "rstest"
-version = "0.25.0"
+version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fc39292f8613e913f7df8fa892b8944ceb47c247b78e1b1ae2f09e019be789d"
+checksum = "f5a3193c063baaa2a95a33f03035c8a72b83d97a54916055ba22d35ed3839d49"
 dependencies = [
  "futures-timer",
  "futures-util",
  "rstest_macros",
- "rustc_version 0.4.1",
 ]
 
 [[package]]
 name = "rstest_macros"
-version = "0.25.0"
+version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f168d99749d307be9de54d23fd226628d99768225ef08f6ffb52e0182a27746"
+checksum = "9c845311f0ff7951c5506121a9ad75aec44d083c31583b2ea5a30bcb0b0abba0"
 dependencies = [
  "cfg-if",
  "glob",
@@ -2329,9 +2319,9 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "rustyline"
-version = "16.0.0"
+version = "17.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62fd9ca5ebc709e8535e8ef7c658eb51457987e48c98ead2be482172accc408d"
+checksum = "a6614df0b6d4cfb20d1d5e295332921793ce499af3ebc011bf1e393380e1e492"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -2343,7 +2333,7 @@ dependencies = [
  "unicode-segmentation",
  "unicode-width 0.2.1",
  "utf8parse",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -2753,31 +2743,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.69"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
-dependencies = [
- "thiserror-impl 1.0.69",
-]
-
-[[package]]
-name = "thiserror"
 version = "2.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3467d614147380f2e4e374161426ff399c91084acd2363eaf549172b3d5e60c0"
 dependencies = [
- "thiserror-impl 2.0.16",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.69"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.106",
+ "thiserror-impl",
 ]
 
 [[package]]
@@ -2909,13 +2879,13 @@ dependencies = [
 
 [[package]]
 name = "tracing-forest"
-version = "0.1.6"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee40835db14ddd1e3ba414292272eddde9dad04d3d4b65509656414d1c42592f"
+checksum = "3298fe855716711a00474eceb89cc7dc254bbe67f6bc4afafdeec5f0c538771c"
 dependencies = [
  "ansi_term",
  "smallvec",
- "thiserror 1.0.69",
+ "thiserror",
  "tracing",
  "tracing-subscriber",
 ]
