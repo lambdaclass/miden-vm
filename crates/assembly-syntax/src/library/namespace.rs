@@ -38,7 +38,7 @@ pub enum LibraryNamespaceError {
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 #[cfg_attr(
-    all(feature = "serde", feature = "arbitrary"),
+    all(feature = "serde", feature = "arbitrary", test),
     miden_serde_test_macros::serde_test
 )]
 pub enum LibraryNamespace {

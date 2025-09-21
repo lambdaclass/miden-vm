@@ -35,7 +35,7 @@ pub use self::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(
-    all(feature = "serde", feature = "arbitrary"),
+    all(feature = "serde", feature = "arbitrary", test),
     miden_serde_test_macros::serde_test
 )]
 pub struct LibraryExport {
@@ -104,7 +104,7 @@ impl Arbitrary for LibraryExport {
 /// to the same top-level namespace.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(
-    all(feature = "serde", feature = "arbitrary"),
+    all(feature = "serde", feature = "arbitrary", test),
     miden_serde_test_macros::serde_test
 )]
 pub struct Library {
