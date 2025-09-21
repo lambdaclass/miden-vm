@@ -50,10 +50,7 @@ midenc-hir-type.workspace = true
 proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-regex = { version = "1.10", default-features = false, features = [
-    "unicode",
-    "perf",
-] }
+regex = { version = "1.10", default-features = false, features = ["unicode", "perf"] }
 semver = { version = "1.0", default-features = false }
 serde = { workspace = true, optional = true }
 serde-untagged = { workspace = true, optional = true }
