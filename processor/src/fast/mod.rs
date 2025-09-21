@@ -627,6 +627,7 @@ impl FastProcessor {
     ///
     /// # Preconditions
     /// - The stack is expected to have exactly 16 elements.
+    #[inline(always)]
     fn reset_stack_in_buffer(&mut self, new_stack_top_idx: usize) {
         debug_assert_eq!(self.stack_depth(), MIN_STACK_DEPTH as u32);
 
