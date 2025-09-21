@@ -37,5 +37,6 @@ thiserror.workspace = true
 
 [dev-dependencies]
 miden-mast-package = { workspace = true, features = ["arbitrary"] }
+miden-stdlib = { path = "../../stdlib", default-features = false }
 insta.workspace = true
 proptest = { workspace = true, features = ["std"] }
