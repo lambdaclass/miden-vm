@@ -351,8 +351,9 @@ mod tests {
 
     impl PartialEq for ExecutionDetails {
         fn eq(&self, rhs: &Self) -> bool {
-            // Minor hack: this function is used for assert_eq!() in the tests below, but errors don't
-            // impl PartialEq, so we just compare the errors stringly, which is good enough.
+            // Minor hack: this function is used for assert_eq!() in the tests below, but errors
+            // don't impl PartialEq, so we just compare the errors stringly, which is
+            // good enough.
             let lhs = (
                 self.total_noops,
                 &self.asm_op_stats,
@@ -368,7 +369,6 @@ mod tests {
             lhs.eq(&rhs)
         }
     }
-
 
     #[test]
     fn analyze_test() {
