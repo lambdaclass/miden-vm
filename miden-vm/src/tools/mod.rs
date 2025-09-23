@@ -180,26 +180,6 @@ impl ExecutionDetails {
     }
 }
 
-impl PartialEq for ExecutionDetails {
-    fn eq(&self, rhs: &Self) -> bool {
-        // Minor hack: this function is used for assert_eq!() in the tests below, but errors don't
-        // impl PartialEq, so we just compare the errors stringly, which is good enough.
-        let lhs = (
-            self.total_noops,
-            &self.asm_op_stats,
-            self.trace_len_summary,
-            self.error.as_ref().map(|e| e.to_string()),
-        );
-        let rhs = (
-            rhs.total_noops,
-            &rhs.asm_op_stats,
-            rhs.trace_len_summary,
-            rhs.error.as_ref().map(|e| e.to_string()),
-        );
-        lhs.eq(&rhs)
-    }
-}
-
 impl fmt::Display for ExecutionDetails {
     #[allow(clippy::write_literal)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -368,6 +348,27 @@ mod tests {
     use miden_vm::Assembler;
 
     use super::{AsmOpStats, ExecutionDetails, StackInputs, *};
+
+    impl PartialEq for ExecutionDetails {
+        fn eq(&self, rhs: &Self) -> bool {
+            // Minor hack: this function is used for assert_eq!() in the tests below, but errors don't
+            // impl PartialEq, so we just compare the errors stringly, which is good enough.
+            let lhs = (
+                self.total_noops,
+                &self.asm_op_stats,
+                self.trace_len_summary,
+                self.error.as_ref().map(|e| e.to_string()),
+            );
+            let rhs = (
+                rhs.total_noops,
+                &rhs.asm_op_stats,
+                rhs.trace_len_summary,
+                rhs.error.as_ref().map(|e| e.to_string()),
+            );
+            lhs.eq(&rhs)
+        }
+    }
+
 
     #[test]
     fn analyze_test() {
