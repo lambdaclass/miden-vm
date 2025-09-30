@@ -4,20 +4,15 @@
 
 #### Enhancements
 
-- Added `before_enter` and `after_exit` decorator lists to `BasicBlockNode`.([#2167](https://github.com/0xMiden/miden-vm/pull/2167))
-- Added `proptest`'s `Arbitrary` instances for `BasicBlockNode` and `MastForest` ([#2200](https://github.com/0xMiden/miden-vm/pull/2200)).
-
-#### Enhancements
-
-- Added support for leaves with multiple pairs in `std::collections::smt::get` ([#2048](https://github.com/0xMiden/miden-vm/pull/2048)).
 - Added support for leaves with multiple pairs in `std::collections::smt::get` ([#2048](https://github.com/0xMiden/miden-vm/pull/2048)).
 - Added `std::mem::pipe_double_words_preimage_to_memory`, a version of `pipe_preimage_to_memory` optimized for pairs of words ([#2048](https://github.com/0xMiden/miden-vm/pull/2048)).
-- Added `before_enter` and `after_exit` decorator lists to `BasicBlockNode`.([#2167](https://github.com/0xMiden/miden-vm/pull/2167))
 
 #### Changes
 
 - [BREAKING] Incremented MSRV to 1.90.
+- Added `before_enter` and `after_exit` decorator lists to `BasicBlockNode`.([#2167](https://github.com/0xMiden/miden-vm/pull/2167)).
 - Fix ability to parse odd-length hex strings ([#2196](https://github.com/0xMiden/miden-vm/pull/2196)).
+- Added `proptest`'s `Arbitrary` instances for `BasicBlockNode` and `MastForest` ([#2200](https://github.com/0xMiden/miden-vm/pull/2200)).
 
 ## 0.18.0 (2025-09-21)
 
