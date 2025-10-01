@@ -82,11 +82,7 @@ impl Arbitrary for LibraryExport {
         use proptest::collection::vec as prop_vec;
 
         // Generate a small set of simple types for params/results to keep strategies fast/stable
-        let simple_type = prop_oneof![
-            Just(Type::Felt),
-            Just(Type::U32),
-            Just(Type::U64),
-        ];
+        let simple_type = prop_oneof![Just(Type::Felt), Just(Type::U32), Just(Type::U64),];
 
         // Small vectors of params/results
         let params = prop_vec(simple_type.clone(), 0..=4);
@@ -101,13 +97,12 @@ impl Arbitrary for LibraryExport {
         ];
 
         // Option<FunctionType>
-        let signature = prop::option::of((abi, params, results).prop_map(
-            |(abi, params_vec, results_vec)| {
+        let signature =
+            prop::option::of((abi, params, results).prop_map(|(abi, params_vec, results_vec)| {
                 let params = SmallVec::<[Type; 4]>::from_vec(params_vec);
                 let results = SmallVec::<[Type; 1]>::from_vec(results_vec);
                 FunctionType { abi, params, results }
-            },
-        ));
+            }));
 
         let nid = any::<MastNodeId>();
         let name = any::<QualifiedProcedureName>();
