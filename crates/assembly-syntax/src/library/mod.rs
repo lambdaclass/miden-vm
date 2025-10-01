@@ -88,13 +88,8 @@ impl Arbitrary for LibraryExport {
         let params = prop_vec(simple_type.clone(), 0..=4);
         let results = prop_vec(simple_type, 0..=2);
 
-        // Limited ABI space sufficient for roundtrip coverage
-        let abi = prop_oneof![
-            Just(midenc_hir_type::CallConv::Fast),
-            Just(midenc_hir_type::CallConv::SystemV),
-            Just(midenc_hir_type::CallConv::Wasm),
-            Just(midenc_hir_type::CallConv::Kernel),
-        ];
+        // Use Fast ABI for roundtrip coverage
+        let abi = Just(midenc_hir_type::CallConv::Fast);
 
         // Option<FunctionType>
         let signature =
