@@ -74,19 +74,48 @@ impl LibraryExport {
     }
 }
 
-// TODO: include an arbitrary Signature here (for serde roundtrip tests)
 #[cfg(feature = "arbitrary")]
 impl Arbitrary for LibraryExport {
     type Parameters = ();
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        use proptest::collection::vec as prop_vec;
+
+        // Generate a small set of simple types for params/results to keep strategies fast/stable
+        let simple_type = prop_oneof![
+            Just(Type::Felt),
+            Just(Type::U32),
+            Just(Type::U64),
+        ];
+
+        // Small vectors of params/results
+        let params = prop_vec(simple_type.clone(), 0..=4);
+        let results = prop_vec(simple_type, 0..=2);
+
+        // Limited ABI space sufficient for roundtrip coverage
+        let abi = prop_oneof![
+            Just(midenc_hir_type::CallConv::Fast),
+            Just(midenc_hir_type::CallConv::SystemV),
+            Just(midenc_hir_type::CallConv::Wasm),
+            Just(midenc_hir_type::CallConv::Kernel),
+        ];
+
+        // Option<FunctionType>
+        let signature = prop::option::of((abi, params, results).prop_map(
+            |(abi, params_vec, results_vec)| {
+                let params = SmallVec::<[Type; 4]>::from_vec(params_vec);
+                let results = SmallVec::<[Type; 1]>::from_vec(results_vec);
+                FunctionType { abi, params, results }
+            },
+        ));
+
         let nid = any::<MastNodeId>();
         let name = any::<QualifiedProcedureName>();
-        (nid, name)
-            .prop_map(|(nodeid, procname)| LibraryExport {
+        (nid, name, signature)
+            .prop_map(|(nodeid, procname, signature)| LibraryExport {
                 node: nodeid,
                 name: procname,
-                signature: None,
+                signature,
                 attributes: Default::default(),
             })
             .boxed()
