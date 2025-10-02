@@ -18,6 +18,10 @@
 - [BREAKING] `Memory::read_element()` now requires `&self` instead of `&mut self` ([#2237](https://github.com/0xMiden/miden-vm/issues/2237))
 - Added `proptest`'s `Arbitrary` instances for `Program`, fixed `Attribute` serialization ([#2224](https://github.com/0xMiden/miden-vm/pull/2224)).
 
+## 0.18.1 (2025-10-02)
+
+- Gate stdlib doc generation in build.rs on `MIDEN_BUILD_STDLIB_DOCS` environmnent variable ([#2239](https://github.com/0xMiden/miden-vm/pull/2239/))
+
 ## 0.18.0 (2025-09-21)
 
 #### Enhancements
