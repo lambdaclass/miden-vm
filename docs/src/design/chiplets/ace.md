@@ -32,7 +32,7 @@ $$
 s \in \{0,1\}, \quad
 \text{output} =
 \begin{cases}
-\text{input}, &s = 0,\\
+\text{input}, &s = 0,
 42, &s = 1.
 \end{cases}
 $$
@@ -185,8 +185,8 @@ In every row, the chiplet the following actions in each block:
   $$
   v_{0} =
   \begin{cases}
-  v_1 - v_2, & op = -1,\\
-  v_1 \times v_2, & op = 0,\\
+  v_1 - v_2, & op = -1,
+  v_1 \times v_2, & op = 0,
   v_1 + v_2, & op = 1.
   \end{cases}
   $$
@@ -209,10 +209,10 @@ We start by assigning values to both the inputs and constants nodes, stored in m
 
 $$
 \begin{aligned}
-v_{14} &= \alpha, & v_{10} &= 42, \\
-v_{13} &= \text{output}, & v_{9} &= 1. \\
-v_{12} &= s, \\
-v_{11} &= \text{input}, \\
+v_{14} &= \alpha, & v_{10} &= 42, 
+v_{13} &= \text{output}, & v_{9} &= 1. 
+v_{12} &= s, 
+v_{11} &= \text{input}, 
 \end{aligned}
 $$
 
@@ -221,15 +221,15 @@ Their instructions are stored in the memory region `0x0006 - 0x00014`
 
 $$
 \begin{aligned}
-v_{8} &= v_{12} - v_{9} &&|\ s - 1 \\
-v_{7} &= v_{12} \times v_8 &&|\ c_0 = s \times (s - 1) \\
-v_{6} &= v_{13} - v_{10} &&|\ \text{case}_{s=1} = \text{output} - 42 \\
-v_{5} &= v_{13} - v_{11} &&|\ \text{case}_{s=0} = \text{output} - \text{input} \\
-v_{4} &= v_{12} \times v_{6} &&|\ s \times \text{case}_{s=1} \\
-v_{3} &= v_{8} \times v_{5} &&|\ (s-1) \times \text{case}_{s=0} \\
-v_{2} &= v_{4} + v_{3} &&|\ c_1 = s × \text{case}_{s=1} + (s - 1) \times \text{case}_{s=0} \\
-v_{1} &= v_{14} \times v_{2} &&|\ \alpha \times c_1 \\
-v_{0} &= v_{7} + v_1 &&|\ \text{result} = c_0 + \alpha × c_1 \\
+v_{8} &= v_{12} - v_{9} &&|\ s - 1 
+v_{7} &= v_{12} \times v_8 &&|\ c_0 = s \times (s - 1) 
+v_{6} &= v_{13} - v_{10} &&|\ \text{case}_{s=1} = \text{output} - 42 
+v_{5} &= v_{13} - v_{11} &&|\ \text{case}_{s=0} = \text{output} - \text{input} 
+v_{4} &= v_{12} \times v_{6} &&|\ s \times \text{case}_{s=1} 
+v_{3} &= v_{8} \times v_{5} &&|\ (s-1) \times \text{case}_{s=0} 
+v_{2} &= v_{4} + v_{3} &&|\ c_1 = s × \text{case}_{s=1} + (s - 1) \times \text{case}_{s=0} 
+v_{1} &= v_{14} \times v_{2} &&|\ \alpha \times c_1 
+v_{0} &= v_{7} + v_1 &&|\ \text{result} = c_0 + \alpha × c_1 
 \end{aligned}
 $$
 
@@ -277,11 +277,11 @@ From these common selectors, we derive the following binary flags which indicate
 
 > $$
 > \begin{aligned}
-> f_{prev} &\gets (1 - s_{d-1}) \cdot \prod_{i=1}^{d-2} s_{i} && | \deg = d-1\\
-> f_{ace} &\gets (1 - s_{d}) \cdot \prod_{i=1}^{d-1} s_{i} && | \deg = d\\
-> f_{ace, first}' &\gets f_{prev} \cdot (1 - s_{d-1}') && | \deg = d \\
-> f_{ace, next} &\gets f_{ace} \cdot (1 - s_{d}') && | \deg = d + 1\\
-> f_{ace, last} &\gets f_{ace} \cdot s_{d}' && | \deg = d + 1\\
+> f_{prev} &\gets (1 - s_{d-1}) \cdot \prod_{i=1}^{d-2} s_{i} && | \deg = d-1
+> f_{ace} &\gets (1 - s_{d}) \cdot \prod_{i=1}^{d-1} s_{i} && | \deg = d
+> f_{ace, first}' &\gets f_{prev} \cdot (1 - s_{d-1}') && | \deg = d 
+> f_{ace, next} &\gets f_{ace} \cdot (1 - s_{d}') && | \deg = d + 1
+> f_{ace, last} &\gets f_{ace} \cdot s_{d}' && | \deg = d + 1
 > \end{aligned}
 > $$
 
@@ -295,9 +295,9 @@ The selector $s_{start}$ indicates the start of a new section, from which we can
 
 > $$
 > \begin{aligned}
-> f_{start} &\gets f_{ace} \cdot s_{start} && | \deg = d+1\\
-> f_{next} &\gets f_{ace, next} \cdot (1 - s_{start}')  && | \deg = d+2\\
-> f_{end} &\gets f_{ace, next} \cdot s_{start}' + f_{ace,last} && | \deg = d+2\\
+> f_{start} &\gets f_{ace} \cdot s_{start} && | \deg = d+1
+> f_{next} &\gets f_{ace, next} \cdot (1 - s_{start}')  && | \deg = d+2
+> f_{end} &\gets f_{ace, next} \cdot s_{start}' + f_{ace,last} && | \deg = d+2
 > \end{aligned}
 > $$
 
@@ -310,10 +310,10 @@ These flags require the following constraints on $s_{start}$.
 
 > $$
 > \begin{aligned}
-> f_{ace} \cdot s_{start} \cdot (1 - s_{start}) &= 0 && | \deg = d + 2\\
-> f_{ace, first}' \cdot (1 - s_{start}') &= 0 && | \deg = d + 1\\
-> f_{ace, last} \cdot s_{start} &= 0 && | \deg = d + 2\\
-> f_{ace, next} \cdot s_{start} \cdot s_{start}' &= 0 && | \deg = d + 2.\\
+> f_{ace} \cdot s_{start} \cdot (1 - s_{start}) &= 0 && | \deg = d + 2
+> f_{ace, first}' \cdot (1 - s_{start}') &= 0 && | \deg = d + 1
+> f_{ace, last} \cdot s_{start} &= 0 && | \deg = d + 2
+> f_{ace, next} \cdot s_{start} \cdot s_{start}' &= 0 && | \deg = d + 2.
 > \end{aligned}
 > $$
 
@@ -323,10 +323,10 @@ These constraints ensure they are mutually exclusive
 
 > $$
 > \begin{aligned}
-> f_{read} \gets (1-s_{block}) & &&| \deg = 1\\
-> f_{eval} \gets s_{block} & &&| \deg = 1\\
-> \\
-> f_{ace} \cdot (1-s_{block}) \cdot s_{block} = 0 && &| \deg = d + 2\\
+> f_{read} \gets (1-s_{block}) & &&| \deg = 1
+> f_{eval} \gets s_{block} & &&| \deg = 1
+> 
+> f_{ace} \cdot (1-s_{block}) \cdot s_{block} = 0 && &| \deg = d + 2
 > \end{aligned}
 > $$
 
@@ -338,9 +338,9 @@ The following constraints ensure the proper layout of the trace. In particular, 
 
 > $$
 > \begin{aligned}
-> f_{start} \cdot f_{eval} &= 0 && | \deg = d + 2\\
-> f_{next} \cdot f_{eval} \cdot f_{read}' &= 0 && | \deg = d + 4\\
-> f_{end} \cdot f_{read} &= 0 && | \deg = d + 3\\
+> f_{start} \cdot f_{eval} &= 0 && | \deg = d + 2
+> f_{next} \cdot f_{eval} \cdot f_{read}' &= 0 && | \deg = d + 4
+> f_{end} \cdot f_{read} &= 0 && | \deg = d + 3
 > \end{aligned}
 > $$
 
@@ -368,10 +368,10 @@ These constraints apply to all rows within the same section/
 
 > $$
 > \begin{aligned}
-> f_{next} \cdot (ctx' - ctx) &= 0 && | \deg = d + 3\\
-> f_{next} \cdot (clk' - clk) &= 0 && | \deg = d + 3\\
-> f_{next} \cdot \big[ptr' - ptr + 4 \cdot f_{read} + f_{eval}\big] &= 0 && | \deg = d + 3\\
-> f_{next} \cdot \big[id_0 - id_0' + 2 \cdot f_{read} + f_{eval}\big] &= 0 && | \deg = d + 3\\
+> f_{next} \cdot (ctx' - ctx) &= 0 && | \deg = d + 3
+> f_{next} \cdot (clk' - clk) &= 0 && | \deg = d + 3
+> f_{next} \cdot \big[ptr' - ptr + 4 \cdot f_{read} + f_{eval}\big] &= 0 && | \deg = d + 3
+> f_{next} \cdot \big[id_0 - id_0' + 2 \cdot f_{read} + f_{eval}\big] &= 0 && | \deg = d + 3
 > \end{aligned}
 > $$
 
@@ -384,7 +384,7 @@ The only constraint we enforce is that $id_0$ and $id_1$ are consecutive
 
 > $$
 > \begin{aligned}
-> f_{ace} \cdot f_{read} \cdot (id_1 - id_0 + 1)  &= 0 && | \deg = d + 2\\
+> f_{ace} \cdot f_{read} \cdot (id_1 - id_0 + 1)  &= 0 && | \deg = d + 2
 > \end{aligned}
 > $$
 
@@ -396,9 +396,9 @@ The result is given by the degree-4 expression
 > $$
 > v_{out} \gets op^2 \cdot \big[ v_1 + op\cdot v_2 \big] + (1 - op^2)  \cdot \big[ v_1 \cdot v_2 \big]
 > = \begin{cases}
-> v_1 - v_2, & op = -1, \\
-> v_1 \times v_2, & op = 0, \\
-> v_1 + v_2, & op = 1. \\
+> v_1 - v_2, & op = -1, 
+> v_1 \times v_2, & op = 0, 
+> v_1 + v_2, & op = 1. 
 > \end{cases}
 > $$
 
@@ -409,8 +409,8 @@ The output node is correctly evaluated when:
 
 > $$
 > \begin{aligned}
-> f_{ace} \cdot f_{eval} \cdot op \cdot (op^2 - 1) &= 0 && | \deg = d + 4\\
-> f_{ace} \cdot f_{eval} \cdot (v_0 - v_{out}) &= 0 && | \deg = d + 5\\
+> f_{ace} \cdot f_{eval} \cdot op \cdot (op^2 - 1) &= 0 && | \deg = d + 4
+> f_{ace} \cdot f_{eval} \cdot (v_0 - v_{out}) &= 0 && | \deg = d + 5
 > \end{aligned}
 > $$
 
@@ -433,8 +433,8 @@ To ensure the circuit has finished evaluating and that the final output value is
 
 > $$
 > \begin{aligned}
-> f_{end} \cdot id_0 &= 0 && | \deg = d + 3\\
-> f_{end} \cdot v_0 &= 0 && | \deg = d + 3\\
+> f_{end} \cdot id_0 &= 0 && | \deg = d + 3
+> f_{end} \cdot v_0 &= 0 && | \deg = d + 3
 > \end{aligned}
 > $$
 
@@ -480,7 +480,7 @@ The actual constraint is given by normalizing the denominator
 
 The ACE chiplet initializes a circuit evaluation by responding to a request made by the decoder, through the [chiplet bus](./index.md#chiplets-bus) $b_{chip}$.
 As mentioned earlier, the message corresponds to the tuple, which is sent to the bus only when $f_{start} = 1$.
-$$(\mathsf{ACE\\_LABEL}, ctx, ptr, clk, n_\text{read}, n_\text{eval}).$$
+$$(\mathsf{ACE_LABEL}, ctx, ptr, clk, n_\text{read}, n_\text{eval}).$$
 The value $n_{read}$ is computed as $id_0 - 1 - n_{eval}$, since in the first row, $id_0$ is expected to be equal to the total number of nodes inserted (subtracting 1 since identifiers are indexed from zero).
 We refer to the [chiplet bus constraints](./index.md#chiplets-bus-constraints) which describes the constraints for chiplet bus responses.
 

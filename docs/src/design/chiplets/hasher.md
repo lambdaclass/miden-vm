@@ -208,7 +208,7 @@ Updating a node in a Merkle tree (which also updates the root of the tree) can b
 Suppose we have the same Merkle tree as in the previous example, and we want to replace node $d$ with node $d'$. The computations we'd need to perform are:
 
 $$
-r \leftarrow hash(e, hash(c, d)) \\
+r \leftarrow hash(e, hash(c, d)) 
 r' \leftarrow hash(e, hash(c, d'))
 $$
 
@@ -243,15 +243,15 @@ When describing AIR constraints, we adopt the following notation: for column $x$
 For selector columns, first we must ensure that only binary values are allowed in these columns. This can be done with the following constraints:
 
 $$
-s_0^2 - s_0 = 0 \text{ | degree} = 2 \\
-s_1^2 - s_1 = 0 \text{ | degree} = 2 \\
+s_0^2 - s_0 = 0 \text{ | degree} = 2 
+s_1^2 - s_1 = 0 \text{ | degree} = 2 
 s_2^2 - s_2 = 0 \text{ | degree} = 2
 $$
 
 Next, we need to make sure that unless $f_{out}=1$ or $f_{out}'=1$, the values in columns $s_1$ and $s_2$ are copied over to the next row. This can be done with the following constraints:
 
 $$
-(s_1' - s_1) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7 \\
+(s_1' - s_1) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7 
 (s_2' - s_2) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7
 $$
 
@@ -339,12 +339,12 @@ In this sections we describe constraints which enforce updates for [multiset che
 To simplify description of the constraints, we define the following variables. Below, we denote random values sent by the verifier after the prover commits to the main execution trace as $\alpha_0$, $\alpha_1$, $\alpha_2$ etc.
 
 $$
-m = op_{label} + 2^4 \cdot k_0 + 2^5 \cdot k_2 \\
-v_h = \alpha_0 + \alpha_1 \cdot m + \alpha_2 \cdot (clk + 1) + \alpha_3 \cdot i \\
-v_a = \sum_{j=0}^{3}(\alpha_{j+4} \cdot h_j) \\
-v_b = \sum_{j=4}^{7}(\alpha_{j+4} \cdot h_j) \\
-v_c = \sum_{j=8}^{11}(\alpha_{j+4} \cdot h_j) \\
-v_d = \sum_{j=8}^{11}(\alpha_j \cdot h_j) \\
+m = op_{label} + 2^4 \cdot k_0 + 2^5 \cdot k_2 
+v_h = \alpha_0 + \alpha_1 \cdot m + \alpha_2 \cdot (clk + 1) + \alpha_3 \cdot i 
+v_a = \sum_{j=0}^{3}(\alpha_{j+4} \cdot h_j) 
+v_b = \sum_{j=4}^{7}(\alpha_{j+4} \cdot h_j) 
+v_c = \sum_{j=8}^{11}(\alpha_{j+4} \cdot h_j) 
+v_d = \sum_{j=8}^{11}(\alpha_j \cdot h_j) 
 $$
 
 In the above:
@@ -382,7 +382,7 @@ $$
 Using the above values, we can describe the constraints for updating column $b_{chip}$ as follows.
 
 $$
-b_{chip}' = b_{chip} \cdot ((f_{bp} + f_{sout}) \cdot v_{all} + (f_{mp} + f_{mv} + f_{mu}) \cdot v_{leaf} + f_{abp} \cdot v_{abp} + f_{hout} \cdot v_{res} + \\
+b_{chip}' = b_{chip} \cdot ((f_{bp} + f_{sout}) \cdot v_{all} + (f_{mp} + f_{mv} + f_{mu}) \cdot v_{leaf} + f_{abp} \cdot v_{abp} + f_{hout} \cdot v_{res} + 
 1 - (f_{bp} + f_{mp} + f_{mv} + f_{mu} + f_{abp} + f_{out}))
 $$
 
@@ -416,7 +416,7 @@ $$
 Using the above value, we can define the constraint for updating $p_1$ as follows:
 
 $$
-p_1' \cdot \left( (f_{mv} + f_{mva}) \cdot v_{sibling} + 1 - (f_{mv} + f_{mva}) \right) = \\
+p_1' \cdot \left( (f_{mv} + f_{mva}) \cdot v_{sibling} + 1 - (f_{mv} + f_{mva}) \right) = 
 p_1 \cdot \left( (f_{mu} + f_{mua}) \cdot v_{sibling} + 1 - (f_{mu} + f_{mua}) \right)
 $$
 

@@ -181,29 +181,29 @@ More specifically, the stack transition for this operation must satisfy the foll
 
 $$
 \begin{align*}
-    \mathsf{tmp}_0 &= \mathsf{acc}_0 \cdot \alpha_0^4 - 8 \cdot \mathsf{acc}_1 \cdot \alpha_0^3 \cdot \alpha_1 - 12 \cdot \mathsf{acc}_0 \cdot \alpha_0^2 \cdot \alpha_1^2 \\ 
-    &- 12 \cdot \mathsf{acc}_1 \cdot \alpha_0^2 \cdot \alpha_1^2 - 8 \cdot \mathsf{acc}_0 \cdot \alpha_0 \cdot \alpha_1^3 \\ 
-    &+ 8 \cdot \mathsf{acc}_1\cdot\alpha_0\cdot\alpha_1^3 + 2\cdot\mathsf{acc}_0\cdot\alpha_1^4 \\ 
-    &+ 6\cdot\mathsf{acc}_1\cdot\alpha_1^4 + s_7\cdot\alpha_0^3 - 6 \cdot s_7\cdot\alpha_0\cdot\alpha_1^2 \\ 
+    \mathsf{tmp}_0 &= \mathsf{acc}_0 \cdot \alpha_0^4 - 8 \cdot \mathsf{acc}_1 \cdot \alpha_0^3 \cdot \alpha_1 - 12 \cdot \mathsf{acc}_0 \cdot \alpha_0^2 \cdot \alpha_1^2  
+    &- 12 \cdot \mathsf{acc}_1 \cdot \alpha_0^2 \cdot \alpha_1^2 - 8 \cdot \mathsf{acc}_0 \cdot \alpha_0 \cdot \alpha_1^3  
+    &+ 8 \cdot \mathsf{acc}_1\cdot\alpha_0\cdot\alpha_1^3 + 2\cdot\mathsf{acc}_0\cdot\alpha_1^4  
+    &+ 6\cdot\mathsf{acc}_1\cdot\alpha_1^4 + s_7\cdot\alpha_0^3 - 6 \cdot s_7\cdot\alpha_0\cdot\alpha_1^2  
     &- 2 \cdot s_7\cdot\alpha_1^3 + s_6\cdot\alpha_0^2 - 2\cdot s_6\cdot\alpha_1^2 + s_5\cdot\alpha_0 + s_4  \text{ | degree} = 5
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{tmp}_1 &= \mathsf{acc}_1 \cdot \alpha_0^4 + 4 \cdot \mathsf{acc}_0 \cdot \alpha_0^3 \cdot \alpha_1 + 4 \cdot \mathsf{acc}_1 \cdot \alpha_0^3 \cdot \alpha_1 \\ &+ 6 \cdot \mathsf{acc}_0 \cdot \alpha_0^2 \cdot \alpha_1^2 - 6 \cdot \mathsf{acc}_1 \cdot \alpha_0^2 \cdot \alpha_1^2 \\ &- 4 \cdot \mathsf{acc}_0 \cdot \alpha_0\cdot\alpha_1^3 - 12 \cdot \mathsf{acc}_1 \cdot \alpha_0 \cdot \alpha_1^3 \\ & - 3 \cdot\mathsf{acc}_0 \cdot \alpha_1^4 - \mathsf{acc}_1 \cdot \alpha_1^4 + 3 \cdot s_7 \cdot \alpha_0^2\cdot\alpha_1 \\ &+ 3 \cdot s_7 \cdot \alpha_0\cdot\alpha_1^2 - s_7   \cdot\alpha_1^3 + 2\cdot s_6\cdot\alpha_0\cdot\alpha_1 + s_6\cdot\alpha_1^2 + s_5\cdot\alpha_1  \text{ | degree} = 5
+\mathsf{tmp}_1 &= \mathsf{acc}_1 \cdot \alpha_0^4 + 4 \cdot \mathsf{acc}_0 \cdot \alpha_0^3 \cdot \alpha_1 + 4 \cdot \mathsf{acc}_1 \cdot \alpha_0^3 \cdot \alpha_1  &+ 6 \cdot \mathsf{acc}_0 \cdot \alpha_0^2 \cdot \alpha_1^2 - 6 \cdot \mathsf{acc}_1 \cdot \alpha_0^2 \cdot \alpha_1^2  &- 4 \cdot \mathsf{acc}_0 \cdot \alpha_0\cdot\alpha_1^3 - 12 \cdot \mathsf{acc}_1 \cdot \alpha_0 \cdot \alpha_1^3  & - 3 \cdot\mathsf{acc}_0 \cdot \alpha_1^4 - \mathsf{acc}_1 \cdot \alpha_1^4 + 3 \cdot s_7 \cdot \alpha_0^2\cdot\alpha_1  &+ 3 \cdot s_7 \cdot \alpha_0\cdot\alpha_1^2 - s_7   \cdot\alpha_1^3 + 2\cdot s_6\cdot\alpha_0\cdot\alpha_1 + s_6\cdot\alpha_1^2 + s_5\cdot\alpha_1  \text{ | degree} = 5
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{acc}_0^{'} &= \mathsf{tmp}_0\cdot\alpha_0^4 - 8 \cdot\mathsf{tmp}_1\cdot\alpha_0^3\cdot\alpha_1 - 12 \cdot\mathsf{tmp}_0\cdot\alpha_0^2\cdot\alpha_1^2  \\ &- 12\cdot\mathsf{tmp}_1\cdot\alpha_0^2\cdot\alpha_1^2 - 8\cdot\mathsf{tmp}_0\cdot\alpha_0\cdot\alpha_1^3 + 8\cdot\mathsf{tmp}_1\cdot\alpha_0\cdot\alpha_1^3 \\ &+ 2\cdot\mathsf{tmp}_0\cdot\alpha_1^4 + 6\cdot\mathsf{tmp}_1\cdot\alpha_1^4 +  s_3\cdot\alpha_0^3 - 6\cdot s_3\cdot\alpha_0\cdot\alpha_1^2 \\ &- 2\cdot s_3\cdot\alpha_1^3 +  s_2\cdot\alpha_0^2 - 2\cdot s_2\cdot\alpha_1^2 +  s_1\cdot\alpha_0 + s_0  \text{ | degree} = 5
+\mathsf{acc}_0^{'} &= \mathsf{tmp}_0\cdot\alpha_0^4 - 8 \cdot\mathsf{tmp}_1\cdot\alpha_0^3\cdot\alpha_1 - 12 \cdot\mathsf{tmp}_0\cdot\alpha_0^2\cdot\alpha_1^2   &- 12\cdot\mathsf{tmp}_1\cdot\alpha_0^2\cdot\alpha_1^2 - 8\cdot\mathsf{tmp}_0\cdot\alpha_0\cdot\alpha_1^3 + 8\cdot\mathsf{tmp}_1\cdot\alpha_0\cdot\alpha_1^3  &+ 2\cdot\mathsf{tmp}_0\cdot\alpha_1^4 + 6\cdot\mathsf{tmp}_1\cdot\alpha_1^4 +  s_3\cdot\alpha_0^3 - 6\cdot s_3\cdot\alpha_0\cdot\alpha_1^2  &- 2\cdot s_3\cdot\alpha_1^3 +  s_2\cdot\alpha_0^2 - 2\cdot s_2\cdot\alpha_1^2 +  s_1\cdot\alpha_0 + s_0  \text{ | degree} = 5
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{acc}_1^{'} &= \mathsf{tmp}_1\cdot\alpha_0^4 + 4\cdot\mathsf{tmp}_0\cdot\alpha_0^3\cdot\alpha_1 + 4\cdot\mathsf{tmp}_1\cdot\alpha_0^3\cdot\alpha_1 + 6\cdot\mathsf{tmp}_0\cdot\alpha_0^2\cdot\alpha_1^2 \\ &- 6\cdot\mathsf{tmp}_1\cdot\alpha_0^2\cdot\alpha_1^2 - 4 \cdot \mathsf{tmp}_0\cdot\alpha_0\cdot\alpha_1^3 -12\cdot\mathsf{tmp}_1\cdot\alpha_0\cdot\alpha_1^3 \\ &- 3\cdot\mathsf{tmp}_0\cdot\alpha_1^4 - \mathsf{tmp}_1\cdot\alpha_1^4 + 3\cdot s_3\cdot\alpha_0^2\cdot\alpha_1 \\ &+ 3\cdot s_3\cdot\alpha_0\cdot\alpha_1^2 -  s_3\cdot\alpha_1^3 + 2\cdot s_2\cdot\alpha_0\cdot\alpha_1 +  s_2\cdot\alpha_1^2 +  s_1\cdot\alpha_1  \text{ | degree} = 5
+\mathsf{acc}_1^{'} &= \mathsf{tmp}_1\cdot\alpha_0^4 + 4\cdot\mathsf{tmp}_0\cdot\alpha_0^3\cdot\alpha_1 + 4\cdot\mathsf{tmp}_1\cdot\alpha_0^3\cdot\alpha_1 + 6\cdot\mathsf{tmp}_0\cdot\alpha_0^2\cdot\alpha_1^2  &- 6\cdot\mathsf{tmp}_1\cdot\alpha_0^2\cdot\alpha_1^2 - 4 \cdot \mathsf{tmp}_0\cdot\alpha_0\cdot\alpha_1^3 -12\cdot\mathsf{tmp}_1\cdot\alpha_0\cdot\alpha_1^3  &- 3\cdot\mathsf{tmp}_0\cdot\alpha_1^4 - \mathsf{tmp}_1\cdot\alpha_1^4 + 3\cdot s_3\cdot\alpha_0^2\cdot\alpha_1  &+ 3\cdot s_3\cdot\alpha_0\cdot\alpha_1^2 -  s_3\cdot\alpha_1^3 + 2\cdot s_2\cdot\alpha_0\cdot\alpha_1 +  s_2\cdot\alpha_1^2 +  s_1\cdot\alpha_1  \text{ | degree} = 5
 \end{align*}
 $$
 
@@ -241,25 +241,25 @@ More specifically, the stack transition for this operation must satisfy the foll
 
 $$
 \begin{align*}
-\mathsf{tmp}_0 &= \mathsf{acc}_0\cdot \alpha_0^2 - 4\cdot \mathsf{acc}_1\cdot \alpha_0\cdot \alpha_1 - 2\cdot \mathsf{acc}_0\cdot \alpha_1^2 \\ &- 2\cdot \mathsf{acc}_1\cdot \alpha_1^2 + s_6\cdot \alpha_0 -2\cdot s_7\cdot \alpha_1 + s_4  \text{ | degree} = 3
+\mathsf{tmp}_0 &= \mathsf{acc}_0\cdot \alpha_0^2 - 4\cdot \mathsf{acc}_1\cdot \alpha_0\cdot \alpha_1 - 2\cdot \mathsf{acc}_0\cdot \alpha_1^2  &- 2\cdot \mathsf{acc}_1\cdot \alpha_1^2 + s_6\cdot \alpha_0 -2\cdot s_7\cdot \alpha_1 + s_4  \text{ | degree} = 3
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{tmp}_1 &= \mathsf{acc}_1\cdot \alpha_0^2 + 2\cdot \mathsf{acc}_0\cdot \alpha_0\cdot \alpha_1 + 2\cdot \mathsf{acc}_1\cdot \alpha_0\cdot \alpha_1 \\ &+ \mathsf{acc}_0\cdot \alpha_1^2 - \mathsf{acc}_1\cdot \alpha_1^2 + s_7\cdot \alpha_0 + s_6\cdot \alpha_1 + s_7\cdot \alpha_1 + s_5  \text{ | degree} = 3
+\mathsf{tmp}_1 &= \mathsf{acc}_1\cdot \alpha_0^2 + 2\cdot \mathsf{acc}_0\cdot \alpha_0\cdot \alpha_1 + 2\cdot \mathsf{acc}_1\cdot \alpha_0\cdot \alpha_1  &+ \mathsf{acc}_0\cdot \alpha_1^2 - \mathsf{acc}_1\cdot \alpha_1^2 + s_7\cdot \alpha_0 + s_6\cdot \alpha_1 + s_7\cdot \alpha_1 + s_5  \text{ | degree} = 3
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{acc}_0^{'} &= \mathsf{tmp}_0\cdot \alpha_0^2 - 4\cdot \mathsf{tmp}_1\cdot \alpha_0\cdot \alpha_1 - 2\cdot \mathsf{tmp}_0\cdot \alpha_1^2 \\& - 2\cdot \mathsf{tmp}_1\cdot \alpha_1^2 + s_2\cdot \alpha_0 - 2\cdot s_3\cdot \alpha_1 + s_0  \text{ | degree} = 3
+\mathsf{acc}_0^{'} &= \mathsf{tmp}_0\cdot \alpha_0^2 - 4\cdot \mathsf{tmp}_1\cdot \alpha_0\cdot \alpha_1 - 2\cdot \mathsf{tmp}_0\cdot \alpha_1^2 & - 2\cdot \mathsf{tmp}_1\cdot \alpha_1^2 + s_2\cdot \alpha_0 - 2\cdot s_3\cdot \alpha_1 + s_0  \text{ | degree} = 3
 \end{align*}
 $$
 
 $$
 \begin{align*}
-\mathsf{acc}_1^{'} &= \mathsf{tmp}_1\cdot \alpha_0^2 + 2\cdot \mathsf{tmp}_0\cdot \alpha_0\cdot \alpha_1 + 2\cdot \mathsf{tmp}_1\cdot \alpha_0\cdot \alpha_1 \\& + \mathsf{tmp}_0\cdot \alpha_1^2 - \mathsf{tmp}_1\cdot \alpha_1^2 + s_3\cdot \alpha_0 + s_2\cdot \alpha_1 + s_3\cdot \alpha_1 + s_1  \text{ | degree} = 3
+\mathsf{acc}_1^{'} &= \mathsf{tmp}_1\cdot \alpha_0^2 + 2\cdot \mathsf{tmp}_0\cdot \alpha_0\cdot \alpha_1 + 2\cdot \mathsf{tmp}_1\cdot \alpha_0\cdot \alpha_1 & + \mathsf{tmp}_0\cdot \alpha_1^2 - \mathsf{tmp}_1\cdot \alpha_1^2 + s_3\cdot \alpha_0 + s_2\cdot \alpha_1 + s_3\cdot \alpha_1 + s_1  \text{ | degree} = 3
 \end{align*}
 $$
 

@@ -25,7 +25,7 @@ Another primitive which is required by most of the operations described below is
 For simplicity, let's denote:
 
 $$
-v_{hi} = 2^{16} \cdot t_3 + t_2 \\
+v_{hi} = 2^{16} \cdot t_3 + t_2 
 v_{lo} = 2^{16} \cdot t_1 + t_0
 $$
 

@@ -13,14 +13,14 @@ This page provides a comprehensive reference for Miden Assembly instructions.
 
 | Instruction                       | Stack Input | Stack Output | Cycles      | Notes                                                                      |
 | --------------------------------- | ----------- | ------------ | ----------- | -------------------------------------------------------------------------- |
-| `lte` <br /> `lte.b`                | `[b, a, ...]` | `[c, ...]`   | 15 <br /> 16   | $$c = \begin{cases} 1, & \text{if } a \leq b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `lt` <br /> `lt.b`                  | `[b, a, ...]` | `[c, ...]`   | 14 <br /> 15   | $$c = \begin{cases} 1, & \text{if } a < b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `gte` <br /> `gte.b`                | `[b, a, ...]` | `[c, ...]`   | 16 <br /> 17   | $$c = \begin{cases} 1, & \text{if } a \geq b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `gt` <br /> `gt.b`                  | `[b, a, ...]` | `[c, ...]`   | 15 <br /> 16   | $$c = \begin{cases} 1, & \text{if } a > b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `eq` <br /> `eq.b`                  | `[b, a, ...]` | `[c, ...]`   | 1 <br /> 1-2   | $$c = \begin{cases} 1, & \text{if } a = b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `neq` <br /> `neq.b`                | `[b, a, ...]` | `[c, ...]`   | 2 <br /> 2-3   | $$c = \begin{cases} 1, & \text{if } a \neq b \\ 0, & \text{otherwise} \end{cases}$$ |
-| `eqw`                             | `[A, B, ...]` | `[c, A, B, ...]` | 15          | $$c = \begin{cases} 1, & \text{if } a_i = b_i\ \forall i \in \{0,1,2,3\} \\ 0, & \text{otherwise} \end{cases}$$ |
-| `is_odd`                          | `[a, ...]`    | `[b, ...]`   | 5           | $$b = \begin{cases} 1, & \text{if $a$ is odd} \\ 0, & \text{otherwise} \end{cases}$$ |
+| `lte` <br /> `lte.b`                | `[b, a, ...]` | `[c, ...]`   | 15 <br /> 16   | $$c = \begin{cases} 1, & \text{if } a \leq b  0, & \text{otherwise} \end{cases}$$ |
+| `lt` <br /> `lt.b`                  | `[b, a, ...]` | `[c, ...]`   | 14 <br /> 15   | $$c = \begin{cases} 1, & \text{if } a < b  0, & \text{otherwise} \end{cases}$$ |
+| `gte` <br /> `gte.b`                | `[b, a, ...]` | `[c, ...]`   | 16 <br /> 17   | $$c = \begin{cases} 1, & \text{if } a \geq b  0, & \text{otherwise} \end{cases}$$ |
+| `gt` <br /> `gt.b`                  | `[b, a, ...]` | `[c, ...]`   | 15 <br /> 16   | $$c = \begin{cases} 1, & \text{if } a > b  0, & \text{otherwise} \end{cases}$$ |
+| `eq` <br /> `eq.b`                  | `[b, a, ...]` | `[c, ...]`   | 1 <br /> 1-2   | $$c = \begin{cases} 1, & \text{if } a = b  0, & \text{otherwise} \end{cases}$$ |
+| `neq` <br /> `neq.b`                | `[b, a, ...]` | `[c, ...]`   | 2 <br /> 2-3   | $$c = \begin{cases} 1, & \text{if } a \neq b  0, & \text{otherwise} \end{cases}$$ |
+| `eqw`                             | `[A, B, ...]` | `[c, A, B, ...]` | 15          | $$c = \begin{cases} 1, & \text{if } a_i = b_i\ \forall i \in \{0,1,2,3\}  0, & \text{otherwise} \end{cases}$$ |
+| `is_odd`                          | `[a, ...]`    | `[b, ...]`   | 5           | $$b = \begin{cases} 1, & \text{if $a$ is odd}  0, & \text{otherwise} \end{cases}$$ |
 
 ### Assertions and Tests
 
@@ -72,8 +72,8 @@ Operations on 32-bit integers. Most instructions will fail or have undefined beh
 
 | Instruction      | Stack Input | Stack Output   | Cycles | Notes                                                                                                |
 | ---------------- | ----------- | -------------- | ------ | ---------------------------------------------------------------------------------------------------- |
-| `u32test`        | `[a, ...]`  | `[b, a, ...]`  | 5      | $$b = \begin{cases} 1, & \text{if } a < 2^{32} \\ 0, & \text{otherwise} \end{cases}$$ |
-| `u32testw`       | `[A, ...]`  | `[b, A, ...]`  | 23     | $$b = \begin{cases} 1, & \text{if } \forall i \in \{0,1,2,3\}, a_i < 2^{32} \\ 0, & \text{otherwise} \end{cases}$$ |
+| `u32test`        | `[a, ...]`  | `[b, a, ...]`  | 5      | $$b = \begin{cases} 1, & \text{if } a < 2^{32}  0, & \text{otherwise} \end{cases}$$ |
+| `u32testw`       | `[A, ...]`  | `[b, A, ...]`  | 23     | $$b = \begin{cases} 1, & \text{if } \forall i \in \{0,1,2,3\}, a_i < 2^{32}  0, & \text{otherwise} \end{cases}$$ |
 | `u32assert`      | `[a, ...]`  | `[a, ...]`     | 3      | Fails if $a \geq 2^{32}$.                                                                                |
 | `u32assert2`     | `[b, a,...]`| `[b, a,...]`   | 1      | Fails if $a \geq 2^{32}$ or $b \geq 2^{32}$.                                                                 |
 | `u32assertw`     | `[A, ...]`  | `[A, ...]`     | 6      | Fails if any element of $A$ is $\geq 2^{32}$.                                                            |
@@ -86,11 +86,11 @@ Operations on 32-bit integers. Most instructions will fail or have undefined beh
 
 | Instruction                                   | Stack Input    | Stack Output  | Cycles    | Notes                                                                                                                            |
 | --------------------------------------------- | -------------- | ------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `u32overflowing_add` <br /> `u32overflowing_add.b` | `[b, a, ...]`  | `[d, c, ...]` | 1 <br /> 2-3 | $c = (a + b) \bmod 2^{32}$, $$d = \begin{cases} 1, & \text{if } (a + b) \geq 2^{32} \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$. |
+| `u32overflowing_add` <br /> `u32overflowing_add.b` | `[b, a, ...]`  | `[d, c, ...]` | 1 <br /> 2-3 | $c = (a + b) \bmod 2^{32}$, $$d = \begin{cases} 1, & \text{if } (a + b) \geq 2^{32}  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$. |
 | `u32wrapping_add` <br /> `u32wrapping_add.b`     | `[b, a, ...]`  | `[c, ...]`    | 2 <br /> 3-4 | $c = (a + b) \bmod 2^{32}$. Undefined if $\max(a,b) \geq 2^{32}$.                                                                         |
 | `u32overflowing_add3`                         | `[c, b, a, ...]` | `[e, d, ...]` | 1         | $d = (a+b+c) \bmod 2^{32}$, $e = \lfloor (a+b+c)/2^{32} \rfloor$. Undefined if $\max(a,b,c) \geq 2^{32}$.                                          |
 | `u32wrapping_add3`                            | `[c, b, a, ...]` | `[d, ...]`    | 2         | $d = (a+b+c) \bmod 2^{32}$. Undefined if $\max(a,b,c) \geq 2^{32}$.                                                                      |
-| `u32overflowing_sub` <br /> `u32overflowing_sub.b` | `[b, a, ...]`  | `[d, c, ...]` | 1 <br /> 2-3 | $c = (a - b) \bmod 2^{32}$, $$d = \begin{cases} 1, & \text{if } a < b \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                     |
+| `u32overflowing_sub` <br /> `u32overflowing_sub.b` | `[b, a, ...]`  | `[d, c, ...]` | 1 <br /> 2-3 | $c = (a - b) \bmod 2^{32}$, $$d = \begin{cases} 1, & \text{if } a < b  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                     |
 | `u32wrapping_sub` <br /> `u32wrapping_sub.b`     | `[b, a, ...]`  | `[c, ...]`    | 2 <br /> 3-4 | $c = (a - b) \bmod 2^{32}$. Undefined if $\max(a,b) \geq 2^{32}$.                                                                         |
 | `u32overflowing_mul` <br /> `u32overflowing_mul.b` | `[b, a, ...]`  | `[d, c, ...]` | 1 <br /> 2-3 | $c = (a \cdot b) \bmod 2^{32}$, $d = \lfloor(a \cdot b) / 2^{32}\rfloor$. Undefined if $\max(a,b) \geq 2^{32}$.                                                 |
 | `u32wrapping_mul` <br /> `u32wrapping_mul.b`     | `[b, a, ...]`  | `[c, ...]`    | 2 <br /> 3-4 | $c = (a \cdot b) \bmod 2^{32}$. Undefined if $\max(a,b) \geq 2^{32}$.                                                                           |
@@ -122,10 +122,10 @@ Operations on 32-bit integers. Most instructions will fail or have undefined beh
 
 | Instruction                     | Stack Input | Stack Output | Cycles    | Notes                                                                                             |
 | ------------------------------- | ----------- | ------------ | --------- | ------------------------------------------------------------------------------------------------- |
-| `u32lt` <br /> `u32lt.b`           | `[b, a, ...]` | `[c, ...]`   | 3 <br /> 4  | $$c = \begin{cases} 1, & \text{if } a < b \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                   |
-| `u32lte` <br /> `u32lte.b`         | `[b, a, ...]` | `[c, ...]`   | 5 <br /> 6  | $$c = \begin{cases} 1, & \text{if } a \leq b \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                  |
-| `u32gt` <br /> `u32gt.b`           | `[b, a, ...]` | `[c, ...]`   | 4 <br /> 5  | $$c = \begin{cases} 1, & \text{if } a > b \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                   |
-| `u32gte` <br /> `u32gte.b`         | `[b, a, ...]` | `[c, ...]`   | 4 <br /> 5  | $$c = \begin{cases} 1, & \text{if } a \geq b \\ 0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                  |
+| `u32lt` <br /> `u32lt.b`           | `[b, a, ...]` | `[c, ...]`   | 3 <br /> 4  | $$c = \begin{cases} 1, & \text{if } a < b  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                   |
+| `u32lte` <br /> `u32lte.b`         | `[b, a, ...]` | `[c, ...]`   | 5 <br /> 6  | $$c = \begin{cases} 1, & \text{if } a \leq b  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                  |
+| `u32gt` <br /> `u32gt.b`           | `[b, a, ...]` | `[c, ...]`   | 4 <br /> 5  | $$c = \begin{cases} 1, & \text{if } a > b  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                   |
+| `u32gte` <br /> `u32gte.b`         | `[b, a, ...]` | `[c, ...]`   | 4 <br /> 5  | $$c = \begin{cases} 1, & \text{if } a \geq b  0, & \text{otherwise} \end{cases}$$. Undefined if $\max(a,b) \geq 2^{32}$.                                  |
 | `u32min` <br /> `u32min.b`         | `[b, a, ...]` | `[c, ...]`   | 8 <br /> 9  | $c = \min(a,b)$. Undefined if $\max(a,b) \geq 2^{32}$.                                                  |
 | `u32max` <br /> `u32max.b`         | `[b, a, ...]` | `[c, ...]`   | 9 <br /> 10 | $c = \max(a,b)$. Undefined if $\max(a,b) \geq 2^{32}$.                                                  |
 

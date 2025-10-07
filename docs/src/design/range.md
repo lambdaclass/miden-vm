@@ -133,7 +133,7 @@ The columns have the following meanings:
 First, we need to constrain that the consecutive values in the range checker are either the same or differ by powers of 3 that are less than or equal to $3^7$.
 
 > $$
-> \Delta v \cdot (\Delta v - 1)  \cdot (\Delta v - 3)  \cdot (\Delta v - 9)  \cdot (\Delta v - 27)  \cdot (\Delta v - 81) \\
+> \Delta v \cdot (\Delta v - 1)  \cdot (\Delta v - 3)  \cdot (\Delta v - 9)  \cdot (\Delta v - 27)  \cdot (\Delta v - 81) 
 > \cdot (\Delta v - 243)  \cdot (\Delta v - 729)  \cdot (\Delta v - 2187) = 0 \text{ | degree} = 9
 > $$
 
@@ -164,7 +164,7 @@ To describe the complete transition constraint for the bus, we'll define the fol
 - $m_0, m_1$: the values for which range checks are requested from the memory chiplet when $f_{mem}$ is set.
 
 > $$
-> b'_{range} = b_{range} + \frac{m}{(\alpha - v)} - \frac{f_{stack}}{(\alpha - s_0)} - \frac{f_{stack}}{(\alpha - s_1)} - \frac{f_{stack}}{(\alpha - s_2)} - \frac{f_{stack}}{(\alpha - s_3)} \\ - \frac{f_{mem}}{(\alpha - m_0)} - \frac{f_{mem}}{(\alpha - m_1)} \text{ | degree} = 9
+> b'_{range} = b_{range} + \frac{m}{(\alpha - v)} - \frac{f_{stack}}{(\alpha - s_0)} - \frac{f_{stack}}{(\alpha - s_1)} - \frac{f_{stack}}{(\alpha - s_2)} - \frac{f_{stack}}{(\alpha - s_3)}  - \frac{f_{mem}}{(\alpha - m_0)} - \frac{f_{mem}}{(\alpha - m_1)} \text{ | degree} = 9
 > $$
 
 As previously mentioned, constraints cannot include divisions, so the actual constraint which is applied will be the equivalent expression in which all denominators have been multiplied through, which is degree 9.

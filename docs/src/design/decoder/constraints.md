@@ -213,7 +213,7 @@ $$
 Using the above definitions, we can describe the constraint for computing block hashes as follows:
 
 > $$
-> b_{chip}' \cdot (u_{ctrli} + u_{syscall} + u_{dynordyncall} + u_{span} + u_{respan} + u_{end} + \\
+> b_{chip}' \cdot (u_{ctrli} + u_{syscall} + u_{dynordyncall} + u_{span} + u_{respan} + u_{end} + 
 > 1 - (f_{ctrli} + f_{syscall} + f_{dyn} + f_{dyncall} + f_{span} + f_{respan} + f_{end})) = b_{chip}
 > $$
 
@@ -260,7 +260,7 @@ $$
 When `RESPAN` operation is executed, row $(a, h_1', 0)$ is removed from the block stack table, and row $(a', h_1', 0)$ is added to the table. The prover sets the value of register $h_1$ at the next row to the ID of the parent block:
 
 $$
-u_{respan} = f_{respan} \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot h_1') \text{ | degree} = 5  \\
+u_{respan} = f_{respan} \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot h_1') \text{ | degree} = 5  
 v_{respan} = f_{respan} \cdot (\alpha_0 + \alpha_1 \cdot a' + \alpha_2 \cdot h_1') \text{ | degree} = 5
 $$
 
@@ -274,7 +274,7 @@ When a `DYNCALL` operation is executed, row $(a', a, 0, ctx, fmp, b_0, b_1, \mat
 
 $$
 \begin{align*}
-v_{dyncall} &= f_{dyncall} \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' + \alpha_4 \cdot ctx \\
+v_{dyncall} &= f_{dyncall} \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' + \alpha_4 \cdot ctx 
 &+ \alpha_5 \cdot fmp + \alpha_6 \cdot b_0 + \alpha_7 \cdot b_1 + <[\alpha_8, \alpha_{11}], \mathrm{fnhash}[0..3]>) \text{ | degree} = 6
 \end{align*}
 $$
@@ -283,7 +283,7 @@ When a `CALL` or `SYSCALL` operation is executed, row $(a', a, 0, ctx, fmp, b_0,
 
 $$
 \begin{align*}
-v_{callorsyscall} &= (f_{call} + f_{syscall}) \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' + \alpha_4 \cdot ctx \\
+v_{callorsyscall} &= (f_{call} + f_{syscall}) \cdot (\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' + \alpha_4 \cdot ctx 
 &+ \alpha_5 \cdot fmp + \alpha_6 \cdot b_0 + \alpha_7 \cdot b_1 + <[\alpha_8, \alpha_{11}], \mathrm{fnhash}[0..3]>) \text{ | degree} = 5
 \end{align*}
 $$
@@ -292,8 +292,8 @@ When `END` operation is executed, how we construct the row will depend on whethe
 
 $$
 \begin{align*}
-u_{endnocall} &=\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' \\
-u_{endcall} &= u_{endnocall} + \alpha_4 \cdot ctx' + \alpha_5 \cdot fmp' + \alpha_6 \cdot b_0' + \alpha_7 \cdot b_1' + <[\alpha_8, \alpha_{11}], \mathrm{fnhash}'[0..3]>\\
+u_{endnocall} &=\alpha_0 + \alpha_1 \cdot a + \alpha_2 \cdot a' 
+u_{endcall} &= u_{endnocall} + \alpha_4 \cdot ctx' + \alpha_5 \cdot fmp' + \alpha_6 \cdot b_0' + \alpha_7 \cdot b_1' + <[\alpha_8, \alpha_{11}], \mathrm{fnhash}'[0..3]>
 u_{end} &= f_{end} \cdot ((1 - h_6 - h_7) \cdot u_{endnocall} + (h_6 + h_7) \cdot u_{endcall} ) \text{ | degree} = 6
 \end{align*}
 $$
@@ -301,8 +301,8 @@ $$
 Using the above definitions, we can describe the constraint for updating the block stack table as follows:
 
 > $$
-> p_1' \cdot (u_{end} + u_{respan} + 1 - (f_{end} + f_{respan})) = p_1 \cdot \\
-> (v_{join} + v_{split} + v_{loop} + v_{span} + v_{respan} + v_{dyn} + v_{dyncall} + v_{callorsyscall} + 1 - \\
+> p_1' \cdot (u_{end} + u_{respan} + 1 - (f_{end} + f_{respan})) = p_1 \cdot 
+> (v_{join} + v_{split} + v_{loop} + v_{span} + v_{respan} + v_{dyn} + v_{dyncall} + v_{callorsyscall} + 1 - 
 > (f_{join} + f_{split} + f_{loop} + f_{span} + f_{respan} + f_{dyn} + f_{dyncall} + f_{call} + f_{syscall}))
 > $$
 
@@ -322,7 +322,7 @@ Adding and removing entries to/from the block hash table is accomplished as foll
 To simplify constraint descriptions, we define values representing left and right children of a block as follows:
 
 $$
-ch_1 = \alpha_0 + \alpha_1 \cdot a' + \sum_{i=0}^3(\alpha_{i+2} \cdot h_i) \text{ | degree} = 1 \\
+ch_1 = \alpha_0 + \alpha_1 \cdot a' + \sum_{i=0}^3(\alpha_{i+2} \cdot h_i) \text{ | degree} = 1 
 ch_2 = \alpha_0 + \alpha_1 \cdot a' + \sum_{i=0}^3(\alpha_{i+2} \cdot h_{i+4}) \text{ | degree} = 1
 $$
 
@@ -377,7 +377,7 @@ $$
 Using the above definitions, we can describe the constraint for updating the block hash table as follows:
 
 > $$
-> p_2' \cdot (u_{end} + 1 - f_{end}) = \\
+> p_2' \cdot (u_{end} + 1 - f_{end}) = 
 > p_2 \cdot (v_{join} + v_{split} + v_{loop} + v_{repeat} + v_{allcalls} + 1 - (f_{join} + f_{split} + f_{loop} + f_{repeat} + f_{dyn} + f_{dyncall} + f_{call} + f_{syscall}))
 > $$
 
@@ -506,7 +506,7 @@ In the above:
 To simplify the description of the constraints, we define the following variables:
 
 $$
-op = \sum_{i=0}^6 (b_i \cdot 2^i) \\
+op = \sum_{i=0}^6 (b_i \cdot 2^i) 
 f_{sgc} = sp \cdot sp' \cdot (1 - \Delta gc)
 $$
 
@@ -534,7 +534,7 @@ The `op_index` column (denoted as $ox$) tracks index of an operation within its 
 To simplify the description of the constraints, we will define the following variables:
 
 $$
-ng = \Delta gc - f_{imm} \\
+ng = \Delta gc - f_{imm} 
 \Delta ox = ox' - ox
 $$
 

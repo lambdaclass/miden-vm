@@ -94,7 +94,7 @@ $$
 Then, to make sure the prover sets the value of $t$ correctly, we'll impose the following constraints:
 
 $$
-n^2 - n = 0 \\
+n^2 - n = 0 
 (1 - n) \cdot  (a' - a) = 0
 $$
 
@@ -130,7 +130,7 @@ This new column `ctx` should behave similarly to the address column: values in i
 To simplify the description of constraints, we'll define two variables $n_0$ and $n_1$ as follows:
 
 $$
-n_0 = (c' - c) \cdot t' \\
+n_0 = (c' - c) \cdot t' 
 n_1 = (a' - a) \cdot t'
 $$
 
@@ -139,9 +139,9 @@ Thus, $n_0 = 1$ when the context changes, and $0$ otherwise. Also, $(1 - n_0) \c
 To make sure the prover sets the value of column `t` correctly, we'll need to impose the following constraints:
 
 $$
-n_0^2 - n_0 = 0 \\
-(1 - n_0) \cdot  (c' - c) = 0 \\
-(1 - n_0) \cdot (n_1^2 - n_1) = 0 \\
+n_0^2 - n_0 = 0 
+(1 - n_0) \cdot  (c' - c) = 0 
+(1 - n_0) \cdot (n_1^2 - n_1) = 0 
 (1 - n_0) \cdot (1 - n_1) \cdot (a' - a) = 0
 $$
 
@@ -220,7 +220,7 @@ $$
 To simplify description of constraints, we'll define two variables $n_0$ and $n_1$ as follows:
 
 $$
-n_0 = \Delta ctx \cdot t' \\
+n_0 = \Delta ctx \cdot t' 
 n_1 = \Delta a \cdot t'
 $$
 
@@ -292,17 +292,17 @@ Finally, we need to constrain the `v0, v1, v2, v3` columns. We will define a few
 
 $$
 \begin{align*}
-f_0 &= (1 - idx1) \cdot (1 - idx0) \text{ | degree} = 2\\
-f_1 &= (1 - idx1) \cdot idx0 \text{ | degree} = 2\\
-f_2 &= idx1 \cdot (1 - idx0) \text{ | degree} = 2\\
-f_3 &= idx1 \cdot idx0 \text{ | degree} = 2\\
+f_0 &= (1 - idx1) \cdot (1 - idx0) \text{ | degree} = 2
+f_1 &= (1 - idx1) \cdot idx0 \text{ | degree} = 2
+f_2 &= idx1 \cdot (1 - idx0) \text{ | degree} = 2
+f_3 &= idx1 \cdot idx0 \text{ | degree} = 2
 \end{align*}
 $$
 
 The flag $f_i$ is set to $1$ when $v_i$ is being accessed, and $0$ otherwise. Next, for $0 \leq i < 4$,
 
 $$
-c_i = rw' + (1 - rw') \cdot (1 - ew') \cdot (1 - f_i') \text{ | degree} = 4\\
+c_i = rw' + (1 - rw') \cdot (1 - ew') \cdot (1 - f_i') \text{ | degree} = 4
 $$
 
 which is set to $1$ when $v_i$ is *not* written to, and $0$ otherwise.
@@ -312,7 +312,7 @@ We're now ready to describe the constraints for the `v0, v1, v2, v3` columns.
 - For the first row of the chiplet (in the "next" position of the frame), for $0 \leq i < 4$,
 
 $$
-f_{mem\_fr} \cdot c_i \cdot v_i' = 0 \text{ | degree} = 9\\
+f_{mem\_fr} \cdot c_i \cdot v_i' = 0 \text{ | degree} = 9
 $$
 
 That is, if the next row is the first row of the memory chiplet, and $v_i'$ is not written to, then $v_i'$ must be $0$.
@@ -320,7 +320,7 @@ That is, if the next row is the first row of the memory chiplet, and $v_i'$ is n
 - For all rows of the chiplet except the first, for $0 \leq i < 4$,
 
 $$
-f_{mem\_nl} \cdot c_i \cdot (f_{scw}' \cdot (v_i' - v_i) + (1 - f_{scw}') \cdot v_i') = 0 \text{ | degree} = 9\\
+f_{mem\_nl} \cdot c_i \cdot (f_{scw}' \cdot (v_i' - v_i) + (1 - f_{scw}') \cdot v_i') = 0 \text{ | degree} = 9
 $$
 
 That is, if $v_i$ is not written to, then either its value needs to be copied over from the previous row (when $f_{scw}' = 1$), or it must be set to 0 (when $f_{scw}' = 0$).
@@ -330,7 +330,7 @@ Communication between the memory chiplet and the stack is accomplished via the c
 
 $$
 \begin{align*}
-v_{mem} = \alpha_0 + \alpha_1 \cdot op_{mem} + \alpha_2 \cdot ctx + \alpha_3 \cdot a + \alpha_4 \cdot clk + ew \cdot v_{word} + (1 - ew) \cdot v_{element}\\ \text{ | degree} = 4
+v_{mem} = \alpha_0 + \alpha_1 \cdot op_{mem} + \alpha_2 \cdot ctx + \alpha_3 \cdot a + \alpha_4 \cdot clk + ew \cdot v_{word} + (1 - ew) \cdot v_{element} \text{ | degree} = 4
 \end{align*}
 $$
 
@@ -338,7 +338,7 @@ where
 
 $$
 \begin{align*}
-v_{word} &= \sum_{j=0}^3(\alpha_{j + 5} \cdot v_j) \text{ | degree} = 1 \\ 
+v_{word} &= \sum_{j=0}^3(\alpha_{j + 5} \cdot v_j) \text{ | degree} = 1  
 v_{element} &= \alpha_5 \cdot \sum_{i=0}^3 f_i \cdot v_i \text{ | degree} = 3
 \end{align*}
 $$

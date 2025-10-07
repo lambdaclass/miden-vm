@@ -12,7 +12,7 @@ For this purpose the VM exposes a set of operation-specific flags. These flags a
 To describe how operation-specific constraints work, let's use an example with `DUP` operation. This  operation pushes a copy of the top stack item onto the stack. The constraints we need to impose for this operation are as follows:
 
 $$
-f_{dup} \cdot (s'_0 - s_0) = 0 \\
+f_{dup} \cdot (s'_0 - s_0) = 0 
 f_{dup} \cdot (s'_{i+1} - s_i) = 0 \ \text{ for } i \in [0, 15)
 $$
 
@@ -21,7 +21,7 @@ The first constraint enforces that the top stack item in the next row is the sam
 Let's write similar constraints for `DUP1` operation, which pushes a copy of the second stack item onto the stack:
 
 $$
-f_{dup1} \cdot (s'_0 - s_1) = 0 \\
+f_{dup1} \cdot (s'_0 - s_1) = 0 
 f_{dup1} \cdot (s'_{i+1} - s_i) = 0 \ \text{ for } i \in [0, 15)
 $$
 
