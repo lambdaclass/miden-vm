@@ -166,7 +166,11 @@ impl FastProcessor {
 
         let stack_top_idx = INITIAL_STACK_TOP_IDX;
         let stack = {
-            let mut stack = Box::new([ZERO; STACK_BUFFER_SIZE]);
+            // Note: we use `Vec::into_boxed_slice()` here, since `Box::new([T; N])` first allocates
+            // the array on the stack, and then moves it to the heap. This might cause a
+            // stack overflow on some systems.
+            let mut stack: Box<[Felt; STACK_BUFFER_SIZE]> =
+                vec![ZERO; STACK_BUFFER_SIZE].into_boxed_slice().try_into().unwrap();
             let bottom_idx = stack_top_idx - stack_inputs.len();
 
             stack[bottom_idx..stack_top_idx].copy_from_slice(stack_inputs);
