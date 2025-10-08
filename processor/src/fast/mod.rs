@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::cmp::min;
 
 use memory::Memory;
@@ -87,7 +87,7 @@ const INITIAL_STACK_TOP_IDX: usize = 250;
 #[derive(Debug)]
 pub struct FastProcessor {
     /// The stack is stored in reverse order, so that the last element is at the top of the stack.
-    pub(super) stack: [Felt; STACK_BUFFER_SIZE],
+    pub(super) stack: Box<[Felt; STACK_BUFFER_SIZE]>,
     /// The index of the top of the stack.
     stack_top_idx: usize,
     /// The index of the bottom of the stack.
@@ -166,7 +166,7 @@ impl FastProcessor {
 
         let stack_top_idx = INITIAL_STACK_TOP_IDX;
         let stack = {
-            let mut stack = [ZERO; STACK_BUFFER_SIZE];
+            let mut stack = Box::new([ZERO; STACK_BUFFER_SIZE]);
             let bottom_idx = stack_top_idx - stack_inputs.len();
 
             stack[bottom_idx..stack_top_idx].copy_from_slice(stack_inputs);
