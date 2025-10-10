@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::cmp::min;
 
 use memory::Memory;
@@ -90,7 +90,7 @@ pub const NUM_ROWS_PER_CORE_FRAGMENT: usize = 1024;
 #[derive(Debug)]
 pub struct FastProcessor {
     /// The stack is stored in reverse order, so that the last element is at the top of the stack.
-    pub(super) stack: [Felt; STACK_BUFFER_SIZE],
+    pub(super) stack: Box<[Felt; STACK_BUFFER_SIZE]>,
     /// The index of the top of the stack.
     stack_top_idx: usize,
     /// The index of the bottom of the stack.
@@ -169,7 +169,11 @@ impl FastProcessor {
 
         let stack_top_idx = INITIAL_STACK_TOP_IDX;
         let stack = {
-            let mut stack = [ZERO; STACK_BUFFER_SIZE];
+            // Note: we use `Vec::into_boxed_slice()` here, since `Box::new([T; N])` first allocates
+            // the array on the stack, and then moves it to the heap. This might cause a
+            // stack overflow on some systems.
+            let mut stack: Box<[Felt; STACK_BUFFER_SIZE]> =
+                vec![ZERO; STACK_BUFFER_SIZE].into_boxed_slice().try_into().unwrap();
             let bottom_idx = stack_top_idx - stack_inputs.len();
 
             stack[bottom_idx..stack_top_idx].copy_from_slice(stack_inputs);
