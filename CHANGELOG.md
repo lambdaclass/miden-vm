@@ -2,11 +2,11 @@
 
 ## 0.18.2 (2025-10-10)
 
-- Place the `FastProcessor` stack on the heap instead of the (OS thread) stack (#[2275](https://github.com/0xMiden/miden-vm/pull/2275))
+- Place the `FastProcessor` stack on the heap instead of the (OS thread) stack (#[2275](https://github.com/0xMiden/miden-vm/pull/2275)).
 
 ## 0.18.1 (2025-10-02)
 
-- Gate stdlib doc generation in build.rs on `MIDEN_BUILD_STDLIB_DOCS` environmnent variable ([#2239](https://github.com/0xMiden/miden-vm/pull/2239/))
+- Gate stdlib doc generation in build.rs on `MIDEN_BUILD_STDLIB_DOCS` environment variable ([#2239](https://github.com/0xMiden/miden-vm/pull/2239/)).
 
 ## 0.18.0 (2025-09-21)
 
