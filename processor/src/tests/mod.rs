@@ -541,8 +541,8 @@ fn test_diagnostic_unaligned_word_access() {
         regex!(r#",-\[test[\d]+:4:22\]"#),
         " 3 |         begin",
         " 4 |             exec.foo mem_storew_be.3",
-        "   :                      ^^^^^^|^^^^^",
-        "   :                            `-- tried to access memory address 3",
+        "   :                      ^^^^^^^|^^^^^^^",
+        "   :                             `-- tried to access memory address 3",
         " 5 |         end",
         "   `----",
         "  help: ensure that the memory address accessed is aligned to a word boundary (it is a multiple of 4)"
@@ -563,8 +563,8 @@ fn test_diagnostic_unaligned_word_access() {
         regex!(r#",-\[test[\d]+:3:13\]"#),
         " 2 |         begin",
         " 3 |             mem_loadw_be.3",
-        "   :             ^^^^^|^^^^^",
-        "   :                  `-- tried to access memory address 3",
+        "   :             ^^^^^^^|^^^^^^",
+        "   :                    `-- tried to access memory address 3",
         " 4 |         end",
         "   `----",
         "  help: ensure that the memory address accessed is aligned to a word boundary (it is a multiple of 4)"
