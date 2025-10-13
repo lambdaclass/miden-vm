@@ -23,6 +23,7 @@
 - Place the `FastProcessor` stack on the heap instead of the (OS thread) stack (#[2271](https://github.com/0xMiden/miden-vm/pull/2271)).
 - `after_exit` decorators execute in the correct sequence in External nodes in the Fast processor ([#2247](https://github.com/0xMiden/miden-vm/pull/2247)).
 - Remove O(n log m) iteration in parallel processor (#[2273](https://github.com/0xMiden/miden-vm/pull/2273)).
+- [BREAKING] Deprecated `mem_loadw` and `mem_storew` instructions in favor of explicit endianness variants (`mem_loadw_be`, `mem_loadw_le`, `mem_storew_be`, `mem_storew_le`) ([#2186](https://github.com/0xMiden/miden-vm/issues/2186)).
 
 ## 0.18.2 (2025-10-10)
 

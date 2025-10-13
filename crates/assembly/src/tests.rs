@@ -1086,11 +1086,11 @@ fn mem_operations_with_constants() -> TestResult {
         # constant should resolve using mem_load operation
         mem_load.GLOBAL_LOAD_PTR
 
-        # constant should resolve using mem_storew operation
-        mem_storew.GLOBAL_STOREW_PTR
+        # constant should resolve using mem_storew_be operation
+        mem_storew_be.GLOBAL_STOREW_PTR
 
-        # constant should resolve using mem_loadw operation
-        mem_loadw.GLOBAL_LOADW_PTR
+        # constant should resolve using mem_loadw_be operation
+        mem_loadw_be.GLOBAL_LOADW_PTR
     end
     "
         )
@@ -1129,11 +1129,11 @@ fn mem_operations_with_constants() -> TestResult {
         # constant should resolve using mem_load operation
         mem_load.{GLOBAL_LOAD_PTR}
 
-        # constant should resolve using mem_storew operation
-        mem_storew.{GLOBAL_STOREW_PTR}
+        # constant should resolve using mem_storew_be operation
+        mem_storew_be.{GLOBAL_STOREW_PTR}
 
-        # constant should resolve using mem_loadw operation
-        mem_loadw.{GLOBAL_LOADW_PTR}
+        # constant should resolve using mem_loadw_be operation
+        mem_loadw_be.{GLOBAL_LOADW_PTR}
     end
     "
         )
