@@ -11,6 +11,7 @@ use miden_core::{ONE, ZERO};
 
 mod assembler;
 mod basic_block_builder;
+mod fmp;
 mod id;
 mod instruction;
 pub mod linker;
