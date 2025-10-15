@@ -12,14 +12,14 @@ use miden_assembly_syntax::{
     library::LibraryExport,
 };
 use miden_core::{
-    AssemblyOp, Decorator, Felt, Kernel, Operation, Program, WORD_SIZE, Word,
+    AssemblyOp, Decorator, Kernel, Operation, Program, Word,
     mast::{DecoratorId, MastNodeExt, MastNodeId},
 };
 
 use crate::{
     GlobalProcedureIndex, ModuleIndex, Procedure, ProcedureContext,
     basic_block_builder::{BasicBlockBuilder, BasicBlockOrDecorators},
-    fmp::fmp_initialization_sequence,
+    fmp::{fmp_end_frame_sequence, fmp_initialization_sequence, fmp_start_frame_sequence},
     linker::{
         CallerInfo, LinkLibrary, LinkLibraryKind, Linker, LinkerError, ModuleLink, ProcedureLink,
         ResolvedTarget,
@@ -718,15 +718,9 @@ impl Assembler {
                 epilogue: Vec::new(),
             })
         } else if num_locals > 0 {
-            // For procedures with locals, we need to update fmp register before and after the
-            // procedure body is executed. Specifically:
-            // - to allocate procedure locals we need to increment fmp by the number of locals
-            //   (rounded up to the word size), and
-            // - to deallocate procedure locals we need to decrement it by the same amount.
-            let locals_frame = Felt::from(num_locals.next_multiple_of(WORD_SIZE as u16));
             Some(BodyWrapper {
-                prologue: vec![Operation::Push(locals_frame), Operation::FmpUpdate],
-                epilogue: vec![Operation::Push(-locals_frame), Operation::FmpUpdate],
+                prologue: fmp_start_frame_sequence(num_locals),
+                epilogue: fmp_end_frame_sequence(num_locals),
             })
         } else {
             None
