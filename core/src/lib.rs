@@ -118,8 +118,7 @@ pub mod prettier {
 
 mod operations;
 pub use operations::{
-    AssemblyOp, DebugOptions, Decorator, DecoratorIdIterator, DecoratorList, Operation,
-    opcode_constants::*,
+    AssemblyOp, DebugOptions, Decorator, DecoratorList, Operation, opcode_constants::*,
 };
 
 pub mod stack;
@@ -134,3 +133,8 @@ mod advice;
 pub use advice::map::AdviceMap;
 
 pub mod utils;
+
+// Re-export indexing functionality from the new standalone crate
+pub use miden_utils_indexing::{
+    DenseIdMap, Idx, IndexVec, IndexedVecError, LookupByIdx, newtype_id,
+};
