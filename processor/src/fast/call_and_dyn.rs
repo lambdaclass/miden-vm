@@ -2,7 +2,7 @@ use alloc::{sync::Arc, vec::Vec};
 
 use miden_air::Felt;
 use miden_core::{
-    Program, ZERO,
+    FMP_ADDR, FMP_INIT_VALUE, Program, ZERO,
     mast::{CallNode, MastForest, MastNodeExt, MastNodeId},
     stack::MIN_STACK_DEPTH,
     utils::range,
@@ -69,11 +69,18 @@ impl FastProcessor {
             self.fmp = SYSCALL_FMP_MIN.into();
             self.in_syscall = true;
         } else {
-            // set the system registers to the callee context. The value for the new context is
-            // defined to be the value of the clock cycle for the following operation.
-            self.ctx = (self.clk + 1).into();
+            let new_ctx: ContextId = self.get_next_ctx_id();
+
+            // Set the system registers to the callee context.
+            self.ctx = new_ctx;
             self.fmp = Felt::new(FMP_MIN);
             self.caller_hash = callee_hash;
+
+            // Initialize the frame pointer in memory for the new context.
+            self.memory
+                .write_element(new_ctx, FMP_ADDR, FMP_INIT_VALUE, &err_ctx)
+                .map_err(ExecutionError::MemoryError)?;
+            tracer.record_memory_write_element(FMP_INIT_VALUE, FMP_ADDR, new_ctx, self.clk);
         }
 
         // push the callee onto the continuation stack, and increment the clock (corresponding to
@@ -164,14 +171,24 @@ impl FastProcessor {
         // Drop the memory address from the stack. This needs to be done before saving the context.
         self.decrement_stack_size(tracer);
 
-        // For dyncall, save the context and reset it.
+        // For dyncall,
+        // - save the context and reset it,
+        // - initialize the frame pointer in memory for the new context.
         if dyn_node.is_dyncall() {
+            let new_ctx: ContextId = self.get_next_ctx_id();
+
+            // Save the current state, and update the system registers.
             self.save_context_and_truncate_stack(tracer);
-            // The value for the new context is defined to be the value of the clock cycle for the
-            // following operation.
-            self.ctx = (self.clk + 1).into();
+
+            self.ctx = new_ctx;
             self.fmp = Felt::new(FMP_MIN);
             self.caller_hash = callee_hash;
+
+            // Initialize the frame pointer in memory for the new context.
+            self.memory
+                .write_element(new_ctx, FMP_ADDR, FMP_INIT_VALUE, &err_ctx)
+                .map_err(ExecutionError::MemoryError)?;
+            tracer.record_memory_write_element(FMP_INIT_VALUE, FMP_ADDR, new_ctx, self.clk);
         };
 
         // Update continuation stack
@@ -246,6 +263,15 @@ impl FastProcessor {
 
     // HELPERS
     // ----------------------------------------------------------------------------------------------
+
+    /// Returns the next context ID that would be created given the current state.
+    ///
+    /// Note: This only applies to the context created upon a `CALL` or `DYNCALL` operation;
+    /// specifically the `SYSCALL` operation doesn't apply as it always goes back to the root
+    /// context.
+    pub fn get_next_ctx_id(&self) -> ContextId {
+        (self.clk + 1).into()
+    }
 
     /// Saves the current execution context and truncates the stack to 16 elements in preparation to
     /// start a new execution context.

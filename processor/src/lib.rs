@@ -479,7 +479,7 @@ impl Process {
         }
         let err_ctx = err_ctx!(program, call_node, host);
 
-        self.start_call_node(call_node, program, host)?;
+        self.start_call_node(call_node, program, host, &err_ctx)?;
         self.execute_mast_node(call_node.callee(), program, host)?;
         self.end_call_node(call_node, program, host, &err_ctx)
     }
