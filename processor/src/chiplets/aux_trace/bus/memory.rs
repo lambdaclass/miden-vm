@@ -128,7 +128,7 @@ pub(super) fn build_dyn_dyncall_callee_hash_read_request<E: FieldElement<BaseFie
 
 /// Builds a write request to initialize the frame pointer in memory when entering a new execution
 /// context.
-/// 
+///
 /// Currently, this is done with `CALL` and `DYNCALL`.
 pub(super) fn build_fmp_initialization_write_request<E: FieldElement<BaseField = Felt>>(
     main_trace: &MainTrace,
