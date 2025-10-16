@@ -12,7 +12,6 @@
 #### Changes
 
 - [BREAKING] Incremented MSRV to 1.90.
-- Made `miden-vm analyze` output analysis even if execution ultimately errored.
 - [BREAKING] Fix inconsistencies in debugging instructions ([#2205](https://github.com/0xMiden/miden-vm/pull/2205)).
 - Fix ability to parse odd-length hex strings ([#2196](https://github.com/0xMiden/miden-vm/pull/2196)).
 - Added `before_enter` and `after_exit` decorator lists to `BasicBlockNode`.([#2167](https://github.com/0xMiden/miden-vm/pull/2167)).
