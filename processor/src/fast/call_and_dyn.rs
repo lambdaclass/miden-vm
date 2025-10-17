@@ -44,12 +44,6 @@ impl FastProcessor {
 
         let err_ctx = err_ctx!(current_forest, call_node, host);
 
-        // call or syscall are not allowed inside a syscall
-        if self.in_syscall {
-            let instruction = if call_node.is_syscall() { "syscall" } else { "call" };
-            return Err(ExecutionError::CallInSyscall(instruction));
-        }
-
         let callee_hash = current_forest
             .get_node_by_id(call_node.callee())
             .ok_or(ExecutionError::MastNodeNotFoundInForest { node_id: call_node.callee() })?
@@ -147,11 +141,6 @@ impl FastProcessor {
         // Corresponds to the row inserted for the DYN or DYNCALL operation
         // added to the trace.
         let dyn_node = current_forest[current_node_id].unwrap_dyn();
-
-        // dyn calls are not allowed inside a syscall
-        if dyn_node.is_dyncall() && self.in_syscall {
-            return Err(ExecutionError::CallInSyscall("dyncall"));
-        }
 
         let err_ctx = err_ctx!(&current_forest, dyn_node, host);
 
