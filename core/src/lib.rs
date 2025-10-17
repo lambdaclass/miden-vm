@@ -145,7 +145,7 @@ pub use miden_utils_indexing::{
 
 /// The initial value for the frame pointer, corresponding to the start address for procedure
 /// locals.
-pub const FMP_INIT_VALUE: Felt = Felt::new(2_u64.pow(30));
+pub const FMP_INIT_VALUE: Felt = Felt::new(2_u64.pow(31));
 
 /// The address where the frame pointer is stored in memory.
 pub const FMP_ADDR: Felt = Felt::new(u32::MAX as u64 - 1_u64);
