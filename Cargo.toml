@@ -43,7 +43,7 @@ miden-core = { path = "./core", version = "0.19", default-features = false }
 miden-debug-types = { path = "./crates/debug-types", version = "0.19", default-features = false }
 miden-mast-package = { path = "./crates/mast-package", version = "0.19", default-features = false }
 miden-processor = { path = "./processor", version = "0.19", default-features = false }
-miden-serde-test-macros = { path = "./crates/serde-test-macros", default-features = false }
+miden-test-serde-macros = { path = "./crates/test-serde-macros", default-features = false }
 miden-prover = { path = "./prover", version = "0.19", default-features = false }
 miden-stdlib = { path = "./stdlib", version = "0.19", default-features = false }
 miden-utils-diagnostics = { path = "./crates/utils-diagnostics", version = "0.19", default-features = false }
