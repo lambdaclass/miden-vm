@@ -12,6 +12,7 @@ Currently, Miden VM relies on 4 chiplets:
 - The [Hash Chiplet](./hasher.md) (also referred to as the Hasher), used to compute Rescue Prime Optimized hashes both for sequential hashing and for Merkle tree hashing.
 - The [Bitwise Chiplet](./bitwise.md), used to compute bitwise operations (e.g., `AND`, `XOR`) over 32-bit integers.
 - The [Memory Chiplet](./memory.md), used to support random-access memory in the VM.
+- The [Arithmetic Circuit Evaluation (ACE)](./ace.md), used to ensure that arithmetic circuits evaluate to zero.
 - The [Kernel ROM Chiplet](kernel_rom.md), used to enable executing kernel procedures during the [`SYSCALL` operation](../programs.md#syscall-block).
 
 Each chiplet executes its computations separately from the rest of the VM and proves the internal correctness of its execution trace in a unique way that is specific to the operation(s) it supports. These methods are described by each chiplet’s documentation.
@@ -26,7 +27,7 @@ The result is an execution trace of 18 trace columns, which allows space for the
 
 _**Note**: The following diagram is outdated (see [issue #1829](https://github.com/0xMiden/miden-vm/issues/1829))._
 
-![chiplets](../../img/design/chiplets/chiplets.png)
+![chiplets](../../assets/design/chiplets/chiplets.png)
 
 During the finalization of the overall execution trace, the chiplets' traces (including internal selectors) are appended to the trace of the Chiplets module one after another, as pictured. Thus, when one chiplet's trace ends, the trace of the next chiplet starts in the subsequent row.
 
