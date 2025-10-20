@@ -2,7 +2,7 @@
 use alloc::string::ToString;
 
 use miden_assembly::{
-    Assembler, DefaultSourceManager, LibraryPath,
+    Assembler, DefaultSourceManager, PathBuf,
     ast::Module,
     testing::{TestContext, assert_diagnostic_lines, regex, source_file},
 };
@@ -28,7 +28,7 @@ mod decorator_execution_tests;
 #[test]
 fn test_advice_map_inline() {
     let source = "\
-adv_map.A=[0x01]
+adv_map A = [0x01]
 
 begin
   push.A
@@ -54,7 +54,7 @@ fn test_diagnostic_advice_map_key_already_present() {
     let test_context = TestContext::new();
 
     let (lib_1, lib_2) = {
-        let dummy_library_source = source_file!(&test_context, "export.foo add end");
+        let dummy_library_source = source_file!(&test_context, "pub proc foo add end");
         let module = test_context
             .parse_module_with_path("foo::bar".parse().unwrap(), dummy_library_source)
             .unwrap();
@@ -307,7 +307,7 @@ fn test_diagnostic_failed_assertion() {
 
     // With error message as constant
     let source = "
-        const.ERR_MSG=\"some error message\"
+        const ERR_MSG = \"some error message\"
         begin
             push.1.2
             assertz.err=ERR_MSG
@@ -445,7 +445,7 @@ fn test_diagnostic_invalid_stack_depth_on_return_call() {
     // returning from a function with non-empty overflow table should result in an error
     // Note: we add the `trace.2` to ensure that asm ops co-exist well with other decorators.
     let source = "
-        proc.foo
+        proc foo
             push.1
         end
 
@@ -474,7 +474,7 @@ fn test_diagnostic_invalid_stack_depth_on_return_call() {
 fn test_diagnostic_invalid_stack_depth_on_return_dyncall() {
     // returning from a function with non-empty overflow table should result in an error
     let source = "
-        proc.foo
+        proc foo
             push.1
         end
 
@@ -530,7 +530,7 @@ fn test_diagnostic_log_argument_zero() {
 fn test_diagnostic_unaligned_word_access() {
     // mem_storew_be
     let source = "
-        proc.foo add end
+        proc foo add end
         begin
             exec.foo mem_storew_be.3
         end";
@@ -715,7 +715,7 @@ fn test_diagnostic_no_mast_forest_with_procedure() {
     let lib_module = {
         let module_name = "foo::bar";
         let src = "
-        export.dummy_proc
+        pub proc dummy_proc
             push.1
         end
     ";
@@ -723,7 +723,7 @@ fn test_diagnostic_no_mast_forest_with_procedure() {
         let content = SourceContent::new(SourceLanguage::Masm, uri.clone(), src);
         let source_file = source_manager.load_from_raw_parts(uri.clone(), content);
         Module::parse(
-            LibraryPath::new(module_name).unwrap(),
+            PathBuf::new(module_name).unwrap(),
             miden_assembly::ast::ModuleKind::Library,
             source_file,
         )
@@ -731,7 +731,7 @@ fn test_diagnostic_no_mast_forest_with_procedure() {
     };
 
     let program_source = "
-        use.foo::bar
+        use foo::bar
 
         begin
             call.bar::dummy_proc
@@ -762,7 +762,7 @@ fn test_diagnostic_no_mast_forest_with_procedure() {
     assert_diagnostic_lines!(
         err,
         "no MAST forest contains the procedure with root digest 0x1b0a6d4b3976737badf180f3df558f45e06e6d1803ea5ad3b95fa7428caccd02",
-        regex!(r#",-\[\$exec:5:13\]"#),
+        regex!(r#",-\[::\$exec:5:13\]"#),
         " 4 |         begin",
         " 5 |             call.bar::dummy_proc",
         "   :             ^^^^^^^^^^^^^^^^^^^^",
@@ -953,7 +953,7 @@ fn test_diagnostic_syscall_target_not_in_kernel() {
     let source_manager = Arc::new(DefaultSourceManager::default());
 
     let kernel_source = "
-        export.dummy_proc
+        pub proc dummy_proc
             push.1 drop
         end
     ";
@@ -987,7 +987,7 @@ fn test_diagnostic_syscall_target_not_in_kernel() {
     assert_diagnostic_lines!(
         err,
         "syscall failed: procedure with root d754f5422c74afd0b094889be6b288f9ffd2cc630e3c44d412b1408b2be3b99c was not found in the kernel",
-        regex!(r#",-\[\$exec:3:13\]"#),
+        regex!(r#",-\[::\$exec:3:13\]"#),
         " 2 |         begin",
         " 3 |             syscall.dummy_proc",
         "   :             ^^^^^^^^^^^^^^^^^^",
@@ -1001,7 +1001,7 @@ fn test_diagnostic_syscall_target_not_in_kernel() {
 #[test]
 fn test_assert_messages() {
     let source = "
-        const.NONZERO = \"Value is not zero\"
+        const NONZERO = \"Value is not zero\"
         begin
             push.1
             assertz.err=NONZERO

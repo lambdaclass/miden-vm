@@ -3,7 +3,7 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 #[cfg(any(test, feature = "testing"))]
 pub use miden_assembly_syntax::parser;
 use miden_assembly_syntax::{
-    Library, LibraryPath, Parse, ParseOptions, Word,
+    Library, Parse, ParseOptions, PathBuf, Word,
     ast::{Module, ModuleKind},
     debuginfo::{DefaultSourceManager, SourceManager},
     diagnostics::{
@@ -138,14 +138,14 @@ impl TestContext {
     #[track_caller]
     pub fn parse_module_with_path(
         &self,
-        path: LibraryPath,
+        path: PathBuf,
         source: impl Parse,
     ) -> Result<Box<Module>, Report> {
         source.parse_with_options(
             self.source_manager.as_ref(),
             ParseOptions {
                 warnings_as_errors: self.assembler.warnings_as_errors(),
-                ..ParseOptions::new(ModuleKind::Library, path).unwrap()
+                ..ParseOptions::new(ModuleKind::Library, path.to_absolute()).unwrap()
             },
         )
     }
@@ -165,7 +165,7 @@ impl TestContext {
     #[track_caller]
     pub fn add_module_from_source(
         &mut self,
-        path: LibraryPath,
+        path: PathBuf,
         source: impl Parse,
     ) -> Result<(), Report> {
         let module = source.parse_with_options(
@@ -210,7 +210,7 @@ impl TestContext {
     #[track_caller]
     pub fn assemble_module(
         &self,
-        _path: LibraryPath,
+        _path: PathBuf,
         _module: impl Parse,
     ) -> Result<Vec<Word>, Report> {
         // This API will change after we implement `Assembler::add_library()`

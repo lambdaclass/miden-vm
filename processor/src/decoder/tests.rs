@@ -813,11 +813,11 @@ fn loop_node_repeat() {
 fn test_call_decoding() {
     // build a program which looks like this:
     //
-    // export.foo
+    // pub proc foo
     //     add
     // end
     //
-    // proc.bar
+    // proc bar
     //     mul
     //     call.foo
     // end
@@ -1107,12 +1107,12 @@ fn test_syscall_decoding() {
     // build a program which looks like this:
     //
     // --- kernel ---
-    // export.foo
+    // pub proc foo
     //     add
     // end
     //
     // --- program ---
-    // proc.bar
+    // proc bar
     //     mul
     //     syscall.foo
     // end
@@ -1395,7 +1395,7 @@ fn test_syscall_decoding() {
 fn dyn_block() {
     // Equivalent masm:
     //
-    // proc.foo
+    // proc foo
     //   push.1 add
     // end
     //
