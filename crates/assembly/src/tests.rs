@@ -1218,6 +1218,35 @@ fn const_conversion_failed_to_u32() -> TestResult {
 }
 
 #[test]
+fn deprecated_mem_loadw_instruction() -> TestResult {
+    let context = TestContext::default();
+
+    let source = source_file!(
+        &context,
+        "\
+    begin
+        mem_loadw
+    end
+    "
+    );
+
+    assert_assembler_diagnostic!(
+        context,
+        source,
+        "deprecated instruction: `mem_loadw` has been removed",
+        regex!(r#",-\[test[\d]+:2:9\]"#),
+        "1 | begin",
+        "2 |         mem_loadw",
+        regex!(r#"^ *: *\^+"#),
+        regex!(r#"this instruction is no longer supported"#),
+        "3 |     end",
+        "  `----",
+        regex!(r#"help:.*use.*mem_loadw_be.*instead"#)
+    );
+    Ok(())
+}
+
+#[test]
 fn const_word_from_string() -> TestResult {
     let context = TestContext::default();
     let sample_source_string = "lorem ipsum";
