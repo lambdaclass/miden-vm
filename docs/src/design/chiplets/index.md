@@ -27,7 +27,7 @@ The result is an execution trace of 18 trace columns, which allows space for the
 
 _**Note**: The following diagram is outdated (see [issue #1829](https://github.com/0xMiden/miden-vm/issues/1829))._
 
-![chiplets](../../assets/design/chiplets/chiplets.png)
+![chiplets](../../img/design/chiplets/chiplets.png)
 
 During the finalization of the overall execution trace, the chiplets' traces (including internal selectors) are appended to the trace of the Chiplets module one after another, as pictured. Thus, when one chiplet's trace ends, the trace of the next chiplet starts in the subsequent row.
 
@@ -66,7 +66,7 @@ This requires the following adjustments for each chiplet.
 
 **In the memory chiplet:** all transition constraints cause a conflict. To adjust for this, the selector flag for the memory chiplet is designed to exclude its last row. Thus, memory constraints will not be applied when transitioning from the last row of the memory chiplet to the following row. This is achieved without any additional increase in the degree of constraints by using $s'_2$ as a selector instead of $s_2$ as seen [below](#chiplet-constraints).
 
-**In the ACE chiplet:** some transition constraints must be disabled in the last row. The flags are derived both from the chiplet selectors and are described in the [flags and boundary constraints section](./ace.md#flags-and-boundary-constraints).
+**In the ACE chiplet:** some transition constraints must be disabled in the last row. The flags are derived both from the chiplet selectors and are described in the [flags and boundary constraints section](./ace.md#flags).
 
 **In the kernel ROM chiplet:** the transition constraints referring to the $s_{first}'$ column cause a conflict.
 It is resolved by enforcing the initial value of this selector in the last row of the previous chiplet,
@@ -150,8 +150,8 @@ Two conditions must be enforced for columns acting as chiplet selectors.
 The following constraints ensure that selector values are binary.
 
 > $$
-> s_0^2 - s_0 = 0 \text{ | degree} = 2 
-> s_0 \cdot (s_1^2 - s_1) = 0 \text{ | degree} = 3 
+> s_0^2 - s_0 = 0 \text{ | degree} = 2
+> s_0 \cdot (s_1^2 - s_1) = 0 \text{ | degree} = 3
 > s_0 \cdot s_1 \cdot (s_2^2 - s_2) = 0 \text{ | degree} = 4
 > s_0 \cdot s_1 \cdot s_2 \cdot (s_3^2 - s_3) = 0 \text{ | degree} = 5
 > s_0 \cdot s_1 \cdot s_2 \cdot s_3 \cdot (s_4^2 - s_4) = 0 \text{ | degree} = 6
@@ -160,11 +160,11 @@ The following constraints ensure that selector values are binary.
 The following constraints ensure that the chiplets are stacked correctly by restricting selector values so they can only change from $0 \rightarrow 1$.
 
 > $$
-> s_0 \cdot (s_0 - s'_0) = 0 \text{ | degree} = 2 
-> s_0 \cdot s_1 \cdot (s_1 - s'_1) \text{ | degree} = 3 
-> s_0 \cdot s_1 \cdot s_2 \cdot (s_2 - s'_2) \text{ | degree} = 4 
-> s_0 \cdot s_1 \cdot s_2 \cdot s_3 \cdot (s_3 - s'_3) \text{ | degree} = 5 
-> s_0 \cdot s_1 \cdot s_2 \cdot s_3 \cdot s_4 \cdot (s_4 - s'_4) \text{ | degree} = 6 
+> s_0 \cdot (s_0 - s'_0) = 0 \text{ | degree} = 2
+> s_0 \cdot s_1 \cdot (s_1 - s'_1) \text{ | degree} = 3
+> s_0 \cdot s_1 \cdot s_2 \cdot (s_2 - s'_2) \text{ | degree} = 4
+> s_0 \cdot s_1 \cdot s_2 \cdot s_3 \cdot (s_3 - s'_3) \text{ | degree} = 5
+> s_0 \cdot s_1 \cdot s_2 \cdot s_3 \cdot s_4 \cdot (s_4 - s'_4) \text{ | degree} = 6
 > $$
 
 In other words, the above constraints enforce that if a selector is $0$ in the current row, then it must be either $0$ or $1$ in the next row; if it is $1$ in the current row, it must be $1$ in the next row.
@@ -226,7 +226,7 @@ The degree of this constraint is the maximum of both message types and is curren
 preventing chiplets from performing any requests using the same bus.
 Instead, a chiplet can make a request through the $vt_{chip}$ bus, with the receiving chiplet responding through the main chiplet bus $b_{chip}$.
 
-At the moment, this feature is only used by the [ACE](./ace.md#bus-messages) allowing it to read inputs and circuit instructions stored in the memory chiplet.
+At the moment, this feature is only used by the [ACE](./ace.md) allowing it to read inputs and circuit instructions stored in the memory chiplet.
 Note that the [memory](./memory.md#chiplets-bus-constraints) chiplet responds via the chiplet bus $b_{chip}$.
 
 To combine these correctly, the [running product column](../lookups/multiset.md) for this table must be constrained not only at the beginning and the end of the trace, but also where the hash chiplet ends.

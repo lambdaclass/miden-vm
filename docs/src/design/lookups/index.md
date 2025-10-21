@@ -30,7 +30,7 @@ Miden VM makes use of 6 virtual tables across 4 components, all of which are imp
 - Chiplets:
     - [Chiplets virtual table](../chiplets/index.md#chiplets-virtual-table), which combines the following two tables into one:
         - [Hash chiplet sibling table](../chiplets/hasher.md#sibling-table-constraints)
-        - [Kernel ROM chiplet procedure table](../chiplets/kernel_rom.md#kernel-procedure-table-constraints)
+        - [Kernel ROM chiplet procedure table](../chiplets/kernel_rom.md#constraints)
 
 ## Communication buses in Miden VM
 

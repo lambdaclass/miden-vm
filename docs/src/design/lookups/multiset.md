@@ -62,9 +62,9 @@ Miden VM makes use of 6 virtual tables across 4 components:
 - Chiplets:
     - [Chiplets virtual table](../chiplets/index.md#chiplets-virtual-table), which combines the following two tables into one:
         - [Hash chiplet sibling table](../chiplets/hasher.md#sibling-table-constraints)
-        - [Kernel ROM chiplet procedure table](../chiplets/kernel_rom.md#kernel-procedure-table-constraints)
+        - [Kernel ROM chiplet procedure table](../chiplets/kernel_rom.md#constraints)
 
-## Communication buses via multiset checks
+## Communication buses {#communication-buses}
 
 A `bus` can be implemented as a single trace column $b$ where a request can be sent to a specific component and a corresponding response will be sent back by that component.
 

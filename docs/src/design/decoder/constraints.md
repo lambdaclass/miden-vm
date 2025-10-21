@@ -168,7 +168,7 @@ $$
 k_{proc} = \alpha_6 + \alpha_7 \cdot op_{krom} + \sum_{i=0}^3 (\alpha_{i + 8} \cdot h_i)
 $$
 
-In the above, $op_{krom}$ is the unique [operation label](./index.md#operation-labels) of the kernel procedure call operation. The values $h_0, h_1, h_2, h_3$ contain the root hash of the procedure being called, which is the procedure that must be requested from the kernel ROM chiplet.
+In the above, $op_{krom}$ is the unique [operation label](../chiplets/index.md#operation-labels) of the kernel procedure call operation. The values $h_0, h_1, h_2, h_3$ contain the root hash of the procedure being called, which is the procedure that must be requested from the kernel ROM chiplet.
 
 $$
 u_{syscall} = f_{syscall} \cdot (h_{init} + \alpha_5 \cdot d) \cdot k_{proc} \text{ | degree} = 7

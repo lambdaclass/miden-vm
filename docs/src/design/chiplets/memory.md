@@ -325,8 +325,13 @@ $$
 
 That is, if $v_i$ is not written to, then either its value needs to be copied over from the previous row (when $f_{scw}' = 1$), or it must be set to 0 (when $f_{scw}' = 0$).
 
-#### Chiplets bus constraints
-Communication between the memory chiplet and the stack is accomplished via the chiplets bus $b_{chip}$. To respond to memory access requests from the stack, we need to divide the current value in $b_{chip}$ by the value representing a row in the memory table. This value can be computed as follows:
+#### Chiplets bus constraints {#chiplets-bus-constraints}
+
+Communication between the memory chiplet and the stack is accomplished via the chiplets bus $b_{chip}$. To respond to memory access requests from the stack, we need to divide the current value in $b_{chip}$ by the value representing a row in the memory table.
+
+##### Memory row value {#memory-row-value}
+
+This value can be computed as follows:
 
 $$
 \begin{align*}
