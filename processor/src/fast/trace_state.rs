@@ -78,9 +78,6 @@ pub struct SystemState {
     /// Execution context ID - starts at 0 (root context), changes on CALL/SYSCALL operations
     pub ctx: ContextId,
 
-    /// Free memory pointer - initially set to 2^30, used for local memory offsets
-    pub fmp: Felt,
-
     /// Flag indicating whether currently executing within a SYSCALL block
     pub in_syscall: bool,
 
@@ -97,7 +94,6 @@ impl SystemState {
         Self {
             clk: processor.clk,
             ctx: processor.ctx,
-            fmp: processor.fmp,
             in_syscall: processor.in_syscall,
             fn_hash: processor.caller_hash,
         }
@@ -407,7 +403,6 @@ pub struct NodeEndData {
 pub struct ExecutionContextSystemInfo {
     pub parent_ctx: ContextId,
     pub parent_fn_hash: Word,
-    pub parent_fmp: Felt,
 }
 
 // MAST FOREST RESOLUTION REPLAY

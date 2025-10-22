@@ -173,16 +173,6 @@ impl SystemInterface for FastProcessor {
     fn ctx(&self) -> ContextId {
         self.ctx
     }
-
-    #[inline(always)]
-    fn fmp(&self) -> Felt {
-        self.fmp
-    }
-
-    #[inline(always)]
-    fn set_fmp(&mut self, new_fmp: Felt) {
-        self.fmp = new_fmp;
-    }
 }
 
 impl StackInterface for FastProcessor {

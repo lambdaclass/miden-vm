@@ -5,8 +5,8 @@ use itertools::Itertools;
 use miden_air::{
     FieldElement, RowIndex,
     trace::{
-        CLK_COL_IDX, CTX_COL_IDX, DECODER_TRACE_OFFSET, DECODER_TRACE_WIDTH, FMP_COL_IDX,
-        FN_HASH_RANGE, IN_SYSCALL_COL_IDX, MIN_TRACE_LEN, PADDED_TRACE_WIDTH, STACK_TRACE_OFFSET,
+        CLK_COL_IDX, CTX_COL_IDX, DECODER_TRACE_OFFSET, DECODER_TRACE_WIDTH, FN_HASH_RANGE,
+        IN_SYSCALL_COL_IDX, MIN_TRACE_LEN, PADDED_TRACE_WIDTH, STACK_TRACE_OFFSET,
         STACK_TRACE_WIDTH, SYS_TRACE_WIDTH, TRACE_WIDTH,
         decoder::{
             ADDR_COL_IDX, GROUP_COUNT_COL_IDX, HASHER_STATE_OFFSET, IN_SPAN_COL_IDX,
@@ -53,7 +53,6 @@ use crate::{
     },
     range::RangeChecker,
     stack::AuxTraceBuilder as StackAuxTraceBuilder,
-    system::{FMP_MIN, SYSCALL_FMP_MIN},
     trace::{AuxTraceBuilders, NUM_RAND_ROWS},
     utils::split_u32_into_u16,
 };
@@ -219,14 +218,13 @@ fn generate_core_trace_fragments(
 
     // Save the first system state for initialization
     let first_system_state = [
-        ZERO,               // clk starts at 0
-        Felt::new(FMP_MIN), // fmp starts at 2^30
-        ZERO,               // ctx starts at 0 (root context)
-        ZERO,               // in_syscall starts as false
-        ZERO,               // fn_hash[0] starts as 0
-        ZERO,               // fn_hash[1] starts as 0
-        ZERO,               // fn_hash[2] starts as 0
-        ZERO,               // fn_hash[3] starts as 0
+        ZERO, // clk starts at 0
+        ZERO, // ctx starts at 0 (root context)
+        ZERO, // in_syscall starts as false
+        ZERO, // fn_hash[0] starts as 0
+        ZERO, // fn_hash[1] starts as 0
+        ZERO, // fn_hash[2] starts as 0
+        ZERO, // fn_hash[3] starts as 0
     ];
 
     // Build the core trace fragments in parallel
@@ -642,16 +640,6 @@ fn pad_trace_columns(
         trace_columns[CLK_COL_IDX].iter_mut().enumerate().skip(total_program_rows)
     {
         clk_row.write(Felt::from(clk_val as u32));
-    }
-
-    // Pad FMP trace - fill with the last value in the column
-
-    // Safety: per our documented safety guarantees, we know that `total_program_rows > 0`, and row
-    // `total_program_rows - 1` is initialized.
-    let last_fmp_value =
-        unsafe { trace_columns[FMP_COL_IDX][total_program_rows - 1].assume_init() };
-    for fmp_row in trace_columns[FMP_COL_IDX].iter_mut().skip(total_program_rows) {
-        fmp_row.write(last_fmp_value);
     }
 
     // Pad CTX trace - fill with ZEROs (root context)
@@ -1251,12 +1239,10 @@ impl CoreTraceFragmentGenerator {
                 // Set up new context for the call
                 if call_node.is_syscall() {
                     self.context.state.system.ctx = ContextId::root(); // Root context for syscalls
-                    self.context.state.system.fmp = Felt::new(SYSCALL_FMP_MIN as u64);
                     self.context.state.system.in_syscall = true;
                 } else {
                     self.context.state.system.ctx =
                         ContextId::from(self.context.state.system.clk + 1); // New context ID
-                    self.context.state.system.fmp = Felt::new(FMP_MIN);
                     self.context.state.system.fn_hash = current_forest[call_node.callee()].digest();
                 }
 
@@ -1294,14 +1280,12 @@ impl CoreTraceFragmentGenerator {
                     let ctx_info = ExecutionContextInfo::new(
                         self.context.state.system.ctx,
                         self.context.state.system.fn_hash,
-                        self.context.state.system.fmp,
                         stack_depth as u32,
                         next_overflow_addr,
                     );
 
                     self.context.state.system.ctx =
                         ContextId::from(self.context.state.system.clk + 1); // New context ID
-                    self.context.state.system.fmp = Felt::new(FMP_MIN);
                     self.context.state.system.fn_hash = callee_hash;
 
                     self.add_dyncall_start_trace_row(
@@ -1384,7 +1368,6 @@ impl CoreTraceFragmentGenerator {
     /// This includes restoring the overflow stack and the system parameters.
     fn restore_context_from_replay(&mut self, ctx_info: &ExecutionContextSystemInfo) {
         self.context.state.system.ctx = ctx_info.parent_ctx;
-        self.context.state.system.fmp = ctx_info.parent_fmp;
         self.context.state.system.fn_hash = ctx_info.parent_fn_hash;
         self.context.state.system.in_syscall = false;
 
@@ -1819,14 +1802,6 @@ impl SystemInterface for CoreTraceFragmentGenerator {
 
     fn ctx(&self) -> ContextId {
         self.context.state.system.ctx
-    }
-
-    fn fmp(&self) -> Felt {
-        self.context.state.system.fmp
-    }
-
-    fn set_fmp(&mut self, new_fmp: Felt) {
-        self.context.state.system.fmp = new_fmp;
     }
 }
 

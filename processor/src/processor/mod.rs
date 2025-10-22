@@ -88,12 +88,6 @@ pub trait SystemInterface {
 
     /// Returns the current context ID.
     fn ctx(&self) -> ContextId;
-
-    /// Returns the current value of the FMP register.
-    fn fmp(&self) -> Felt;
-
-    /// Sets the FMP register to a new value.
-    fn set_fmp(&mut self, new_fmp: Felt);
 }
 
 /// We model the stack as a slice of `Felt` values, where the top of the stack is at the last index
