@@ -40,14 +40,14 @@ The meaning of the columns is as follows:
 - Three periodic columns $k_0$, $k_1$, and $k_2$ are used to help select the instruction executed at a given row. All of these columns contain patterns which repeat every $8$ rows. For $k_0$ the pattern is $7$ zeros followed by $1$ one, helping us identify the last row in the cycle. For $k_1$ the pattern is $6$ zeros, $1$ one, and $1$ zero, which can be used to identify the second-to-last row in a cycle. For $k_2$ the pattern is $1$ one followed by $7$ zeros, which can identify the first row in the cycle.
 - Three selector columns $s_0$, $s_1$, and $s_2$. These columns can contain only binary values (ones or zeros), and they are also used to help select the instruction to execute at a given row.
 - Twelve hasher state columns $h_0, ..., h_{11}$. These columns are used to hold the hasher state for each round of the hash function permutation. The state is laid out as follows:
-  - The first four columns ($h_0, ..., h_3$) are reserved for capacity elements of the state. When the state is initialized for hash computations, $h_0$ should be set to $0$ if the number of elements to be hashed is a multiple of the rate width ($8$). Otherwise, $h_0$ should be set to $1$. $h_1$ should be set to the domain value if a domain has been provided (as in the case of [control block hashing](../programs.md#program-hash-computation)).  All other capacity elements should be set to $0$'s.
+  - The first four columns ($h_0, ..., h_3$) are reserved for capacity elements of the state. When the state is initialized for hash computations, $h_0$ should be set to $0$ if the number of elements to be hashed is a multiple of the rate width ($8$). Otherwise, $h_0$ should be set to $1$. $h_1$ should be set to the domain value if a domain has been provided (as in the case of [control block hashing](../programs.md#program-hash-computation)). All other capacity elements should be set to $0$'s.
   - The next eight columns ($h_4, ..., h_{11}$) are reserved for the rate elements of the state. These are used to absorb the values to be hashed. Once the permutation is complete, hash output is located in the first four rate columns ($h_4, ..., h_7$).
 - One index column $i$. This column is used to help with Merkle path verification and Merkle root update computations.
 
 In addition to the columns described above, the chiplet relies on two running product columns which are used to facilitate multiset checks (similar to the ones described [here](https://hackmd.io/@relgabizon/ByFgSDA7D)). These columns are:
 
 - $b_{chip}$ - which is used to tie the chiplet table with the main VM's stack and decoder. That is, values representing inputs consumed by the chiplet and outputs produced by the chiplet are multiplied into $b_{chip}$, while the main VM stack (or decoder) divides them out of $b_{chip}$. Thus, if the sets of inputs and outputs between the main VM stack and hash chiplet are the same, the value of $b_{chip}$ should be equal to $1$ at the start and the end of the execution trace.
-- $p_1$ - which is used to keep track of the *sibling* table used for Merkle root update computations. Specifically, when a root for the old leaf value is computed, we add an entry for all sibling nodes to the table (i.e., we multiply $p_1$ by the values representing these entries). When the root for the new leaf value is computed, we remove the entries for the nodes from the table (i.e., we divide $p_1$ by the value representing these entries). Thus, if both computations used the same set of sibling nodes (in the same order), the sibling table should be empty by the time Merkle root update procedure completes (i.e., the value of $p_1$ would be $1$).
+- $p_1$ - which is used to keep track of the _sibling_ table used for Merkle root update computations. Specifically, when a root for the old leaf value is computed, we add an entry for all sibling nodes to the table (i.e., we multiply $p_1$ by the values representing these entries). When the root for the new leaf value is computed, we remove the entries for the nodes from the table (i.e., we divide $p_1$ by the value representing these entries). Thus, if both computations used the same set of sibling nodes (in the same order), the sibling table should be empty by the time Merkle root update procedure completes (i.e., the value of $p_1$ would be $1$).
 
 ## Instruction flags
 
@@ -208,7 +208,7 @@ Updating a node in a Merkle tree (which also updates the root of the tree) can b
 Suppose we have the same Merkle tree as in the previous example, and we want to replace node $d$ with node $d'$. The computations we'd need to perform are:
 
 $$
-r \leftarrow hash(e, hash(c, d)) 
+r \leftarrow hash(e, hash(c, d))
 r' \leftarrow hash(e, hash(c, d'))
 $$
 
@@ -236,22 +236,22 @@ The semantics of `MV` and `MU` instructions are similar to the semantics of `MP`
 
 ## AIR constraints
 
-When describing AIR constraints, we adopt the following notation: for column $x$, we denote the value in the current row simply as $x$, and the value in the next row of the column as $x′$. Thus, all transition constraints described in this note work with two consecutive rows of the execution trace.
+When describing AIR constraints, we adopt the following notation: for column $x$, we denote the value in the current row simply as $x$, and the value in the next row of the column as $x'$. Thus, all transition constraints described in this note work with two consecutive rows of the execution trace.
 
 ### Selector columns constraints
 
 For selector columns, first we must ensure that only binary values are allowed in these columns. This can be done with the following constraints:
 
 $$
-s_0^2 - s_0 = 0 \text{ | degree} = 2 
-s_1^2 - s_1 = 0 \text{ | degree} = 2 
+s_0^2 - s_0 = 0 \text{ | degree} = 2
+s_1^2 - s_1 = 0 \text{ | degree} = 2
 s_2^2 - s_2 = 0 \text{ | degree} = 2
 $$
 
 Next, we need to make sure that unless $f_{out}=1$ or $f_{out}'=1$, the values in columns $s_1$ and $s_2$ are copied over to the next row. This can be done with the following constraints:
 
 $$
-(s_1' - s_1) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7 
+(s_1' - s_1) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7
 (s_2' - s_2) \cdot (1 - f_{out}') \cdot (1 - f_{out}) = 0  \text{ | degree} = 7
 $$
 
@@ -334,17 +334,18 @@ $$
 Note, that when a computation is completed (i.e., $f_{out}=1$), the next hasher state is unconstrained.
 
 ### Multiset check constraints
+
 In this sections we describe constraints which enforce updates for [multiset check columns](../lookups/multiset.md) $b_{chip}$ and $p_1$. These columns can be updated only on rows which are multiples of $8$ or $1$ less than a multiple of $8$. On all other rows the values in the columns remain the same.
 
 To simplify description of the constraints, we define the following variables. Below, we denote random values sent by the verifier after the prover commits to the main execution trace as $\alpha_0$, $\alpha_1$, $\alpha_2$ etc.
 
 $$
-m = op_{label} + 2^4 \cdot k_0 + 2^5 \cdot k_2 
-v_h = \alpha_0 + \alpha_1 \cdot m + \alpha_2 \cdot (clk + 1) + \alpha_3 \cdot i 
-v_a = \sum_{j=0}^{3}(\alpha_{j+4} \cdot h_j) 
-v_b = \sum_{j=4}^{7}(\alpha_{j+4} \cdot h_j) 
-v_c = \sum_{j=8}^{11}(\alpha_{j+4} \cdot h_j) 
-v_d = \sum_{j=8}^{11}(\alpha_j \cdot h_j) 
+m = op_{label} + 2^4 \cdot k_0 + 2^5 \cdot k_2
+v_h = \alpha_0 + \alpha_1 \cdot m + \alpha_2 \cdot (clk + 1) + \alpha_3 \cdot i
+v_a = \sum_{j=0}^{3}(\alpha_{j+4} \cdot h_j)
+v_b = \sum_{j=4}^{7}(\alpha_{j+4} \cdot h_j)
+v_c = \sum_{j=8}^{11}(\alpha_{j+4} \cdot h_j)
+v_d = \sum_{j=8}^{11}(\alpha_j \cdot h_j)
 $$
 
 In the above:
@@ -355,26 +356,31 @@ In the above:
 - $v_d$ is the third word of the hasher state but computed using the same $\alpha$ values as used for the second word. This is needed for computing the value of $v_{leaf}$ below to ensure that the same $\alpha$ values are used for the leaf node regardless of which part of the state the node comes from.
 
 #### Chiplets bus constraints
+
 As described previously, the [chiplets bus](./index.md#chiplets-bus) $b_{chip}$, implemented as a running product column, is used to tie the hash chiplet with the main VM's stack and decoder. When receiving inputs from or returning results to the stack (or decoder), the hash chiplet multiplies $b_{chip}$ by their respective values. On the other side, when sending inputs to the hash chiplet or receiving results from the chiplet, the stack (or decoder) divides $b_{chip}$ by their values.
 
 In the section below we describe only the hash chiplet side of the constraints (i.e., multiplying $b_{chip}$ by relevant values). We define the values which are to be multiplied into $b_{chip}$ for each operation as follows:
 
 When starting a new simple or linear hash computation (i.e., $f_{bp}=1$) or when returning the entire state of the hasher ($f_{sout}=1$), the entire hasher state is included into $b_{chip}$:
+
 $$
 v_{all} = v_h + v_a + v_b + v_c
 $$
 
 When starting a Merkle path computation (i.e., $f_{mp} + f_{mv} + f_{mu} = 1$), we include the leaf of the path into $b_{chip}$. The leaf is selected from the state based on value of $b$ (defined as in the previous section):
+
 $$
 v_{leaf} = v_h + (1-b) \cdot v_b + b \cdot v_d
 $$
 
 When absorbing a new set of elements into the state while computing a linear hash (i.e., $f_{abp}=1$), we include deltas between the last $8$ elements of the hasher state (the rate) into $b_{chip}$:
+
 $$
 v_{abp} = v_h + v'_b + v'_c - (v_b + v_c)
 $$
 
 When a computation is complete (i.e., $f_{hout}=1$), we include the second word of the hasher state (the result) into $b_{chip}$:
+
 $$
 v_{res} = v_h + v_b
 $$
@@ -382,7 +388,7 @@ $$
 Using the above values, we can describe the constraints for updating column $b_{chip}$ as follows.
 
 $$
-b_{chip}' = b_{chip} \cdot ((f_{bp} + f_{sout}) \cdot v_{all} + (f_{mp} + f_{mv} + f_{mu}) \cdot v_{leaf} + f_{abp} \cdot v_{abp} + f_{hout} \cdot v_{res} + 
+b_{chip}' = b_{chip} \cdot ((f_{bp} + f_{sout}) \cdot v_{all} + (f_{mp} + f_{mv} + f_{mu}) \cdot v_{leaf} + f_{abp} \cdot v_{abp} + f_{hout} \cdot v_{res} +
 1 - (f_{bp} + f_{mp} + f_{mv} + f_{mu} + f_{abp} + f_{out}))
 $$
 
@@ -402,13 +408,16 @@ The above constraint reduces to the following under various flag conditions:
 Note that the degree of the above constraint is $7$.
 
 #### Sibling table constraints
-*Note: Although this table is described independently, it is implemented as part of the [chiplets virtual table](../chiplets/index.md#chiplets-virtual-table), which combines all virtual tables required by any of the chiplets into a single master table.*
+
+_Note: Although this table is described independently, it is implemented as part of the [chiplets virtual table](../chiplets/index.md#chiplets-virtual-table), which combines all virtual tables required by any of the chiplets into a single master table._
 
 As mentioned previously, the sibling table (represented by running column $p_1$) is used to keep track of sibling nodes used during Merkle root update computations. For this computation, we need to enforce the following rules:
-* When computing the old Merkle root, whenever a new sibling node is absorbed into the hasher state (i.e., $f_{mv} + f_{mva} = 1$), an entry for this sibling should be included into $p_1$.
-* When computing the new Merkle root, whenever a new sibling node is absorbed into the hasher state (i.e., $f_{mu} + f_{mua} = 1$), the entry for this sibling should be removed from $p_1$.
+
+- When computing the old Merkle root, whenever a new sibling node is absorbed into the hasher state (i.e., $f_{mv} + f_{mva} = 1$), an entry for this sibling should be included into $p_1$.
+- When computing the new Merkle root, whenever a new sibling node is absorbed into the hasher state (i.e., $f_{mu} + f_{mua} = 1$), the entry for this sibling should be removed from $p_1$.
 
 To simplify the description of the constraints, we use variables $v_b$ and $v_c$ defined above and define the value representing an entry in the sibling table as follows:
+
 $$
 v_{sibling} = \alpha_0 + \alpha_3 \cdot i + b \cdot v_b + (1-b) \cdot v_c
 $$
@@ -416,19 +425,19 @@ $$
 Using the above value, we can define the constraint for updating $p_1$ as follows:
 
 $$
-p_1' \cdot \left( (f_{mv} + f_{mva}) \cdot v_{sibling} + 1 - (f_{mv} + f_{mva}) \right) = 
+p_1' \cdot \left( (f_{mv} + f_{mva}) \cdot v_{sibling} + 1 - (f_{mv} + f_{mva}) \right) =
 p_1 \cdot \left( (f_{mu} + f_{mua}) \cdot v_{sibling} + 1 - (f_{mu} + f_{mua}) \right)
 $$
 
 The above constraint reduces to the following under various flag conditions:
 
-| Condition      | Applied constraint             |
-| -------------- | ------------------------------ |
-| $f_{mv} = 1$   | $p_1' \cdot v_{sibling} = p_1$ |
-| $f_{mva} = 1$  | $p_1' \cdot v_{sibling} = p_1$ |
-| $f_{mu} = 1$   | $p_1' = p_1 \cdot v_{sibling}$ |
-| $f_{mua} = 1$  | $p_1' = p_1 \cdot v_{sibling}$ |
-| Otherwise      | $p_1' = p_1$                   |
+| Condition     | Applied constraint             |
+| ------------- | ------------------------------ |
+| $f_{mv} = 1$  | $p_1' \cdot v_{sibling} = p_1$ |
+| $f_{mva} = 1$ | $p_1' \cdot v_{sibling} = p_1$ |
+| $f_{mu} = 1$  | $p_1' = p_1 \cdot v_{sibling}$ |
+| $f_{mua} = 1$ | $p_1' = p_1 \cdot v_{sibling}$ |
+| Otherwise     | $p_1' = p_1$                   |
 
 Note that the degree of the above constraint is $7$.
 
