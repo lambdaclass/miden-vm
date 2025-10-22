@@ -16,5 +16,8 @@
     "react-dom": "^19.1.1",
     "rehype-katex": "^7",
     "remark-math": "^6"
+  },
+  "devDependencies": {
+    "@cmfcmf/docusaurus-search-local": "^2.0.0"
   }
 }
