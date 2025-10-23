@@ -61,10 +61,6 @@ impl Process {
     /// # Errors
     /// Returns an error if the VM is not currently executing a SYSCALL block.
     pub(super) fn op_caller(&mut self) -> Result<(), ExecutionError> {
-        if !self.system.in_syscall() {
-            return Err(ExecutionError::CallerNotInSyscall);
-        }
-
         let fn_hash = self.system.fn_hash();
 
         self.stack.set(0, fn_hash[3]);

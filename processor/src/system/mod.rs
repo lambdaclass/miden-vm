@@ -3,7 +3,7 @@ use core::fmt::{self, Display};
 
 use miden_air::RowIndex;
 
-use super::{EMPTY_WORD, ExecutionError, Felt, FieldElement, ONE, SysTrace, Word, ZERO};
+use super::{EMPTY_WORD, ExecutionError, Felt, FieldElement, SysTrace, Word, ZERO};
 
 #[cfg(test)]
 mod tests;
@@ -18,18 +18,15 @@ mod tests;
 /// - execution context (ctx), which starts at 0 (root context), and changes when CALL or SYSCALL
 ///   operations are executed by the VM (or when we return from a CALL or SYSCALL).
 /// - free memory pointer (fmp), which is initially set to 2^30.
-/// - in_syscall flag which indicates whether the execution is currently in a SYSCALL block.
 /// - hash of the function which initiated the current execution context. if the context was
 ///   initiated from the root context, this will be set to ZEROs.
 #[derive(Debug)]
 pub struct System {
     clk: RowIndex,
     ctx: ContextId,
-    in_syscall: bool,
     fn_hash: Word,
     ctx_trace: Vec<Felt>,
     clk_trace: Vec<Felt>,
-    in_syscall_trace: Vec<Felt>,
     fn_hash_trace: [Vec<Felt>; 4],
 }
 
@@ -43,11 +40,9 @@ impl System {
         Self {
             clk: RowIndex::from(0),
             ctx: ContextId::root(),
-            in_syscall: false,
             fn_hash: EMPTY_WORD,
             clk_trace: vec![Felt::ZERO; init_trace_capacity],
             ctx_trace: vec![Felt::ZERO; init_trace_capacity],
-            in_syscall_trace: vec![Felt::ZERO; init_trace_capacity],
             fn_hash_trace: [
                 vec![Felt::ZERO; init_trace_capacity],
                 vec![Felt::ZERO; init_trace_capacity],
@@ -70,11 +65,6 @@ impl System {
     #[inline(always)]
     pub fn ctx(&self) -> ContextId {
         self.ctx
-    }
-
-    /// Returns true if the VM is currently executing a SYSCALL block.
-    pub fn in_syscall(&self) -> bool {
-        self.in_syscall
     }
 
     /// Returns hash of the function which initiated the current execution context.
@@ -113,7 +103,6 @@ impl System {
 
         self.clk_trace[clk] = Felt::from(self.clk);
         self.ctx_trace[clk] = Felt::from(self.ctx);
-        self.in_syscall_trace[clk] = if self.in_syscall { ONE } else { ZERO };
 
         self.fn_hash_trace[0][clk] = self.fn_hash[0];
         self.fn_hash_trace[1][clk] = self.fn_hash[1];
@@ -144,7 +133,6 @@ impl System {
     /// - Sets the free memory pointer to the initial value of syscalls (SYSCALL_FMP_MIN). This
     ///   ensures that procedure locals within a syscall do not conflict with procedure locals of
     ///   the original root context.
-    /// - Sets the in_syscall flag to true.
     ///
     /// A SYSCALL cannot be started when the VM is executing a SYSCALL.
     ///
@@ -152,17 +140,12 @@ impl System {
     /// for SYSCALLs this remains set to the hash of the last invoked function.
     pub fn start_syscall(&mut self) {
         self.ctx = ContextId::root();
-        self.in_syscall = true;
     }
 
     /// Updates system registers to the provided values. These updates are made at the end of a
     /// CALL or a SYSCALL blocks.
-    ///
-    /// Note that we set in_syscall flag to true regardless of whether we return from a CALL or a
-    /// SYSCALL.
     pub fn restore_context(&mut self, ctx: ContextId, fn_hash: Word) {
         self.ctx = ctx;
-        self.in_syscall = false;
         self.fn_hash = fn_hash;
     }
 
@@ -176,8 +159,6 @@ impl System {
     /// - the remainder of the `clk` column is filled in with increasing values of `clk`.
     /// - the remainder of the `ctx` column is filled in with ZERO, which should be the last value
     ///   in the column.
-    /// - the remainder of the `in_syscall` column is filled with ZERO, which should be the last
-    ///   value in this colum.
     /// - the remainder of the `fn_hash` columns are filled with ZERO, which should be the last
     ///   values in these columns.
     ///
@@ -202,12 +183,7 @@ impl System {
         debug_assert!(self.ctx.is_root());
         self.ctx_trace.resize(trace_len, ZERO);
 
-        // complete the in_syscall column by filling all values after the last clock cycle with
-        // ZEROs as we must end the program in the root context which is not a SYSCALL
-        debug_assert!(!self.in_syscall);
-        self.in_syscall_trace.resize(trace_len, ZERO);
-
-        let mut trace = vec![self.clk_trace, self.ctx_trace, self.in_syscall_trace];
+        let mut trace = vec![self.clk_trace, self.ctx_trace];
 
         // complete the fn hash columns by filling them with ZEROs as program execution must always
         // end in the root context.
@@ -232,7 +208,6 @@ impl System {
             let new_length = current_capacity * 2;
             self.clk_trace.resize(new_length, ZERO);
             self.ctx_trace.resize(new_length, ZERO);
-            self.in_syscall_trace.resize(new_length, ZERO);
             for column in self.fn_hash_trace.iter_mut() {
                 column.resize(new_length, ZERO);
             }

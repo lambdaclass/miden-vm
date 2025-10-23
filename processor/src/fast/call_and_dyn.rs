@@ -59,7 +59,6 @@ impl FastProcessor {
 
             // set the system registers to the syscall context
             self.ctx = ContextId::root();
-            self.in_syscall = true;
         } else {
             let new_ctx: ContextId = self.get_next_ctx_id();
 
@@ -314,7 +313,6 @@ impl FastProcessor {
 
         // restore system parameters
         self.ctx = ctx_info.ctx;
-        self.in_syscall = false;
         self.caller_hash = ctx_info.fn_hash;
 
         tracer.restore_context();

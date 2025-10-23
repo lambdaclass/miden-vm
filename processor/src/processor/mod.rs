@@ -80,9 +80,6 @@ pub trait SystemInterface {
     /// called the currently executing procedure.
     fn caller_hash(&self) -> Word;
 
-    /// Returns true if the processor is currently executing a syscall, false otherwise.
-    fn in_syscall(&self) -> bool;
-
     /// Returns the current clock cycle.
     fn clk(&self) -> RowIndex;
 

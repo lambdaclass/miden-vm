@@ -160,11 +160,6 @@ impl SystemInterface for FastProcessor {
     }
 
     #[inline(always)]
-    fn in_syscall(&self) -> bool {
-        self.in_syscall
-    }
-
-    #[inline(always)]
     fn clk(&self) -> RowIndex {
         self.clk
     }

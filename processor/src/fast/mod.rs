@@ -98,9 +98,6 @@ pub struct FastProcessor {
     /// The current context ID.
     pub(super) ctx: ContextId,
 
-    /// Whether we are currently in a syscall.
-    in_syscall: bool,
-
     /// The hash of the function that called into the current context, or `[ZERO, ZERO, ZERO,
     /// ZERO]` if we are in the first context (i.e. when `call_stack` is empty).
     pub(super) caller_hash: Word,
@@ -180,7 +177,6 @@ impl FastProcessor {
             stack_bot_idx: stack_top_idx - MIN_STACK_DEPTH,
             clk: 0_u32.into(),
             ctx: 0_u32.into(),
-            in_syscall: false,
             caller_hash: EMPTY_WORD,
             memory: Memory::new(),
             call_stack: Vec::new(),

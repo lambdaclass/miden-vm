@@ -2,8 +2,8 @@ use alloc::vec::Vec;
 use std::sync::Arc;
 
 use miden_air::trace::{
-    CTX_COL_IDX, DECODER_TRACE_RANGE, DECODER_TRACE_WIDTH, FN_HASH_RANGE, IN_SYSCALL_COL_IDX,
-    SYS_TRACE_RANGE, SYS_TRACE_WIDTH,
+    CTX_COL_IDX, DECODER_TRACE_RANGE, DECODER_TRACE_WIDTH, FN_HASH_RANGE, SYS_TRACE_RANGE,
+    SYS_TRACE_WIDTH,
     decoder::{
         ADDR_COL_IDX, GROUP_COUNT_COL_IDX, HASHER_STATE_RANGE, IN_SPAN_COL_IDX, NUM_HASHER_COLUMNS,
         NUM_OP_BATCH_FLAGS, NUM_OP_BITS, OP_BATCH_1_GROUPS, OP_BATCH_2_GROUPS, OP_BATCH_4_GROUPS,
@@ -1024,20 +1024,6 @@ fn test_call_decoding() {
         assert_eq!(sys_trace[CTX_COL_IDX][i], ZERO);
     }
 
-    // --- check the is_syscall column ------------------------------------------------------------
-
-    for i in 0..14 {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ZERO);
-    }
-
-    for i in 14..17 {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ZERO);
-    }
-
-    for i in 18..trace_len {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ZERO);
-    }
-
     // --- check fn hash columns ------------------------------------------------------------------
 
     // before the CALL operation is executed, we are in a root context and thus fn_hash is ZEROs.
@@ -1321,23 +1307,6 @@ fn test_syscall_decoding() {
     // once the CALL block exited, we go back to the root context
     for i in 20..trace_len {
         assert_eq!(sys_trace[CTX_COL_IDX][i], ZERO);
-    }
-
-    // --- check the is_syscall column ------------------------------------------------------------
-
-    // before the SYSCALL block, syscall flag values should be set to 0
-    for i in 0..14 {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ZERO);
-    }
-
-    // within the SYSCALL block, syscall flag values should be set to 1
-    for i in 14..17 {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ONE);
-    }
-
-    // after the SYSCALL block, syscall flag values should be set to 0 again
-    for i in 18..trace_len {
-        assert_eq!(sys_trace[IN_SYSCALL_COL_IDX][i], ZERO);
     }
 
     // --- check fn hash columns ------------------------------------------------------------------

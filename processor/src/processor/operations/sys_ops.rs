@@ -45,10 +45,6 @@ pub(super) fn op_sdepth<P: Processor>(
 /// Analogous to `Process::op_caller`.
 #[inline(always)]
 pub(super) fn op_caller<P: Processor>(processor: &mut P) -> Result<(), ExecutionError> {
-    if !processor.system().in_syscall() {
-        return Err(ExecutionError::CallerNotInSyscall);
-    }
-
     let caller_hash = processor.system().caller_hash();
     processor.stack().set_word(0, &caller_hash);
 

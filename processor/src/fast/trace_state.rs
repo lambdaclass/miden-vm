@@ -78,9 +78,6 @@ pub struct SystemState {
     /// Execution context ID - starts at 0 (root context), changes on CALL/SYSCALL operations
     pub ctx: ContextId,
 
-    /// Flag indicating whether currently executing within a SYSCALL block
-    pub in_syscall: bool,
-
     /// Hash of the function that initiated the current execution context
     /// - For root context: [ZERO; 4]
     /// - For CALL/DYNCALL contexts: hash of the called function
@@ -94,7 +91,6 @@ impl SystemState {
         Self {
             clk: processor.clk,
             ctx: processor.ctx,
-            in_syscall: processor.in_syscall,
             fn_hash: processor.caller_hash,
         }
     }

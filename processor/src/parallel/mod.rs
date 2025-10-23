@@ -6,8 +6,8 @@ use miden_air::{
     FieldElement, RowIndex,
     trace::{
         CLK_COL_IDX, CTX_COL_IDX, DECODER_TRACE_OFFSET, DECODER_TRACE_WIDTH, FN_HASH_RANGE,
-        IN_SYSCALL_COL_IDX, MIN_TRACE_LEN, PADDED_TRACE_WIDTH, STACK_TRACE_OFFSET,
-        STACK_TRACE_WIDTH, SYS_TRACE_WIDTH, TRACE_WIDTH,
+        MIN_TRACE_LEN, PADDED_TRACE_WIDTH, STACK_TRACE_OFFSET, STACK_TRACE_WIDTH, SYS_TRACE_WIDTH,
+        TRACE_WIDTH,
         decoder::{
             ADDR_COL_IDX, GROUP_COUNT_COL_IDX, HASHER_STATE_OFFSET, IN_SPAN_COL_IDX,
             NUM_HASHER_COLUMNS, NUM_OP_BATCH_FLAGS, NUM_OP_BITS, NUM_USER_OP_HELPERS,
@@ -220,7 +220,6 @@ fn generate_core_trace_fragments(
     let first_system_state = [
         ZERO, // clk starts at 0
         ZERO, // ctx starts at 0 (root context)
-        ZERO, // in_syscall starts as false
         ZERO, // fn_hash[0] starts as 0
         ZERO, // fn_hash[1] starts as 0
         ZERO, // fn_hash[2] starts as 0
@@ -645,11 +644,6 @@ fn pad_trace_columns(
     // Pad CTX trace - fill with ZEROs (root context)
     for ctx_row in trace_columns[CTX_COL_IDX].iter_mut().skip(total_program_rows) {
         ctx_row.write(ZERO);
-    }
-
-    // Pad IN_SYSCALL trace - fill with ZEROs (not in syscall)
-    for in_syscall_row in trace_columns[IN_SYSCALL_COL_IDX].iter_mut().skip(total_program_rows) {
-        in_syscall_row.write(ZERO);
     }
 
     // Pad FN_HASH traces (4 columns) - fill with ZEROs as program execution must always end in the
@@ -1239,7 +1233,6 @@ impl CoreTraceFragmentGenerator {
                 // Set up new context for the call
                 if call_node.is_syscall() {
                     self.context.state.system.ctx = ContextId::root(); // Root context for syscalls
-                    self.context.state.system.in_syscall = true;
                 } else {
                     self.context.state.system.ctx =
                         ContextId::from(self.context.state.system.clk + 1); // New context ID
@@ -1369,7 +1362,6 @@ impl CoreTraceFragmentGenerator {
     fn restore_context_from_replay(&mut self, ctx_info: &ExecutionContextSystemInfo) {
         self.context.state.system.ctx = ctx_info.parent_ctx;
         self.context.state.system.fn_hash = ctx_info.parent_fn_hash;
-        self.context.state.system.in_syscall = false;
 
         self.context
             .state
@@ -1790,10 +1782,6 @@ impl Processor for CoreTraceFragmentGenerator {
 impl SystemInterface for CoreTraceFragmentGenerator {
     fn caller_hash(&self) -> Word {
         self.context.state.system.fn_hash
-    }
-
-    fn in_syscall(&self) -> bool {
-        self.context.state.system.in_syscall
     }
 
     fn clk(&self) -> RowIndex {

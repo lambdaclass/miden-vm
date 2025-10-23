@@ -32,9 +32,6 @@ pub enum ExecutionError {
         #[diagnostic_source]
         err: AdviceError,
     },
-    /// This error is caught by the assembler, so we don't need diagnostics here.
-    #[error("instruction `caller` used outside of kernel context")]
-    CallerNotInSyscall,
     #[error("external node with mast root {0} resolved to an external node")]
     CircularExternalNode(Word),
     #[error("exceeded the allowed number of max cycles {0}")]
