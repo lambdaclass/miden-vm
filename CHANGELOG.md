@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.18.3 (TBD)
+## 0.18.3 (2025-10-27)
 
 - Implement `sorted_array::find_half_key_value` (#[2268](https://github.com/0xMiden/miden-vm/pull/2268)).
 
