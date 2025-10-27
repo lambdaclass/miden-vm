@@ -1,6 +1,6 @@
 use alloc::{vec, vec::Vec};
 
-use miden_core::{EventId, Felt, LexicographicWord, Word};
+use miden_core::{EventId, Felt, FieldElement, LexicographicWord, Word};
 use miden_processor::{AdviceMutation, EventError, MemoryError, ProcessState};
 
 /// Qualified event names for `lowerbound` events.
@@ -11,6 +11,12 @@ pub const LOWERBOUND_KEY_VALUE_EVENT_NAME: &str =
 /// Constant Event ID for `lowerbound` events, derived via `EventId::from_name(EVENT_NAME)`.
 pub const LOWERBOUND_ARRAY_EVENT_ID: EventId = EventId::from_u64(2382974753388103136);
 pub const LOWERBOUND_KEY_VALUE_EVENT_ID: EventId = EventId::from_u64(486819235893213157);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum KeySize {
+    Full,
+    Half,
+}
 
 /// Pushes onto the advice stack the first pointer in [start_ptr, end_ptr) such that
 /// `mem[word_ptr] >= KEY` in lexicographic order of words. If all words are < KEY, returns end_ptr.
@@ -27,7 +33,7 @@ pub const LOWERBOUND_KEY_VALUE_EVENT_ID: EventId = EventId::from_u64(48681923589
 /// # Errors
 /// Returns an error if the provided word array is not sorted in non-decreasing order.
 pub fn handle_lowerbound_array(process: &ProcessState) -> Result<Vec<AdviceMutation>, EventError> {
-    push_lowerbound_result(process, 4)
+    push_lowerbound_result(process, 4, KeySize::Full)
 }
 
 /// Pushes onto the advice stack the first pointer in [start_ptr, end_ptr) such that
@@ -38,11 +44,11 @@ pub fn handle_lowerbound_array(process: &ProcessState) -> Result<Vec<AdviceMutat
 /// This event returns
 ///
 /// Inputs:
-///   Operand stack: [KEY, start_ptr, end_ptr, ...]
+///   Operand stack: [event_id, KEY, start_ptr, end_ptr, use_full_key, ...]
 ///   Advice stack: [...]
 ///
 /// Outputs:
-///   Operand stack: [KEY, start_ptr, end_ptr, ...]
+///   Operand stack: [event_id, KEY, start_ptr, end_ptr, use_full_key, ...]
 ///   Advice stack: [maybe_key_ptr, was_key_found, ...]
 ///
 /// # Errors
@@ -50,7 +56,19 @@ pub fn handle_lowerbound_array(process: &ProcessState) -> Result<Vec<AdviceMutat
 pub fn handle_lowerbound_key_value(
     process: &ProcessState,
 ) -> Result<Vec<AdviceMutation>, EventError> {
-    push_lowerbound_result(process, 8)
+    let use_full_key = process.get_stack_item(7);
+
+    let key_size = match use_full_key.as_int() {
+        0 => KeySize::Half,
+        1 => KeySize::Full,
+        _ => {
+            return Err(EventError::from(alloc::format!(
+                "use_full_key must be 0 or 1, was {use_full_key}"
+            )));
+        },
+    };
+
+    push_lowerbound_result(process, 8, key_size)
 }
 
 /// Offsets for the push_lowerbound_result inputs from the top of the stack
@@ -61,6 +79,7 @@ const END_ADDR_OFFSET: usize = 6;
 fn push_lowerbound_result(
     process: &ProcessState,
     stride: u32,
+    key_size: KeySize,
 ) -> Result<Vec<AdviceMutation>, EventError> {
     // only support sorted arrays (stride = 4) and sorted key-value arrays (stride = 8)
     assert!(stride == 4 || stride == 8);
@@ -107,7 +126,7 @@ fn push_lowerbound_result(
         |addr: u32| {
             process
                 .get_mem_word(process.ctx(), addr)
-                .map(|word| LexicographicWord::new(word.unwrap_or(Word::empty())))
+                .map(|word| word_to_search_key(word.unwrap_or_default(), key_size))
         }
     };
 
@@ -143,6 +162,23 @@ fn push_lowerbound_result(
         Felt::from(was_key_found),
         Felt::from(result.unwrap_or(addr_range.end)),
     ])])
+}
+
+/// Selectively zeroizes the felts in a [`Word`] based on the provided [`KeySize`].
+///
+/// - If the `key_size` is [`KeySize::Full`], the word is returned untouched.
+/// - If the `key_size` is [`KeySize::Half`], the word is returned with the two least significant
+///   elements zeroized.
+fn word_to_search_key(mut word: Word, key_size: KeySize) -> LexicographicWord {
+    match key_size {
+        KeySize::Full => LexicographicWord::new(word),
+        KeySize::Half => {
+            word[0] = Felt::ZERO;
+            word[1] = Felt::ZERO;
+
+            LexicographicWord::new(word)
+        },
+    }
 }
 
 // ERROR TYPES
