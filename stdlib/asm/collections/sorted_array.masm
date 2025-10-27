@@ -380,7 +380,7 @@ end
 #!
 #! Cycles: 16
 proc.load_key
-    padw movup.5 mem_loadw
+    padw movup.5 mem_loadw_be
     # => [FULL_KEY, use_full_key]
 
     # multiply the two least significant elements by use_full_key

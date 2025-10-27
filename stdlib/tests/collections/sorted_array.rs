@@ -154,14 +154,14 @@ fn test_sorted_key_value_array_find_half_key() {
             {TRUNCATE_STACK_PROC}
 
             begin
-                push.9.9.3.4 mem_storew.100 dropw
-                push.5.5.5.5 mem_storew.104 dropw
+                push.9.9.3.4 mem_storew_be.100 dropw
+                push.5.5.5.5 mem_storew_be.104 dropw
 
-                push.10.11.12.13 mem_storew.108 dropw
-                push.3.3.3.3 mem_storew.112 dropw
+                push.10.11.12.13 mem_storew_be.108 dropw
+                push.3.3.3.3 mem_storew_be.112 dropw
 
-                push.1.1.1.103 mem_storew.116 dropw
-                push.8.8.8.8 mem_storew.120 dropw
+                push.1.1.1.103 mem_storew_be.116 dropw
+                push.8.8.8.8 mem_storew_be.120 dropw
 
                 push.124 push.100 push.{key_suffix} push.{key_prefix}
 
