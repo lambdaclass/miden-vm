@@ -1391,6 +1391,7 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "miden-assembly",
  "miden-assembly-syntax",
  "miden-core",
  "miden-mast-package",
