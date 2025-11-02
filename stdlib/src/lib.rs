@@ -7,19 +7,20 @@ extern crate alloc;
 use alloc::{sync::Arc, vec, vec::Vec};
 
 use miden_assembly::{Library, mast::MastForest, utils::Deserializable};
-use miden_core::{EventId, Felt, Word};
+use miden_core::{EventName, Felt, Word, precompile::PrecompileVerifierRegistry};
 use miden_processor::{EventHandler, HostLibrary};
 use miden_utils_sync::LazyLock;
 
 use crate::handlers::{
-    falcon_div::{FALCON_DIV_EVENT_ID, handle_falcon_div},
-    keccak256::{KECCAK_HASH_MEMORY_EVENT_ID, handle_keccak_hash_memory},
-    smt_peek::{SMT_PEEK_EVENT_ID, handle_smt_peek},
+    ecdsa::{ECDSA_VERIFY_EVENT_NAME, EcdsaPrecompile},
+    falcon_div::{FALCON_DIV_EVENT_NAME, handle_falcon_div},
+    keccak256::{KECCAK_HASH_MEMORY_EVENT_NAME, KeccakPrecompile},
+    smt_peek::{SMT_PEEK_EVENT_NAME, handle_smt_peek},
     sorted_array::{
-        LOWERBOUND_ARRAY_EVENT_ID, LOWERBOUND_KEY_VALUE_EVENT_ID, handle_lowerbound_array,
+        LOWERBOUND_ARRAY_EVENT_NAME, LOWERBOUND_KEY_VALUE_EVENT_NAME, handle_lowerbound_array,
         handle_lowerbound_key_value,
     },
-    u64_div::{U64_DIV_EVENT_ID, handle_u64_div},
+    u64_div::{U64_DIV_EVENT_NAME, handle_u64_div},
 };
 
 // STANDARD LIBRARY
@@ -66,15 +67,24 @@ impl StdLibrary {
     }
 
     /// List of all `EventHandlers` required to run all of the standard library.
-    pub fn handlers(&self) -> Vec<(EventId, Arc<dyn EventHandler>)> {
+    pub fn handlers(&self) -> Vec<(EventName, Arc<dyn EventHandler>)> {
         vec![
-            (KECCAK_HASH_MEMORY_EVENT_ID, Arc::new(handle_keccak_hash_memory)),
-            (SMT_PEEK_EVENT_ID, Arc::new(handle_smt_peek)),
-            (U64_DIV_EVENT_ID, Arc::new(handle_u64_div)),
-            (FALCON_DIV_EVENT_ID, Arc::new(handle_falcon_div)),
-            (LOWERBOUND_ARRAY_EVENT_ID, Arc::new(handle_lowerbound_array)),
-            (LOWERBOUND_KEY_VALUE_EVENT_ID, Arc::new(handle_lowerbound_key_value)),
+            (KECCAK_HASH_MEMORY_EVENT_NAME, Arc::new(KeccakPrecompile)),
+            (ECDSA_VERIFY_EVENT_NAME, Arc::new(EcdsaPrecompile)),
+            (SMT_PEEK_EVENT_NAME, Arc::new(handle_smt_peek)),
+            (U64_DIV_EVENT_NAME, Arc::new(handle_u64_div)),
+            (FALCON_DIV_EVENT_NAME, Arc::new(handle_falcon_div)),
+            (LOWERBOUND_ARRAY_EVENT_NAME, Arc::new(handle_lowerbound_array)),
+            (LOWERBOUND_KEY_VALUE_EVENT_NAME, Arc::new(handle_lowerbound_key_value)),
         ]
+    }
+
+    /// Returns a [`PrecompileVerifierRegistry`] containing all verifiers required to validate
+    /// standard library precompile requests.
+    pub fn verifier_registry(&self) -> PrecompileVerifierRegistry {
+        PrecompileVerifierRegistry::new()
+            .with_verifier(&KECCAK_HASH_MEMORY_EVENT_NAME, Arc::new(KeccakPrecompile))
+            .with_verifier(&ECDSA_VERIFY_EVENT_NAME, Arc::new(EcdsaPrecompile))
     }
 }
 

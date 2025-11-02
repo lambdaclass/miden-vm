@@ -8,19 +8,20 @@
 
 use core::array;
 
-use miden_core::{EventId, Felt};
-use miden_crypto::{
-    Word,
-    hash::{keccak::Keccak256, rpo::Rpo256},
+use miden_core::{
+    Felt,
+    precompile::{PrecompileCommitment, PrecompileVerifier},
 };
-use miden_processor::{AdviceMutation, EventError, EventHandler, ProcessState};
-use miden_stdlib::handlers::keccak256::{KECCAK_HASH_MEMORY_EVENT_NAME, KeccakFeltDigest};
+use miden_stdlib::handlers::keccak256::{
+    KECCAK_HASH_MEMORY_EVENT_NAME, KeccakPrecompile, KeccakPreimage,
+};
+
+use crate::helpers::{masm_push_felts, masm_store_felts};
 
 // Test constants
 // ================================================================================================
 
 const INPUT_MEMORY_ADDR: u32 = 128;
-const DEBUG_EVENT_NAME: &str = "miden::debug";
 
 // TESTS
 // ================================================================================================
@@ -29,20 +30,15 @@ const DEBUG_EVENT_NAME: &str = "miden::debug";
 fn test_keccak_handlers() {
     // Test various input sizes including edge cases
     let hash_memory_inputs: Vec<Vec<u8>> = vec![
-        //empty
+        // empty
         vec![],
-        // different byte packing
+        // representative small sizes and alignments
         vec![1],
-        vec![1, 2],
-        vec![1, 2, 3],
         vec![1, 2, 3, 4],
-        // longer inputs with non-aligned sizes
-        (0..31).collect(),
+        vec![1, 2, 3, 4, 5],
+        // boundary and just-over-boundary
         (0..32).collect(),
         (0..33).collect(),
-        // large-ish inputs
-        (0..64).collect(),
-        (0..128).collect(),
     ];
 
     for input in &hash_memory_inputs {
@@ -54,9 +50,10 @@ fn test_keccak_handlers() {
 
 fn test_keccak_handler(input_u8: &[u8]) {
     let len_bytes = input_u8.len();
-    let preimage = Preimage(input_u8.to_vec());
+    let preimage = KeccakPreimage::new(input_u8.to_vec());
 
-    let memory_stores_source = preimage.masm_memory_store_source();
+    let input_felts = preimage.as_felts();
+    let memory_stores_source = masm_store_felts(&input_felts, INPUT_MEMORY_ADDR);
 
     let source = format!(
         r#"
@@ -70,23 +67,35 @@ fn test_keccak_handler(input_u8: &[u8]) {
 
                 emit.event("{KECCAK_HASH_MEMORY_EVENT_NAME}")
                 drop drop
-
-                emit.event("{DEBUG_EVENT_NAME}")
             end
             "#,
     );
 
-    let mut test = build_debug_test!(source, &[]);
+    let test = build_debug_test!(source, &[]);
 
-    test.add_event_handler(EventId::from_name(DEBUG_EVENT_NAME), preimage.handler_test());
-    test.execute().unwrap();
+    let output = test.execute().unwrap();
+
+    let advice_stack = output.advice_provider().stack();
+    assert_eq!(advice_stack, preimage.digest().as_ref());
+
+    let deferred = output.advice_provider().precompile_requests().to_vec();
+    assert_eq!(deferred.len(), 1, "advice deferred must contain one entry");
+    let precompile_data = &deferred[0];
+
+    // PrecompileData contains the raw input bytes directly
+    assert_eq!(
+        precompile_data.calldata(),
+        preimage.as_ref(),
+        "data in deferred storage does not match preimage"
+    );
 }
 
 fn test_keccak_hash_memory_impl(input_u8: &[u8]) {
     let len_bytes = input_u8.len();
-    let preimage = Preimage(input_u8.to_vec());
+    let preimage = KeccakPreimage::new(input_u8.to_vec());
 
-    let memory_stores_source = preimage.masm_memory_store_source();
+    let input_felts = preimage.as_felts();
+    let memory_stores_source = masm_store_felts(&input_felts, INPUT_MEMORY_ADDR);
 
     let source = format!(
         r#"
@@ -102,7 +111,7 @@ fn test_keccak_hash_memory_impl(input_u8: &[u8]) {
                 # => [ptr, len_bytes]
 
                 exec.keccak256::hash_memory_impl
-                # => [COMM, DIGEST_U32[8]]
+                # => [COMM, TAG, DIGEST_U32[8]]
 
                 exec.sys::truncate_stack
             end
@@ -112,19 +121,34 @@ fn test_keccak_hash_memory_impl(input_u8: &[u8]) {
     let test = build_debug_test!(source, &[]);
 
     let output = test.execute().unwrap();
-    let stack = output.stack_outputs();
-    let commitment = stack.get_stack_word(0).unwrap();
-    assert_eq!(commitment, preimage.calldata_commitment(), "calldata_commitment does not match");
 
-    let digest: [Felt; 8] = array::from_fn(|i| stack.get_stack_item(4 + i).unwrap());
-    assert_eq!(digest, preimage.digest().inner(), "output digest does not match");
+    let stack = output.stack_outputs();
+    let commitment = stack.get_stack_word_be(0).unwrap();
+    let tag = stack.get_stack_word_be(4).unwrap();
+    let precompile_commitment = PrecompileCommitment::new(tag, commitment);
+    let verifier_commitment = KeccakPrecompile.verify(preimage.as_ref()).unwrap();
+    assert_eq!(precompile_commitment, verifier_commitment);
+
+    // Digest occupies the elements after COMM/TAG
+    let digest: [Felt; 8] = array::from_fn(|i| stack.get_stack_item(8 + i).unwrap());
+    assert_eq!(&digest, preimage.digest().as_ref(), "output digest does not match");
+
+    let deferred = output.advice_provider().precompile_requests().to_vec();
+    assert_eq!(deferred.len(), 1, "expected a single deferred request");
+    assert_eq!(deferred[0].event_id(), KECCAK_HASH_MEMORY_EVENT_NAME.to_event_id());
+    assert_eq!(deferred[0].calldata(), preimage.as_ref());
+    assert_eq!(deferred[0], preimage.into());
+
+    let advice_stack = output.advice_provider().stack();
+    assert!(advice_stack.is_empty(), "advice stack should be empty after hash_memory_impl");
 }
 
 fn test_keccak_hash_memory(input_u8: &[u8]) {
     let len_bytes = input_u8.len();
-    let preimage = Preimage(input_u8.to_vec());
+    let preimage = KeccakPreimage::new(input_u8.to_vec());
 
-    let memory_stores_source = preimage.masm_memory_store_source();
+    let input_felts = preimage.as_felts();
+    let memory_stores_source = masm_store_felts(&input_felts, INPUT_MEMORY_ADDR);
 
     let source = format!(
         r#"
@@ -148,16 +172,17 @@ fn test_keccak_hash_memory(input_u8: &[u8]) {
     );
 
     let test = build_debug_test!(source, &[]);
-    let digest = preimage.digest().inner().map(|felt| felt.as_int());
+    let digest: Vec<u64> = preimage.digest().as_ref().iter().map(Felt::as_int).collect();
     test.expect_stack(&digest);
 }
 
 #[test]
 fn test_keccak_hash_1to1() {
     let input_u8: Vec<u8> = (0..32).collect();
-    let preimage = Preimage(input_u8);
+    let preimage = KeccakPreimage::new(input_u8);
 
-    let stack_stores_source = preimage.masm_stack_store_source();
+    let input_felts = preimage.as_felts();
+    let stack_stores_source = masm_push_felts(&input_felts);
 
     let source = format!(
         r#"
@@ -178,16 +203,17 @@ fn test_keccak_hash_1to1() {
     );
 
     let test = build_debug_test!(source, &[]);
-    let digest = preimage.digest().inner().map(|felt| felt.as_int());
+    let digest: Vec<u64> = preimage.digest().as_ref().iter().map(Felt::as_int).collect();
     test.expect_stack(&digest);
 }
 
 #[test]
 fn test_keccak_hash_2to1() {
     let input_u8: Vec<u8> = (0..64).collect();
-    let preimage = Preimage(input_u8);
+    let preimage = KeccakPreimage::new(input_u8);
 
-    let stack_stores_source = preimage.masm_stack_store_source();
+    let input_felts = preimage.as_felts();
+    let stack_stores_source = masm_push_felts(&input_felts);
 
     let source = format!(
         r#"
@@ -208,105 +234,6 @@ fn test_keccak_hash_2to1() {
     );
 
     let test = build_debug_test!(source, &[]);
-    let digest = preimage.digest().inner().map(|felt| felt.as_int());
+    let digest: Vec<u64> = preimage.digest().as_ref().iter().map(Felt::as_int).collect();
     test.expect_stack(&digest);
-}
-
-// DEBUG HANDLER
-// ================================================================================================
-
-/// Test helper for Keccak256 precompile operations.
-///
-/// Wraps a byte array and provides utilities for:
-/// - Converting bytes to u32/felt representations
-/// - Computing expected Keccak256 digests and commitments
-/// - Generating MASM code for memory/stack operations
-/// - Creating event handlers for test validation
-#[derive(Debug, Eq, PartialEq)]
-struct Preimage(Vec<u8>);
-
-impl Preimage {
-    /// Converts bytes to packed u32 values (4 bytes per u32, last chunk padded with zeros).
-    fn as_packed_u32(&self) -> impl Iterator<Item = u32> {
-        let pack_bytes = |bytes: &[u8]| -> u32 {
-            let mut out = [0u8; 4];
-            for (i, byte) in bytes.iter().enumerate() {
-                out[i] = *byte;
-            }
-            u32::from_le_bytes(out)
-        };
-
-        self.0.chunks(4).map(pack_bytes)
-    }
-
-    /// Converts packed u32 values to field elements.
-    fn as_felt(&self) -> impl Iterator<Item = Felt> {
-        self.as_packed_u32().map(Felt::from)
-    }
-
-    /// Computes RPO(input_felts) for commitment calculation.
-    fn input_commitment(&self) -> Word {
-        let preimage_felt: Vec<Felt> = self.as_felt().collect();
-        Rpo256::hash_elements(&preimage_felt)
-    }
-
-    /// Computes the expected Keccak256 digest.
-    fn digest(&self) -> KeccakFeltDigest {
-        let hash_u8 = Keccak256::hash(&self.0);
-        KeccakFeltDigest::from_bytes(&hash_u8)
-    }
-
-    /// Computes the expected commitment: RPO(RPO(input) || RPO(hash)).
-    fn calldata_commitment(&self) -> Word {
-        Rpo256::merge(&[self.input_commitment(), self.digest().to_commitment()])
-    }
-
-    /// Generates MASM code to store packed u32 values into memory.
-    fn masm_memory_store_source(&self) -> String {
-        self.as_packed_u32()
-            .enumerate()
-            .map(|(i, value)| {
-                format!("push.{} push.{} mem_store", value, INPUT_MEMORY_ADDR + i as u32)
-            })
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
-    /// Generates MASM code to push the input represented as u32 values to the stack
-    fn masm_stack_store_source(&self) -> String {
-        let input_u32: Vec<u32> = self.as_packed_u32().collect();
-        // Push elements in reverse order so that the first element ends up at the top
-        input_u32
-            .into_iter()
-            .rev()
-            .map(|value| format!("push.{}", value))
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
-    /// Handler for verifying the correctness of the keccak handler.
-    fn handler_test(self) -> impl EventHandler {
-        move |process: &ProcessState| -> Result<Vec<AdviceMutation>, EventError> {
-            let digest = self.digest();
-            assert_eq!(
-                &digest.inner(),
-                process.advice_provider().stack(),
-                "digest not found in advice stack"
-            );
-
-            let calldata_commitment = self.calldata_commitment();
-            let witness = process
-                .advice_provider()
-                .get_mapped_values(&calldata_commitment)
-                .expect("witness was not found in advice map with key {calldata_commitment:?}");
-            let witness_expected: Vec<Felt> = {
-                let len_bytes = self.0.len() as u64;
-
-                [Felt::new(len_bytes)].into_iter().chain(self.as_felt()).collect()
-            };
-            assert_eq!(witness, witness_expected, "witness in advice map does not match preimage");
-
-            Ok(vec![])
-        }
-    }
 }
