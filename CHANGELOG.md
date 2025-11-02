@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.20.0 (TBD)
+
 ## 0.19.0 (2025-11-1)
 
 #### Enhancements
