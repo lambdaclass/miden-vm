@@ -63,7 +63,7 @@ pub(super) fn op_mpverify<P: Processor>(
     // get a Merkle path from the advice provider for the specified root and node index
     let path = processor
         .advice_provider()
-        .get_merkle_path(root, &depth, &index)
+        .get_merkle_path(root, depth, index)
         .map_err(|err| ExecutionError::advice_error(err, clk, err_ctx))?;
 
     tracer.record_hasher_build_merkle_root(node, path.as_ref(), index, root);
@@ -102,7 +102,7 @@ pub(super) fn op_mrupdate<P: Processor>(
     // whole sub-tree to this node.
     let path = processor
         .advice_provider()
-        .update_merkle_node(claimed_old_root, &depth, &index, new_value)
+        .update_merkle_node(claimed_old_root, depth, index, new_value)
         .map_err(|err| ExecutionError::advice_error(err, clk, err_ctx))?;
 
     if let Some(path) = &path {
