@@ -5,7 +5,12 @@
 #### Enhancements
 
 #### Changes
+
 - Added missing implementations of `proptest::Arbitrary` for non-`BasicBlockNode` variants of `MastNode` ([#2335](https://github.com/0xMiden/miden-vm/pull/2335)).
+
+## 0.19.1 (2025-11-6)
+
+- Add `verify_ecdsa_k256_keccak` procedure for verifying signatures using the `miden-crypto` format ([#2344](https://github.com/0xMiden/miden-vm/pull/2344)).
 
 ## 0.19.0 (2025-11-1)
 
