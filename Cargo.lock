@@ -1341,7 +1341,7 @@ dependencies = [
 
 [[package]]
 name = "miden-air"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "criterion",
  "miden-core",
@@ -1355,7 +1355,7 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "env_logger",
  "insta",
@@ -1372,7 +1372,7 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly-syntax"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "aho-corasick",
  "env_logger",
@@ -1399,7 +1399,7 @@ dependencies = [
 
 [[package]]
 name = "miden-core"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "criterion",
  "enum_dispatch",
@@ -1464,7 +1464,7 @@ dependencies = [
 
 [[package]]
 name = "miden-debug-types"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "memchr",
  "miden-crypto",
@@ -1500,7 +1500,7 @@ dependencies = [
 
 [[package]]
 name = "miden-mast-package"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "derive_more",
  "miden-assembly-syntax",
@@ -1558,7 +1558,7 @@ dependencies = [
 
 [[package]]
 name = "miden-processor"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "insta",
  "itertools 0.14.0",
@@ -1583,7 +1583,7 @@ dependencies = [
 
 [[package]]
 name = "miden-prover"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "elsa",
  "miden-air",
@@ -1598,7 +1598,7 @@ dependencies = [
 
 [[package]]
 name = "miden-stdlib"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "blake3",
  "criterion",
@@ -1658,7 +1658,7 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-diagnostics"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "miden-crypto",
  "miden-debug-types",
@@ -1669,7 +1669,7 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-indexing"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "serde",
  "thiserror",
@@ -1677,7 +1677,7 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-sync"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "lock_api",
  "loom",
@@ -1687,7 +1687,7 @@ dependencies = [
 
 [[package]]
 name = "miden-verifier"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "miden-air",
  "miden-core",
@@ -1698,7 +1698,7 @@ dependencies = [
 
 [[package]]
 name = "miden-vm"
-version = "0.19.0"
+version = "0.19.1"
 dependencies = [
  "assert_cmd",
  "blake3",
@@ -1732,9 +1732,9 @@ dependencies = [
 
 [[package]]
 name = "midenc-hir-type"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7798671ffbf6596de00619a9abaec67dc26965b891328c9d65c4cb6007597d50"
+checksum = "9d4cfab04baffdda3fb9eafa5f873604059b89a1699aa95e4f1057397a69f0b5"
 dependencies = [
  "miden-formatting",
  "serde",
@@ -2158,9 +2158,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.41"
+version = "1.0.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce25767e7b499d1b604768e7cde645d14cc8584231ea6b295e9c9eb22c02e1d1"
+checksum = "a338cc41d27e6cc6dce6cefc13a0729dfbb81c262b1f519331575dd80ef3067f"
 dependencies = [
  "proc-macro2",
 ]
