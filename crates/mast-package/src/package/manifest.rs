@@ -118,6 +118,28 @@ impl PackageExport {
         }
     }
 
+    /// Get the namespace of the exported item.
+    ///
+    /// For example, if `Self::path` returns the path `std::foo::NAME`, this returns `std::foo`.
+    pub fn namespace(&self) -> &Path {
+        match self {
+            Self::Procedure(ProcedureExport { path, .. })
+            | Self::Constant(ConstantExport { path, .. })
+            | Self::Type(TypeExport { path, .. }) => path.parent().unwrap(),
+        }
+    }
+
+    /// Get the name of the exported item without its namespace.
+    ///
+    /// For example, if `Self::path` returns the path `std::foo::NAME`, this returns just `NAME`.
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Procedure(ProcedureExport { path, .. })
+            | Self::Constant(ConstantExport { path, .. })
+            | Self::Type(TypeExport { path, .. }) => path.last().unwrap(),
+        }
+    }
+
     /// Returns true if this item is a procedure
     #[inline]
     pub fn is_procedure(&self) -> bool {
