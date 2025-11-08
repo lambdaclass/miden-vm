@@ -14,7 +14,7 @@ use crate::{
 pub enum SymbolResolution {
     /// The name was resolved to a definition in the same module at the given index
     Local(Span<ItemIndex>),
-    /// The name was resolved to an path referring to an item exported from another module
+    /// The name was resolved to a path referring to an item exported from another module
     External(Span<Arc<Path>>),
     /// The name was resolved to a procedure MAST root
     MastRoot(Span<Word>),
@@ -225,6 +225,39 @@ impl SymbolTable {
         }
     }
 
+    /// Expand `path` in the context of `module`.
+    ///
+    /// Our aim here is to replace any leading import-relative path component with the corresponding
+    /// target path, recursively.
+    ///
+    /// Doing so ensures that code like the following works as expected:
+    ///
+    /// ```masm,ignore
+    /// use mylib::foo
+    /// use foo::bar->baz
+    ///
+    /// begin
+    ///     exec.baz::p
+    /// end
+    /// ```
+    ///
+    /// In the scenario above, calling `expand` on `baz::p` would proceed as follows:
+    ///
+    /// 1. `path` is `baz::p` a. We split `path` into `baz` and `p` (i.e. `module_name` and `rest`)
+    ///    b. We look for an import of the symbol `baz`, and find `use foo::bar->baz` c. The target
+    ///    of the import is `foo::bar`, which we recursively call `expand` on
+    /// 2. `path` is now `foo::bar` a. We split `path` into `foo` and `bar` b. We look for an import
+    ///    of `foo`, and find `use mylib::foo` c. The target of the import is `mylib::foo`, which we
+    ///    recursively call `expand` on
+    /// 3. `path` is now `mylib::foo` a. We split `path` into `mylib` and `foo` b. We look for an
+    ///    import of `mylib`, and do not find one. c. Since there is no import, we consider
+    ///    `mylib::foo` to be fully expanded and return it
+    /// 4. We've now expanded `foo` into `mylib::foo`, and so expansion of `foo::bar` is completed
+    ///    by joining `bar` to `mylib::foo`, and returning `mylib::foo::bar`.
+    /// 5. We've now expanded `baz` into `mylib::foo::bar`, and so the expansion of `baz::p` is
+    ///    completed by joining `p` to `mylib::foo::bar` and returning `mylib::foo::bar::p`.
+    /// 6. We're done, having successfully resolved `baz::p` to its full expansion
+    ///    `mylib::foo::bar::p`
     fn expand(
         module: &crate::ast::Module,
         path: Span<&Path>,

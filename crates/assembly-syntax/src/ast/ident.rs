@@ -317,7 +317,7 @@ pub(crate) mod testing {
 
     prop_compose! {
         /// A strategy to produce a raw String of no more than length `length` bytes, containing any
-        /// characers from our dictionary.
+        /// characters from our dictionary.
         ///
         /// The returned string will always be at least 1 characters.
         fn ident_raw_any(length: u32)

@@ -9,11 +9,26 @@ use super::{
     PathBuf, SymbolResolution, Visibility,
 };
 
+/// Abstracts over resolving an item to a concrete [Type], using one of:
+///
+/// * A [GlobalItemIndex]
+/// * An [ItemIndex]
+/// * A [Path]
+/// * A [TypeExpr]
+///
+/// Since type resolution happens in two different contexts during assembly, this abstraction allows
+/// us to share more of the resolution logic in both places.
 pub trait TypeResolver<E> {
-    fn get_type(&self, context: SourceSpan, gid: GlobalItemIndex) -> Result<Type, E>;
-    fn get_local_type(&self, context: SourceSpan, id: ItemIndex) -> Result<Option<Type>, E>;
+    /// Should be called by consumers of this resolver to convert a [LocalSymbolResolutionError]
+    /// to the error type used by the [TypeResolver] implementation.
     fn resolve_local_failed(&self, err: LocalSymbolResolutionError) -> E;
+    /// Get the [Type] corresponding to the item given by `gid`
+    fn get_type(&self, context: SourceSpan, gid: GlobalItemIndex) -> Result<Type, E>;
+    /// Get the [Type] corresponding to the item in the current module given by `id`
+    fn get_local_type(&self, context: SourceSpan, id: ItemIndex) -> Result<Option<Type>, E>;
+    /// Attempt to resolve a symbol path, given by a `TypeExpr::Ref`, to an item
     fn resolve_type_ref(&self, ty: Span<&Path>) -> Result<Option<SymbolResolution>, E>;
+    /// Resolve a [TypeExpr] to a concrete [Type]
     fn resolve(&self, ty: &TypeExpr) -> Result<Option<Type>, E> {
         ty.resolve_type(self)
     }

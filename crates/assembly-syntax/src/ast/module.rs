@@ -348,7 +348,7 @@ impl Module {
     /// Get the name of this specific module, i.e. the last component of the [Path] that
     /// represents the fully-qualified name of the module, e.g. `u64` in `std::math::u64`
     pub fn name(&self) -> &str {
-        self.path.last().unwrap()
+        self.path.last().expect("non-empty module path")
     }
 
     /// Get the fully-qualified name of this module, e.g. `std::math::u64`

@@ -135,7 +135,7 @@ impl PathBuf {
 
 /// Mutation
 impl PathBuf {
-    /// Override the parent prefix of this path.
+    /// Overrides the parent prefix of this path.
     ///
     /// The parent prefix is the part of the path consisting of all components but the last one.
     ///

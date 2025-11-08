@@ -11,7 +11,7 @@ pub enum Visibility {
     Public = 0,
     /// The item is visible only within its defining module
     #[default]
-    Private = 2,
+    Private = 1,
 }
 
 impl fmt::Display for Visibility {

@@ -10,12 +10,13 @@ use crate::{ast::Ident, debuginfo::Span};
 // PATH COMPONENT
 // ================================================================================================
 
+/// Represents a single component of a [Path]
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PathComponent<'a> {
     /// The root anchor, indicating that the path is absolute/fully qualified
     Root,
-    /// A normal component of the path
+    /// A normal component of the path, i.e. an identifier
     Normal(&'a str),
 }
 
@@ -137,21 +138,27 @@ impl<'a> DoubleEndedIterator for Iter<'a> {
     }
 }
 
+/// The underlying path component iterator used by [Iter]
 struct Components<'a> {
     /// The path left to parse components from
     path: &'a str,
-    /// To support double-ended iteration, these states keep tack of what has been produced from
-    /// each end
+    // To support double-ended iteration, these states keep tack of what has been produced from
+    // each end
     front: State,
     back: State,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum State {
+    // We're at the start of the path
     Start,
+    // We're parsing components of the path
     Body,
+    // We've started parsing a quoted component
     QuoteOpened,
+    // We've parsed a quoted component
     QuoteClosed,
+    // We're at the end of the path
     Done,
 }
 

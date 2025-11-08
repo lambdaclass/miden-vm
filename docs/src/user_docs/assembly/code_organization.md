@@ -323,7 +323,7 @@ pub proc set_level(level: Level)
 end
 ```
 
-Note that nothing currently validates that a u8 value passed as an instance of `Level` is actually one of those three constants, that is up to you. Instead, the `enum` syntax is intended to provide more semantic information for readers of the code, and to better express the relationship between the type and the constants in question.
+Note that nothing currently validates that a `u8` value passed as an instance of `Level` is actually one of those three constants, that is up to you. Instead, the `enum` syntax is intended to provide more semantic information for readers of the code, and to better express the relationship between the type and the constants in question.
 
 #### Type signatures
 
