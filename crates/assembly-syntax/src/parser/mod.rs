@@ -180,8 +180,8 @@ fn parse_forms_internal(
 /// Returns an iterator over all parsed modules.
 #[cfg(feature = "std")]
 pub fn read_modules_from_dir(
-    namespace: impl AsRef<Path>,
     dir: impl AsRef<std::path::Path>,
+    namespace: impl AsRef<Path>,
     source_manager: &dyn SourceManager,
 ) -> Result<impl Iterator<Item = Box<ast::Module>>, Report> {
     use std::collections::{BTreeMap, btree_map::Entry};

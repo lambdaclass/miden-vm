@@ -206,7 +206,7 @@ impl Assembler {
     /// use miden_assembly::{Assembler, Path};
     ///
     /// let mut assembler = Assembler::default();
-    /// assembler.compile_and_statically_link_from_dir("std::foo", "~/masm/std");
+    /// assembler.compile_and_statically_link_from_dir("~/masm/std", "std::foo");
     /// ```
     ///
     /// Here's how we would handle various files under this path:
@@ -219,13 +219,13 @@ impl Assembler {
     #[cfg(feature = "std")]
     pub fn compile_and_statically_link_from_dir(
         &mut self,
-        namespace: impl AsRef<Path>,
         dir: impl AsRef<std::path::Path>,
+        namespace: impl AsRef<Path>,
     ) -> Result<(), Report> {
         use miden_assembly_syntax::parser;
 
         let namespace = namespace.as_ref();
-        let modules = parser::read_modules_from_dir(namespace, dir, &self.source_manager)?;
+        let modules = parser::read_modules_from_dir(dir, namespace, &self.source_manager)?;
         self.linker.link_modules(modules)?;
         Ok(())
     }
@@ -399,7 +399,7 @@ impl Assembler {
     /// ```rust
     /// use miden_assembly::{Assembler, Path};
     ///
-    /// Assembler::default().assemble_library_from_dir("~/masm/std", Path::new("std::foo").unwrap());
+    /// Assembler::default().assemble_library_from_dir("~/masm/std", "std::foo");
     /// ```
     ///
     /// Here's how we would handle various files under this path:
@@ -412,16 +412,16 @@ impl Assembler {
     #[cfg(feature = "std")]
     pub fn assemble_library_from_dir(
         self,
-        path: impl AsRef<std::path::Path>,
+        dir: impl AsRef<std::path::Path>,
         namespace: impl AsRef<Path>,
     ) -> Result<Library, Report> {
         use miden_assembly_syntax::parser;
 
-        let path = path.as_ref();
+        let dir = dir.as_ref();
         let namespace = namespace.as_ref();
 
         let source_manager = self.source_manager.clone();
-        let modules = parser::read_modules_from_dir(namespace, path, &source_manager)?;
+        let modules = parser::read_modules_from_dir(dir, namespace, &source_manager)?;
         self.assemble_library(modules)
     }
 
@@ -467,7 +467,7 @@ impl Assembler {
     ) -> Result<KernelLibrary, Report> {
         // if library directory is provided, add modules from this directory to the assembler
         if let Some(lib_dir) = lib_dir {
-            self.compile_and_statically_link_from_dir(Path::kernel_path(), lib_dir)?;
+            self.compile_and_statically_link_from_dir(lib_dir, Path::kernel_path())?;
         }
 
         self.assemble_kernel(sys_module_path.as_ref())
