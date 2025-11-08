@@ -15,7 +15,7 @@ fn merge_programs(
     program_b: &str,
 ) -> Result<(MastForest, MastForest, MastForest, MastForestRootMap), Report> {
     let context = TestContext::new();
-    let module = context.parse_module_with_path("lib::mod".parse().unwrap(), program_a)?;
+    let module = context.parse_module_with_path("lib::mod", program_a)?;
 
     let lib_a = Assembler::new(context.source_manager()).assemble_library([module])?;
 

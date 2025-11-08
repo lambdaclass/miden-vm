@@ -152,14 +152,14 @@ type DocPayload = (Option<String>, Vec<(String, Option<String>)>);
 
 /// Parse MASM source using AST-parsing
 fn parse_module_with_ast(label: &str, file_path: &Path) -> io::Result<DocPayload> {
-    let path = masm::PathBuf::new(label).map_err(|e| io::Error::other(e.to_string()))?;
+    let path = masm::Path::new(label);
     let module = file_path
         .parse_with_options(
             &DefaultSourceManager::default(),
             ParseOptions {
                 kind: ModuleKind::Library,
                 warnings_as_errors: false,
-                path: Some(path),
+                path: Some(path.into()),
             },
         )
         .map_err(|e| io::Error::other(e.to_string()))?;

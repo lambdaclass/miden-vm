@@ -55,9 +55,7 @@ fn test_diagnostic_advice_map_key_already_present() {
 
     let (lib_1, lib_2) = {
         let dummy_library_source = source_file!(&test_context, "pub proc foo add end");
-        let module = test_context
-            .parse_module_with_path("foo::bar".parse().unwrap(), dummy_library_source)
-            .unwrap();
+        let module = test_context.parse_module_with_path("foo::bar", dummy_library_source).unwrap();
         let lib = test_context.assemble_library(std::iter::once(module)).unwrap();
         let lib_1 = lib
             .clone()

@@ -525,7 +525,7 @@ fn call_without_path() -> TestResult {
 
     // compile first module
     context.assemble_module(
-        "account_code1".parse().unwrap(),
+        "account_code1",
         source_file!(
             &context,
             "\
@@ -544,7 +544,7 @@ fn call_without_path() -> TestResult {
 
     // compile second module
     context.assemble_module(
-        "account_code2".parse().unwrap(),
+        "account_code2",
         source_file!(
             &context,
             "\
@@ -591,7 +591,7 @@ fn procref_call() -> TestResult {
     let mut context = TestContext::default();
     // compile first module
     context.add_module_from_source(
-        "module::path::one".parse().unwrap(),
+        "module::path::one",
         source_file!(
             &context,
             "
@@ -607,7 +607,7 @@ fn procref_call() -> TestResult {
 
     // compile second module
     context.add_module_from_source(
-        "module::path::two".parse().unwrap(),
+        "module::path::two",
         source_file!(
             &context,
             "
@@ -653,7 +653,7 @@ fn get_proc_name_of_unknown_module() -> TestResult {
         procref.two::bar
     end"
     );
-    let module_path_one = "module::path::one".parse().unwrap();
+    let module_path_one = "module::path::one";
     let module1 = context.parse_module_with_path(module_path_one, module_source1)?;
 
     let report = Assembler::new(context.source_manager())
@@ -2208,7 +2208,7 @@ fn program_with_one_import_and_hex_call() -> TestResult {
         end"#;
 
     let mut context = TestContext::default();
-    let path = MODULE.parse().unwrap();
+    let path = MODULE;
     let ast =
         context.parse_module_with_path(path, source_file!(&context, PROCEDURE.to_string()))?;
     let library = Assembler::new(context.source_manager())
@@ -2258,7 +2258,7 @@ fn program_with_two_imported_procs_with_same_mast_root() -> TestResult {
         end"#;
 
     let mut context = TestContext::default();
-    let path = MODULE.parse().unwrap();
+    let path = MODULE;
     let ast =
         context.parse_module_with_path(path, source_file!(&context, PROCEDURE.to_string()))?;
     let library = Assembler::new(context.source_manager())
@@ -3565,8 +3565,7 @@ fn nested_blocks() -> Result<(), Report> {
     let assembler = {
         let kernel_lib = Assembler::new(context.source_manager()).assemble_kernel(KERNEL).unwrap();
 
-        let dummy_module =
-            context.parse_module_with_path(MODULE.parse().unwrap(), MODULE_PROCEDURE)?;
+        let dummy_module = context.parse_module_with_path(MODULE, MODULE_PROCEDURE)?;
         let dummy_library = Assembler::new(context.source_manager())
             .assemble_library([dummy_module])
             .unwrap();
@@ -3927,8 +3926,8 @@ fn explicit_fully_qualified_procedure_references() -> Result<(), Report> {
         end"#;
 
     let context = TestContext::default();
-    let bar = context.parse_module_with_path(BAR_NAME.parse().unwrap(), BAR)?;
-    let baz = context.parse_module_with_path(BAZ_NAME.parse().unwrap(), BAZ)?;
+    let bar = context.parse_module_with_path(BAR_NAME, BAR)?;
+    let baz = context.parse_module_with_path(BAZ_NAME, BAZ)?;
     let library = context.assemble_library([bar, baz]).unwrap();
 
     let assembler =
@@ -3962,8 +3961,8 @@ fn re_exports() -> Result<(), Report> {
         end"#;
 
     let context = TestContext::new();
-    let bar = context.parse_module_with_path(BAR_NAME.parse().unwrap(), BAR)?;
-    let baz = context.parse_module_with_path(BAZ_NAME.parse().unwrap(), BAZ)?;
+    let bar = context.parse_module_with_path(BAR_NAME, BAR)?;
+    let baz = context.parse_module_with_path(BAZ_NAME, BAZ)?;
     let library = context.assemble_library([bar, baz]).unwrap();
 
     let assembler =
@@ -4004,9 +4003,9 @@ fn module_ordering_can_be_arbitrary() -> Result<(), Report> {
         end"#;
 
     let context = TestContext::new();
-    let a = context.parse_module_with_path(A_NAME.parse().unwrap(), A)?;
-    let b = context.parse_module_with_path(B_NAME.parse().unwrap(), B)?;
-    let c = context.parse_module_with_path(C_NAME.parse().unwrap(), C)?;
+    let a = context.parse_module_with_path(A_NAME, A)?;
+    let b = context.parse_module_with_path(B_NAME, B)?;
+    let c = context.parse_module_with_path(C_NAME, C)?;
 
     let mut assembler = Assembler::new(context.source_manager());
     assembler.compile_and_statically_link(b)?.compile_and_statically_link(a)?;

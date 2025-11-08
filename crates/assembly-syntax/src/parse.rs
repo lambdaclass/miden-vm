@@ -33,7 +33,7 @@ pub struct ParseOptions {
     /// If unset, and there is no name associated with the item being parsed (e.g. a file path)
     /// then the path will consist of just a namespace; using the value of `namespace` if provided,
     /// or deriving one from `kind`.
-    pub path: Option<PathBuf>,
+    pub path: Option<Arc<Path>>,
 }
 
 impl Default for ParseOptions {
@@ -51,16 +51,12 @@ impl ParseOptions {
     /// This is primarily useful when compiling a module from source code that has no meaningful
     /// [Path] associated with it, such as when compiling from a `str`. This will override
     /// the default name derived from the given [ModuleKind].
-    pub fn new<P, E>(kind: ModuleKind, path: P) -> Result<Self, E>
-    where
-        P: TryInto<PathBuf, Error = E>,
-    {
-        let path = path.try_into()?;
-        Ok(Self {
+    pub fn new(kind: ModuleKind, path: impl AsRef<Path>) -> Self {
+        Self {
             kind,
-            path: Some(path),
+            path: Some(path.as_ref().into()),
             ..Default::default()
-        })
+        }
     }
 
     /// Get the default [`ParseOptions`] for compiling a library module.
@@ -186,6 +182,7 @@ impl Parse for Arc<SourceFile> {
                 .uri()
                 .path()
                 .parse::<PathBuf>()
+                .map(|p| p.into())
                 .into_diagnostic()
                 .wrap_err("cannot parse module as it has an invalid path/name")?,
         };
@@ -322,6 +319,7 @@ where
             None => self
                 .name()
                 .parse::<PathBuf>()
+                .map(|p| p.into())
                 .into_diagnostic()
                 .wrap_err("cannot parse module as it has an invalid path/name")?,
         };
@@ -391,7 +389,7 @@ impl Parse for &std::path::Path {
                         Ok::<(), Report>(())
                     })?;
 
-                buf
+                buf.into()
             },
         };
         let source_file = source_manager

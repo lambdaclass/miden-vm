@@ -353,7 +353,7 @@ impl Test {
                 let module = source
                     .parse_with_options(
                         &self.source_manager,
-                        ParseOptions::new(ModuleKind::Library, path.to_path_buf()).unwrap(),
+                        ParseOptions::new(ModuleKind::Library, path.clone()),
                     )
                     .expect("invalid masm source code");
                 assembler.compile_and_statically_link(module).expect("failed to link module");

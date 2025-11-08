@@ -434,7 +434,7 @@ impl Assembler {
         let module = module.parse_with_options(
             &self.source_manager,
             ParseOptions {
-                path: Some(Path::kernel_path().to_path_buf()),
+                path: Some(Path::kernel_path().into()),
                 warnings_as_errors: self.warnings_as_errors,
                 ..ParseOptions::for_kernel()
             },
@@ -692,7 +692,7 @@ impl Assembler {
         let options = ParseOptions {
             kind: ModuleKind::Executable,
             warnings_as_errors: self.warnings_as_errors,
-            path: Some(Path::exec_path().to_path_buf()),
+            path: Some(Path::exec_path().into()),
         };
 
         let program = source.parse_with_options(&self.source_manager, options)?;
