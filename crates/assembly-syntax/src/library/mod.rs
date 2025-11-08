@@ -354,7 +354,7 @@ impl Library {
 
     /// Returns the digest of the procedure with the specified name, or `None` if it was not found
     /// in the library or its library path is malformed.
-    pub fn get_procedure_root_by_name(&self, path: impl AsRef<Path>) -> Option<Word> {
+    pub fn get_procedure_root_by_path(&self, path: impl AsRef<Path>) -> Option<Word> {
         let path = path.as_ref().to_absolute();
         let export = self.exports.get(path.as_ref()).and_then(LibraryExport::as_procedure);
         export.map(|e| self.mast_forest()[e.node].digest())

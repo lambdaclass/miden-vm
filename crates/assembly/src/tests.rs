@@ -445,23 +445,23 @@ fn get_proc_digest_by_name() -> Result<(), Report> {
     assert!(
         library_procedure_digests.contains(
             &library
-                .get_procedure_root_by_name("test::names::foo")
+                .get_procedure_root_by_path("test::names::foo")
                 .expect("procedure with name 'foo' must exist in the test library")
         )
     );
     assert!(
         library_procedure_digests.contains(
             &library
-                .get_procedure_root_by_name("test::names::bar")
+                .get_procedure_root_by_path("test::names::bar")
                 .expect("procedure with name 'bar' must exist in the test library")
         )
     );
 
     // invalid procedure name
-    assert_eq!(None, library.get_procedure_root_by_name("test::names::baz"));
+    assert_eq!(None, library.get_procedure_root_by_path("test::names::baz"));
 
     // invalid namespace
-    assert_eq!(None, library.get_procedure_root_by_name("invalid::namespace::foo"));
+    assert_eq!(None, library.get_procedure_root_by_path("invalid::namespace::foo"));
 
     Ok(())
 }
