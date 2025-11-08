@@ -185,24 +185,37 @@ impl Assembler {
         Ok(self)
     }
 
-    /// Compiles all Miden Assembly modules in the provided directory, and then statically links
-    /// them into the final artifact.
+    /// Compiles and statically links all Miden Assembly modules in the provided directory, using
+    /// the provided [Path] as the root namespace for the compiled modules.
     ///
-    /// When compiling each module, the path of the module is derived by appending path components
+    /// When compiling each module, its Miden Assembly path is derived by appending path components
     /// corresponding to the relative path of the module in `dir`, to `namespace`. If a source file
     /// named `mod.masm` is found, the resulting module will derive its path using the path
     /// components of the parent directory, rather than the file name.
     ///
-    /// For example, let's assume we call this function with the namespace `my_lib`, for a
-    /// directory at path `~/masm`. Now, let's look at how various file system paths would get
-    /// translated to their corresponding module paths:
+    /// The `namespace` can be any valid Miden Assembly path, e.g. `std` is a valid path, as is
+    /// `std::math::u64` - there is no requirement that the namespace be a single identifier. This
+    /// allows defining multiple projects relative to a common root namespace without conflict.
     ///
-    /// | file path           | module path        |
-    /// |---------------------|--------------------|
-    /// | ~/masm/mod.masm     | "my_lib"           |
-    /// | ~/masm/foo.masm     | "my_lib::foo"      |
-    /// | ~/masm/bar/mod.masm | "my_lib::bar"      |
-    /// | ~/masm/bar/baz.masm | "my_lib::bar::baz" |
+    /// This function recursively parses the entire directory structure under `dir`, ignoring
+    /// any files which do not have the `.masm` extension.
+    ///
+    /// For example, let's say I call this function like so:
+    ///
+    /// ```rust
+    /// use miden_assembly::{Assembler, Path};
+    ///
+    /// let mut assembler = Assembler::default();
+    /// assembler.compile_and_statically_link_from_dir("std::foo", "~/masm/std");
+    /// ```
+    ///
+    /// Here's how we would handle various files under this path:
+    ///
+    /// - ~/masm/std/sys.masm            -> Parsed as "std::foo::sys"
+    /// - ~/masm/std/crypto/hash.masm    -> Parsed as "std::foo::crypto::hash"
+    /// - ~/masm/std/math/u32.masm       -> Parsed as "std::foo::math::u32"
+    /// - ~/masm/std/math/u64.masm       -> Parsed as "std::foo::math::u64"
+    /// - ~/masm/std/math/README.md      -> Ignored
     #[cfg(feature = "std")]
     pub fn compile_and_statically_link_from_dir(
         &mut self,
@@ -362,12 +375,21 @@ impl Assembler {
         self.assemble_common(&module_indices)
     }
 
-    /// Assemble a [Library] from a standard Miden Assembly project layout.
+    /// Assemble a [Library] from a standard Miden Assembly project layout, using the provided
+    /// [Path] as the root under which the project is rooted.
     ///
-    /// The standard layout dictates that a given path is the root of a namespace, and the
-    /// directory hierarchy corresponds to the namespace hierarchy. A `.masm` file found in a
-    /// given subdirectory of the root, will be parsed with its [Path] set based on where it resides
-    /// in the directory structure.
+    /// The standard layout assumes that the given filesystem path corresponds to the root of
+    /// `namespace`. Modules will be parsed with their path made relative to `namespace` according
+    /// to their location in the directory structure with respect to `path`. See below for an
+    /// example of what this looks like in practice.
+    ///
+    /// The `namespace` can be any valid Miden Assembly path, e.g. `std` is a valid path, as is
+    /// `std::math::u64` - there is no requirement that the namespace be a single identifier. This
+    /// allows defining multiple projects relative to a common root namespace without conflict.
+    ///
+    /// NOTE: You must ensure there is no conflict in namespace between projects, e.g. two projects
+    /// both assembled with `namespace` set to `std::math` would conflict with each other in a way
+    /// that would prevent them from being used at the same time.
     ///
     /// This function recursively parses the entire directory structure under `path`, ignoring
     /// any files which do not have the `.masm` extension.
@@ -377,15 +399,15 @@ impl Assembler {
     /// ```rust
     /// use miden_assembly::{Assembler, Path};
     ///
-    /// Assembler::default().assemble_library_from_dir("~/masm/std", Path::new("std").unwrap());
+    /// Assembler::default().assemble_library_from_dir("~/masm/std", Path::new("std::foo").unwrap());
     /// ```
     ///
     /// Here's how we would handle various files under this path:
     ///
-    /// - ~/masm/std/sys.masm            -> Parsed as "std::sys"
-    /// - ~/masm/std/crypto/hash.masm    -> Parsed as "std::crypto::hash"
-    /// - ~/masm/std/math/u32.masm       -> Parsed as "std::math::u32"
-    /// - ~/masm/std/math/u64.masm       -> Parsed as "std::math::u64"
+    /// - ~/masm/std/sys.masm            -> Parsed as "std::foo::sys"
+    /// - ~/masm/std/crypto/hash.masm    -> Parsed as "std::foo::crypto::hash"
+    /// - ~/masm/std/math/u32.masm       -> Parsed as "std::foo::math::u32"
+    /// - ~/masm/std/math/u64.masm       -> Parsed as "std::foo::math::u64"
     /// - ~/masm/std/math/README.md      -> Ignored
     #[cfg(feature = "std")]
     pub fn assemble_library_from_dir(
