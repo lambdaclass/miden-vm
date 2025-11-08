@@ -197,10 +197,11 @@ A constant's value must be in a decimal or hexadecimal form and be in the range 
 use std::math::u64
 use mylib::CONSTANT_1 # constants can be imported like other items
 
-const CONSTANT_2 = 200+(CONSTANT_1-50)
+# Constants can be exported like other items
+pub const CONSTANT_2 = 200+(CONSTANT_1-50)
 const ADDR_1 = 3
 
-begin
+pub proc example
     push.CONSTANT_1.CONSTANT_2
     exec.u64::wrapping_add
     mem_store.ADDR_1
