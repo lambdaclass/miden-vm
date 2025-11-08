@@ -56,7 +56,7 @@ impl QualifiedProcedureName {
     }
 
     /// Get the module/namespace of this procedure
-    pub fn module(&self) -> &Path {
+    pub fn namespace(&self) -> &Path {
         self.path.parent().unwrap()
     }
 

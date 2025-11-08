@@ -86,18 +86,16 @@ impl Package {
             return Err(Report::msg("expected library but got an executable"));
         };
 
-        let entrypoint = entrypoint.as_path();
-
         let module = library
             .module_infos()
-            .find(|info| info.path() == entrypoint.parent().unwrap())
+            .find(|info| info.path() == entrypoint.namespace())
             .ok_or_else(|| {
                 Report::msg(format!(
                     "invalid entrypoint: library does not contain a module named '{}'",
-                    entrypoint.parent().unwrap()
+                    entrypoint.namespace()
                 ))
             })?;
-        if let Some(digest) = module.get_procedure_digest_by_name(entrypoint.last().unwrap()) {
+        if let Some(digest) = module.get_procedure_digest_by_name(entrypoint.name()) {
             let node_id = library.mast_forest().find_procedure_root(digest).ok_or_else(|| {
                 Report::msg(
                     "invalid entrypoint: malformed library - procedure exported, but digest has \
