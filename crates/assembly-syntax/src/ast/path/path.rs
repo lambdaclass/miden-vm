@@ -363,7 +363,11 @@ impl Path {
     pub fn join(&self, path: impl AsRef<Path>) -> PathBuf {
         let path = path.as_ref();
 
-        if path.is_absolute() {
+        if path.is_empty() {
+            return self.to_path_buf();
+        }
+
+        if self.is_empty() || path.is_absolute() {
             return path.to_path_buf();
         }
 
