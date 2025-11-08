@@ -188,7 +188,7 @@ pub struct ConstantExport {
     )]
     pub path: Arc<Path>,
     /// The constant-folded AST representing the value of this constant
-    pub value: crate::ast::ConstantExpr,
+    pub value: crate::ast::ConstantValue,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -618,7 +618,7 @@ impl Deserializable for Library {
                     })
                 },
                 1 => {
-                    let value = crate::ast::ConstantExpr::read_from(source)?;
+                    let value = crate::ast::ConstantValue::read_from(source)?;
                     LibraryExport::Constant(ConstantExport { path: path.clone(), value })
                 },
                 2 => {

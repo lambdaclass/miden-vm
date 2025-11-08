@@ -393,7 +393,7 @@ impl Serializable for ConstantExport {
 impl Deserializable for ConstantExport {
     fn read_from<R: ByteReader>(source: &mut R) -> Result<Self, DeserializationError> {
         let path = PathBuf::read_from(source)?.into_boxed_path().into();
-        let value = miden_assembly_syntax::ast::ConstantExpr::read_from(source)?;
+        let value = miden_assembly_syntax::ast::ConstantValue::read_from(source)?;
         Ok(Self { path, value })
     }
 }

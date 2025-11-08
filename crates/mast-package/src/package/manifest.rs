@@ -218,11 +218,11 @@ pub struct ConstantExport {
     pub path: Arc<Path>,
     /// The value of the exported constant
     ///
-    /// We export a [ast::ConstantExpr] here, rather than a concrete value, because it is how a
-    /// constant is used that determines its final concrete value, not the declaration itself.
-    /// However, we do ensure that the expression here has been folded to _some_ concrete value,
-    /// i.e. there are no references to other constants; no unapplied operators, etc.
-    pub value: ast::ConstantExpr,
+    /// We export a [ast::ConstantValue] here, rather than raw felts, because it is how a constant
+    /// is used that determines its final concrete value, not the declaration itself. However,
+    /// [ast::ConstantValue] does represent a concrete value, just one that requires context to
+    /// fully evaluate.
+    pub value: ast::ConstantValue,
 }
 
 impl fmt::Debug for ConstantExport {

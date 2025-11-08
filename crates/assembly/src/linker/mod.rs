@@ -944,9 +944,13 @@ impl Linker {
     pub fn const_eval(
         &self,
         _gid: GlobalItemIndex,
-        _expr: &ast::ConstantExpr,
-    ) -> Result<ast::ConstantExpr, LinkerError> {
-        todo!()
+        expr: &ast::ConstantExpr,
+    ) -> Result<ast::ConstantValue, LinkerError> {
+        // TODO(pauls): Implement const evaluation at link-time
+        //
+        // Constants which are not yet a value, must reference imported constants, and so only at
+        // link-time do we have the information necessary to fully evaluate those expressions.
+        Ok(expr.expect_value())
     }
 
     /// Registers a [MastNodeId] as corresponding to a given [GlobalProcedureIndex].

@@ -6,7 +6,7 @@ use midenc_hir_type::FunctionType;
 use crate::{
     Path, Word,
     ast::{
-        self, AttributeSet, ConstantExpr, GlobalItemIndex, Ident, ItemIndex,
+        self, AttributeSet, ConstantValue, GlobalItemIndex, Ident, ItemIndex,
         LocalSymbolResolutionError, LocalSymbolResolver, ProcedureName, SymbolResolution,
         TypeResolver,
     },
@@ -51,7 +51,7 @@ impl ModuleInfo {
     }
 
     /// Adds a constant to the module.
-    pub fn add_constant(&mut self, name: Ident, value: ConstantExpr) {
+    pub fn add_constant(&mut self, name: Ident, value: ConstantValue) {
         self.items.push(ItemInfo::Constant(ConstantInfo { name, value }));
     }
 
@@ -187,7 +187,7 @@ pub struct ProcedureInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstantInfo {
     pub name: Ident,
-    pub value: ConstantExpr,
+    pub value: ConstantValue,
 }
 
 /// Stores the name and concrete type of a type declaration
