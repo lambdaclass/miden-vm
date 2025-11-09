@@ -6,8 +6,10 @@ use std::{
 
 use fs_err as fs;
 use miden_assembly::{
-    self as masm, Assembler, Library, Parse, ParseOptions, Report, ast::ModuleKind,
-    debuginfo::DefaultSourceManager, diagnostics::IntoDiagnostic,
+    self as masm, Assembler, Library, Parse, ParseOptions, Report,
+    ast::{self, ModuleKind},
+    debuginfo::DefaultSourceManager,
+    diagnostics::IntoDiagnostic,
 };
 
 // CONSTANTS
@@ -169,12 +171,20 @@ fn parse_module_with_ast(label: &str, file_path: &Path) -> io::Result<DocPayload
 
     // Extract procedures and their documentation
     let mut procedures = Vec::new();
-    for export in module.procedures() {
-        // Only include exported procedures (skip private procedures)
-        if export.visibility().is_public() {
-            let name = export.name().to_string();
-            let docs = export.docs().map(|d| d.to_string());
-            procedures.push((name, docs));
+    for (index, name) in module.exported() {
+        match &module[index] {
+            ast::Export::Procedure(proc) => {
+                let docs = proc.docs().map(|d| d.to_string());
+                procedures.push((name.name().to_string(), docs));
+            },
+            ast::Export::Alias(alias) => {
+                // Ignore undocumented aliases, as they may not be procedure items
+                if let Some(docs) = alias.docs() {
+                    procedures.push((name.name().to_string(), Some(docs.to_string())));
+                }
+            },
+            // TODO: Update doc format to allow for other item types
+            ast::Export::Constant(_) | ast::Export::Type(_) => continue,
         }
     }
 
