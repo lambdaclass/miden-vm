@@ -112,7 +112,10 @@ impl Package {
                     node_id,
                 ))),
                 manifest: PackageManifest::new(
-                    self.manifest.get_exports_by_digest(&digest).cloned(),
+                    self.manifest
+                        .get_procedures_by_digest(&digest)
+                        .cloned()
+                        .map(PackageExport::Procedure),
                 )
                 .with_dependencies(self.manifest.dependencies().cloned()),
                 sections: self.sections.clone(),

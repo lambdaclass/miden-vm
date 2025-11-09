@@ -81,15 +81,17 @@ impl PackageManifest {
         self.exports.get(name.as_ref())
     }
 
-    /// Get information about all exports of this package with the given MAST root digest
-    pub fn get_exports_by_digest(
+    /// Get information about all exported procedures of this package with the given MAST root
+    /// digest
+    pub fn get_procedures_by_digest(
         &self,
         digest: &Word,
-    ) -> impl Iterator<Item = &PackageExport> + '_ {
+    ) -> impl Iterator<Item = &ProcedureExport> + '_ {
         let digest = *digest;
-        self.exports.values().filter(move |export| match export {
-            PackageExport::Procedure(export) => export.digest == digest,
-            PackageExport::Constant(_) | PackageExport::Type(_) => false,
+        self.exports.values().filter_map(move |export| match export {
+            PackageExport::Procedure(export) if export.digest == digest => Some(export),
+            PackageExport::Procedure(_) => None,
+            PackageExport::Constant(_) | PackageExport::Type(_) => None,
         })
     }
 }
