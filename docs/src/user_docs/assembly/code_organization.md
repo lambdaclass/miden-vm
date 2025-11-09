@@ -186,6 +186,21 @@ pub use 0x0000..0000->mul64
 
 In all of the forms described above, the actual implementation of the re-exported procedure is defined externally. Other modules which reference the re-exported procedure, will have those references resolved to the original procedure during assembly.
 
+You may attach documentation to re-exported items, e.g.:
+
+```
+#! Multiply two u64 integers
+pub use ::std::math::u64::mul
+```
+
+However you cannot attach attributes to re-exported items, i.e. the following is
+not supported:
+
+```
+@foo
+pub use ::std::math::u64::mul
+```
+
 ### Constants
 Miden assembly supports constant declarations. Similar to procedures, constants have private visibility by default, but may be given `pub` visibility to export them for use from other modules. Constants can be used as immediates, rather than literals, with Miden assembly instructions that support immediate operands, avoiding duplicating the same literal expression in many places, as well as naming the value for readers. Many of the instructions in the Miden Assembly instruction set support immediate operands, but check the documentation to confirm that for specific instructions.
 
