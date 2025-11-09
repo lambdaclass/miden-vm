@@ -66,9 +66,9 @@ impl PackageManifest {
         self.dependencies.iter()
     }
 
-    /// Get the number of procedures exported from this package
+    /// Get the number of items exported from this package
     pub fn num_exports(&self) -> usize {
-        self.exports.values().filter(|export| export.is_procedure()).count()
+        self.exports.len()
     }
 
     /// Get an iterator over the exports in this package
