@@ -70,6 +70,15 @@ impl VerifyInvokeTargets<'_> {
                     });
                     None
                 },
+                // If we have an import like `use lib::lib`, the base `lib` has been shadowed, so
+                // we cannot attempt to resolve further. Instead, we use the target path we have.
+                // In the future we may need to support exclusions from import resolution to allow
+                // chasing through shadowed imports, but we do not do that for now.
+                AliasTarget::Path(shadowed) if shadowed.as_deref() == path => {
+                    Some(InvocationTarget::Path(
+                        shadowed.as_deref().map(|p| p.to_absolute().join(rest).into()),
+                    ))
+                },
                 AliasTarget::Path(path) => {
                     let path = path.clone();
                     let resolved = self.resolve_external(path.span(), path.inner())?;

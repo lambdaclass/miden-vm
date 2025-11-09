@@ -274,6 +274,16 @@ impl SymbolTable {
                         span: digest.span(),
                     })
                 },
+                // If we have an import like `use lib::lib`, we cannot refer to the base `lib` any
+                // longer, as it has been shadowed; any attempt to further expand the path will
+                // recurse infinitely.
+                //
+                // For now, we handle this by simply stopping further expansion. In the future, we
+                // may want to refine module.get_import to allow passing an exclusion list, so that
+                // we can avoid recursing on the same import in an infinite loop.
+                AliasTarget::Path(shadowed) if shadowed.as_deref() == path => {
+                    Ok(SymbolResolution::External(shadowed.clone()))
+                },
                 AliasTarget::Path(path) => {
                     let path = path.clone();
                     let resolved = Self::expand(module, path.as_deref())?;
