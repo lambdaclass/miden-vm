@@ -491,6 +491,8 @@ impl Linker {
             module.module.set_kind(crate::ast::ModuleKind::Kernel);
         }
 
+        self.kernel_index = Some(module_index);
+
         self.link_and_rewrite()?;
 
         Ok(vec![module_index])
