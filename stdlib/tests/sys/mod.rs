@@ -59,7 +59,7 @@ fn log_precompile_request_procedure() {
 
     let source = format!(
         "
-            use.std::sys
+            use std::sys
 
             begin
                 emit.event(\"{EVENT_NAME}\")

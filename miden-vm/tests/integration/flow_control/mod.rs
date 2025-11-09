@@ -291,7 +291,8 @@ fn call_in_syscall() {
         # USER CONTEXT FUNCTIONS (i.e. not 0)
         # ====================================================================================
 
-        proc.userland.4
+        @locals(4)
+        proc userland
             # Ensure that the memory locals are fresh before we write to them
             loc_loadw_be.0 assertz assertz assertz assertz
 
@@ -308,7 +309,8 @@ fn call_in_syscall() {
         # CONTEXT 0 FUNCTIONS
         # ====================================================================================
 
-        export.second_kernel_entry.4
+        @locals(4)
+        pub proc second_kernel_entry
             # Ensure that the memory locals are fresh before we write to them
             loc_loadw_be.0 assertz assertz assertz assertz
 
@@ -317,7 +319,8 @@ fn call_in_syscall() {
             push.9.10.11.12 loc_storew_be.0 dropw
         end
 
-        export.first_kernel_entry.4
+        @locals(4)
+        pub proc first_kernel_entry
             # Ensure that the memory locals are fresh before we write to them
             loc_loadw_be.0 assertz assertz assertz assertz
 
@@ -333,7 +336,7 @@ fn call_in_syscall() {
     ";
 
     let program_source = "
-        proc.new_ctx
+        proc new_ctx
             syscall.first_kernel_entry
         end
 

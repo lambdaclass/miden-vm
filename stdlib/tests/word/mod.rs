@@ -141,7 +141,7 @@ fn store_word_u32s_le_stores_limbs() {
 
     let source = format!(
         "
-        use.std::word
+        use std::word
 
         begin
             push.{ptr}

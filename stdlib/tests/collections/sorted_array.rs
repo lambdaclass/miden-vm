@@ -149,7 +149,7 @@ fn test_sorted_key_value_array_find_half_key() {
         let (key_suffix, key_prefix, was_key_found, key_ptr) = test;
         let source: String = format!(
             "
-            use.std::collections::sorted_array
+            use std::collections::sorted_array
 
             {TRUNCATE_STACK_PROC}
 

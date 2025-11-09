@@ -1262,7 +1262,8 @@ fn deprecated_loc_loadw_instruction() -> TestResult {
     let source = source_file!(
         &context,
         "\
-    proc.foo.8
+    @locals(8)
+    proc foo
         loc_loadw.0
     end
     begin
@@ -1275,12 +1276,12 @@ fn deprecated_loc_loadw_instruction() -> TestResult {
         context,
         source,
         "deprecated instruction: `loc_loadw` has been removed",
-        regex!(r#",-\[test[\d]+:2:9\]"#),
-        "1 | proc.foo.8",
-        "2 |         loc_loadw.0",
+        regex!(r#",-\[test[\d]+:3:9\]"#),
+        "2 |     proc foo",
+        "3 |         loc_loadw.0",
         regex!(r#"^ *: *\^+"#),
         regex!(r#"this instruction is no longer supported"#),
-        "3 |     end",
+        "4 |     end",
         "  `----",
         regex!(r#"help:.*use.*loc_loadw_be.*instead"#)
     );
@@ -1294,7 +1295,8 @@ fn deprecated_loc_storew_instruction() -> TestResult {
     let source = source_file!(
         &context,
         "\
-    proc.foo.8
+    @locals(8)
+    proc foo
         loc_storew.0
     end
     begin
@@ -1307,12 +1309,12 @@ fn deprecated_loc_storew_instruction() -> TestResult {
         context,
         source,
         "deprecated instruction: `loc_storew` has been removed",
-        regex!(r#",-\[test[\d]+:2:9\]"#),
-        "1 | proc.foo.8",
-        "2 |         loc_storew.0",
+        regex!(r#",-\[test[\d]+:3:9\]"#),
+        "2 |     proc foo",
+        "3 |         loc_storew.0",
         regex!(r#"^ *: *\^+"#),
         regex!(r#"this instruction is no longer supported"#),
-        "3 |     end",
+        "4 |     end",
         "  `----",
         regex!(r#"help:.*use.*loc_storew_be.*instead"#)
     );

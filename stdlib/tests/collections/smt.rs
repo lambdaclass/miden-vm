@@ -310,8 +310,8 @@ fn test_set_empty_key_in_non_empty_leaf() {
 #[test]
 fn test_smt_set_single_to_multi() {
     const SOURCE: &str = "
-        use.std::collections::smt
-        use.std::sys
+        use std::collections::smt
+        use std::sys
 
         begin
             # => [V, K, R]
@@ -349,8 +349,8 @@ fn test_smt_set_single_to_multi() {
 #[test]
 fn test_smt_set_in_multi() {
     const SOURCE: &str = "
-        use.std::collections::smt
-        use.std::sys
+        use std::collections::smt
+        use std::sys
 
         begin
             # => [V, K, R]
@@ -415,8 +415,8 @@ fn test_smt_set_in_multi() {
 #[test]
 fn test_smt_set_replace_in_multi() {
     const SOURCE: &str = "
-        use.std::collections::smt
-        use.std::sys
+        use std::collections::smt
+        use std::sys
 
         begin
             # => [V, K, R]
@@ -457,8 +457,8 @@ fn test_smt_set_replace_in_multi() {
 #[test]
 fn test_smt_set_multi_to_single() {
     const SOURCE: &str = "
-        use.std::collections::smt
-        use.std::sys
+        use std::collections::smt
+        use std::sys
 
         begin
             # => [V, K, R]
@@ -501,8 +501,8 @@ fn test_smt_set_multi_to_single() {
 #[test]
 fn test_smt_set_remove_in_multi() {
     const SOURCE: &str = "
-        use.std::collections::smt
-        use.std::sys
+        use std::collections::smt
+        use std::sys
 
         begin
             # => [V, K, R]
@@ -637,8 +637,8 @@ fn test_smt_randomized_round_trip() {
                 prepare_insert_or_set(key, value, &mut smt);
 
             const SET_SOURCE: &str = "
-                use.std::collections::smt
-                use.std::sys
+                use std::collections::smt
+                use std::sys
 
                 begin
                     # => [V, K, R]
