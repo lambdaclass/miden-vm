@@ -19,7 +19,7 @@ use crate::Dependency;
 // ================================================================================================
 
 /// The manifest of a package, containing the set of package dependencies (libraries or packages)
-/// and exported procedures and their signatures, if known.
+/// and exported items (procedures, constants, types), if known.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "arbitrary", derive(proptest_derive::Arbitrary))]
 pub struct PackageManifest {
