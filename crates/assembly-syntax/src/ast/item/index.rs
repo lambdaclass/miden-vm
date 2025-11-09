@@ -44,8 +44,8 @@ impl core::fmt::Display for ItemIndex {
 /// In addition to the linker's module graph, these indices are also used with an instance of a
 /// `MastForestBuilder`. This is because the linker and `MastForestBuilder` instances
 /// are paired, i.e. the linker stores the syntax trees and call graph analysis for a program, while
-/// the `MastForestBuilder` caches the compiled [crate::Procedure]s for the same program, as
-/// derived from the corresponding graph.
+/// the `MastForestBuilder` caches the compiled procedures for the same program, as derived from
+/// the corresponding graph.
 ///
 /// This is intended for use when we are doing global inter-procedural analysis on a (possibly
 /// growable) set of modules. It is expected that the index of a module in the set, as well as the

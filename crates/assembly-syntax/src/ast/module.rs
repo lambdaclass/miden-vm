@@ -183,7 +183,7 @@ impl Module {
     /// Modifies the path of this module by overriding the portion of the path preceding
     /// [`Self::name`], i.e. the portion returned by [`Self::parent`].
     ///
-    /// See [`Path::set_parent`] for details.
+    /// See [`PathBuf::set_parent`] for details.
     pub fn set_parent(&mut self, ns: impl AsRef<Path>) {
         self.path.set_parent(ns.as_ref());
     }
@@ -569,7 +569,7 @@ impl Module {
         })
     }
 
-    /// Same as [Module::resolve_import], but returns a mutable reference to the [Alias]
+    /// Same as [Module::get_import], but returns a mutable reference to the [Alias]
     pub fn get_import_mut(&mut self, module_name: &str) -> Option<&mut Alias> {
         self.items.iter_mut().find_map(|item| match item {
             Export::Alias(item) if item.name().as_str() == module_name => Some(item),

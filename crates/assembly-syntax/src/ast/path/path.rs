@@ -293,7 +293,7 @@ impl Path {
         }
     }
 
-    /// Splits this path on the last component, returning it and a new [PathRef] of the remaining
+    /// Splits this path on the last component, returning it and a new [Path] of the remaining
     /// components.
     ///
     /// Returns `None` if there are no components to split

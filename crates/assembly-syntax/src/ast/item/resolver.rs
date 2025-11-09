@@ -1,3 +1,6 @@
+// Allow unused assignments - required by miette::Diagnostic derive macro
+#![allow(unused_assignments)]
+
 use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 
 use miden_debug_types::{SourceSpan, Span, Spanned};
@@ -342,7 +345,7 @@ impl SymbolTable {
 impl LocalSymbolResolver {
     /// Try to resolve `name` to an item, either local or external
     ///
-    /// See [`SymbolTable::get`] for details.
+    /// See `SymbolTable::get` for details.
     pub fn resolve(
         &self,
         name: &str,
