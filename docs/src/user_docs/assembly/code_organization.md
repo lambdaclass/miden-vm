@@ -184,6 +184,8 @@ Additionally, you may re-export a procedure using its MAST root, so long as you 
 pub use 0x0000..0000->mul64
 ```
 
+Note that when an explicit MAST root is used, either directly, or via an alias like the example above - the assembler assumes that the MAST corresponding to that root will be available at runtime, and so it is up to you to either provide that code to the VM when executing the program, or statically link the code into the assembled program ahead of time using the assembler.
+
 In all of the forms described above, the actual implementation of the re-exported procedure is defined externally. Other modules which reference the re-exported procedure, will have those references resolved to the original procedure during assembly.
 
 You may attach documentation to re-exported items, e.g.:
