@@ -8,8 +8,6 @@ use core::{
 use miden_core::utils::{
     ByteReader, ByteWriter, Deserializable, DeserializationError, Serializable,
 };
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 use super::{Path, PathError};
 use crate::ast::Ident;
@@ -19,7 +17,6 @@ use crate::ast::Ident;
 
 /// Path to an item in a library, i.e. module, procedure, constant or type.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(
     all(feature = "arbitrary", test),
     miden_test_serde_macros::serde_test(winter_serde(true))
@@ -313,41 +310,32 @@ impl Deserializable for PathBuf {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for PathBuf {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.inner.as_str())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for PathBuf {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let inner = <&'de str as serde::Deserialize<'de>>::deserialize(deserializer)?;
+
+        PathBuf::new(inner).map_err(serde::de::Error::custom)
+    }
+}
+
 impl fmt::Display for PathBuf {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self.as_path(), f)
     }
-}
-
-// ARBITRARY IMPLEMENTATION
-// ================================================================================================
-
-#[cfg(any(test, feature = "arbitrary"))]
-impl proptest::prelude::Arbitrary for PathBuf {
-    type Parameters = ();
-
-    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-        use proptest::prelude::*;
-
-        let wasm_cm_style =
-            Just(PathBuf::new("namespace-kebab:package-kebab/interface-kebab@1.0.0").unwrap());
-        let component_strategy = crate::ast::ident::testing::ident_any_random_length();
-        let components_strategy = proptest::collection::vec(component_strategy, 1usize..8usize)
-            .prop_map(|components| {
-                let mut buf = String::with_capacity(256);
-                for (i, component) in components.iter().enumerate() {
-                    if i > 0 {
-                        buf.push_str("::");
-                    }
-                    buf.push_str(component.as_str());
-                }
-                PathBuf { inner: buf }
-            });
-
-        prop_oneof![wasm_cm_style, components_strategy].boxed()
-    }
-
-    type Strategy = proptest::prelude::BoxedStrategy<Self>;
 }
 
 // TESTS

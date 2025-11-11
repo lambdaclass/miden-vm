@@ -165,7 +165,7 @@ impl Arbitrary for ProcedureExport {
         (nid, name, signature)
             .prop_map(|(nodeid, procname, signature)| Self {
                 node: nodeid,
-                path: procname.to_path_buf().into_boxed_path().into(),
+                path: procname.to_path_buf().into(),
                 signature,
                 attributes: Default::default(),
             })
@@ -184,7 +184,7 @@ pub struct ConstantExport {
     #[cfg_attr(feature = "serde", serde(with = "crate::ast::path"))]
     #[cfg_attr(
         feature = "arbitrary",
-        proptest(strategy = "any::<PathBuf>().prop_map(|p| p.into())")
+        proptest(strategy = "crate::arbitrary::path::constant_path_random_length(1)")
     )]
     pub path: Arc<Path>,
     /// The constant-folded AST representing the value of this constant
@@ -207,16 +207,11 @@ impl Arbitrary for TypeExport {
     type Parameters = ();
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-        use proptest::{
-            arbitrary::any,
-            strategy::{Just, Strategy},
-        };
-        let path = any::<PathBuf>();
+        use proptest::strategy::{Just, Strategy};
+        let path = crate::arbitrary::path::user_defined_type_path_random_length(1);
         let ty = Just(crate::ast::types::Type::Felt);
 
-        (path, ty)
-            .prop_map(|(path, ty)| Self { path: path.into_boxed_path().into(), ty })
-            .boxed()
+        (path, ty).prop_map(|(path, ty)| Self { path, ty }).boxed()
     }
 
     type Strategy = BoxedStrategy<Self>;
@@ -1045,60 +1040,36 @@ impl proptest::prelude::Arbitrary for Library {
     type Parameters = ();
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        use miden_core::{
+            Operation,
+            mast::{BasicBlockNodeBuilder, MastForestContributor},
+        };
         use proptest::prelude::*;
-        prop::collection::btree_map(any::<PathBuf>(), any::<LibraryExport>(), 1..5)
-            .prop_flat_map(|exports| {
+
+        prop::collection::vec(any::<LibraryExport>(), 1..5)
+            .prop_map(|exports| {
+                let mut exports =
+                    BTreeMap::from_iter(exports.into_iter().map(|export| (export.path(), export)));
                 // Create a MastForest with actual nodes for the exports
                 let mut mast_forest = MastForest::new();
                 let mut nodes = Vec::new();
 
-                // Create a simple node for each export
-                let exports = exports
-                    .into_iter()
-                    .map(|(mut export_name, mut export)| {
-                        use miden_core::{
-                            Operation,
-                            mast::{BasicBlockNodeBuilder, MastForestContributor},
-                        };
+                for export in exports.values() {
+                    if let LibraryExport::Procedure(export) = export {
+                        let node_id = BasicBlockNodeBuilder::new(
+                            vec![Operation::Add, Operation::Mul],
+                            Vec::new(),
+                        )
+                        .add_to_forest(&mut mast_forest)
+                        .unwrap();
+                        nodes.push((export.node, node_id));
+                    }
+                }
 
-                        let export_name = match &mut export {
-                            LibraryExport::Procedure(export) => {
-                                let node_id = BasicBlockNodeBuilder::new(
-                                    vec![Operation::Add, Operation::Mul],
-                                    Vec::new(),
-                                )
-                                .add_to_forest(&mut mast_forest)
-                                .unwrap();
-                                nodes.push((export.node, node_id));
-                                // Ensure the export name matches the exported procedure, as the
-                                // Arbitrary impl will generate
-                                // different paths for each
-                                export.path.clone()
-                            },
-                            LibraryExport::Constant(export) => {
-                                export_name.pop();
-                                export_name.push(export.path.last().unwrap());
-                                export_name.into_boxed_path().into()
-                            },
-                            LibraryExport::Type(export) => {
-                                export_name.pop();
-                                export_name.push(export.path.last().unwrap());
-                                export_name.into_boxed_path().into()
-                            },
-                        };
-                        (export_name, export)
-                    })
-                    .collect::<BTreeMap<Arc<Path>, LibraryExport>>();
-
-                (Just(mast_forest), Just(nodes), Just(exports))
-            })
-            .prop_map(|(mut mast_forest, nodes, exports)| {
                 // Replace the export node IDs with the actual node IDs we created
-                let mut adjusted_exports = BTreeMap::new();
-
                 let mut procedure_exports = 0;
-                for (proc_name, mut export) in exports {
-                    match &mut export {
+                for export in exports.values_mut() {
+                    match export {
                         LibraryExport::Procedure(export) => {
                             procedure_exports += 1;
                             // Find the corresponding node we created
@@ -1120,12 +1091,10 @@ impl proptest::prelude::Arbitrary for Library {
                         },
                         LibraryExport::Constant(_) | LibraryExport::Type(_) => (),
                     }
-
-                    adjusted_exports.insert(proc_name, export);
                 }
 
                 let mut node_ids = Vec::with_capacity(procedure_exports);
-                for export in adjusted_exports.values() {
+                for export in exports.values() {
                     if let LibraryExport::Procedure(export) = export {
                         // Add the node to the forest roots if it's not already there
                         mast_forest.make_root(export.node);
@@ -1138,11 +1107,7 @@ impl proptest::prelude::Arbitrary for Library {
                 let digest = mast_forest.compute_nodes_commitment(&node_ids);
 
                 let mast_forest = Arc::new(mast_forest);
-                Library {
-                    digest,
-                    exports: adjusted_exports,
-                    mast_forest,
-                }
+                Library { digest, exports, mast_forest }
             })
             .boxed()
     }

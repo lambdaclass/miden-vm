@@ -1,8 +1,6 @@
 use alloc::{collections::BTreeMap, sync::Arc, vec::Vec};
 use core::fmt;
 
-#[cfg(feature = "arbitrary")]
-use miden_assembly_syntax::ast::PathBuf;
 use miden_assembly_syntax::ast::{
     self, AttributeSet, Path,
     types::{FunctionType, Type},
@@ -199,7 +197,7 @@ pub struct ProcedureExport {
     #[cfg_attr(feature = "serde", serde(with = "miden_assembly_syntax::ast::path"))]
     #[cfg_attr(
         feature = "arbitrary",
-        proptest(strategy = "any::<PathBuf>().prop_map(|p| p.into())")
+        proptest(strategy = "miden_assembly_syntax::arbitrary::path::bare_path_random_length(2)")
     )]
     pub path: Arc<Path>,
     /// The digest of the procedure exported by this package.
@@ -237,7 +235,9 @@ pub struct ConstantExport {
     #[cfg_attr(feature = "serde", serde(with = "miden_assembly_syntax::ast::path"))]
     #[cfg_attr(
         feature = "arbitrary",
-        proptest(strategy = "any::<PathBuf>().prop_map(|p| p.into())")
+        proptest(
+            strategy = "miden_assembly_syntax::arbitrary::path::constant_path_random_length(1)"
+        )
     )]
     pub path: Arc<Path>,
     /// The value of the exported constant
@@ -269,7 +269,9 @@ pub struct TypeExport {
     #[cfg_attr(feature = "serde", serde(with = "miden_assembly_syntax::ast::path"))]
     #[cfg_attr(
         feature = "arbitrary",
-        proptest(strategy = "any::<PathBuf>().prop_map(|p| p.into())")
+        proptest(
+            strategy = "miden_assembly_syntax::arbitrary::path::user_defined_type_path_random_length(1)"
+        )
     )]
     pub path: Arc<Path>,
     /// The type that was declared

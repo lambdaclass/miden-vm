@@ -7,7 +7,7 @@ mod block;
 mod constants;
 mod docstring;
 mod form;
-mod ident;
+pub(crate) mod ident;
 mod immediate;
 mod instruction;
 mod invocation_target;

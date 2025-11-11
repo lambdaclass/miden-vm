@@ -543,7 +543,8 @@ impl proptest::arbitrary::Arbitrary for ConstantExpr {
 
         prop_oneof![
             any::<IntValue>().prop_map(|n| Self::Int(Span::unknown(n))),
-            any::<PathBuf>().prop_map(|path| Self::Var(Span::unknown(path))),
+            crate::arbitrary::path::constant_pathbuf_random_length(0)
+                .prop_map(|p| Self::Var(Span::unknown(p))),
             any::<(ConstantOp, IntValue, IntValue)>().prop_map(|(op, lhs, rhs)| Self::BinaryOp {
                 span: SourceSpan::UNKNOWN,
                 op,

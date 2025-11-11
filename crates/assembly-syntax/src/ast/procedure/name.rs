@@ -11,8 +11,6 @@ use core::{
 
 use miden_debug_types::{SourceSpan, Span, Spanned};
 use miden_utils_diagnostics::{IntoDiagnostic, Report, miette};
-#[cfg(feature = "arbitrary")]
-use proptest::prelude::{Strategy, any};
 
 use crate::{
     Path, PathBuf,
@@ -35,7 +33,7 @@ pub struct QualifiedProcedureName {
     span: SourceSpan,
     #[cfg_attr(
         feature = "arbitrary",
-        proptest(strategy = "any::<PathBuf>().prop_map(|p| p.into())")
+        proptest(strategy = "crate::arbitrary::path::path_random_length(2)")
     )]
     path: Arc<Path>,
 }
@@ -462,13 +460,13 @@ impl proptest::prelude::Arbitrary for ProcedureName {
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
         use proptest::prelude::*;
-        // see https://doc.rust-lang.org/rustc/symbol-mangling/v0.html#symbol-grammar-summary
-        let all_possible_chars_in_mangled_name =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.$";
-        let mangled_rustc_name = ProcedureName::new(all_possible_chars_in_mangled_name).unwrap();
-        let plain = ProcedureName::new("user_func").unwrap();
-        let wasm_cm_style = ProcedureName::new("kebab-case-func").unwrap();
-        prop_oneof![Just(mangled_rustc_name), Just(plain), Just(wasm_cm_style)].boxed()
+
+        prop_oneof![
+            1 => crate::arbitrary::ident::ident_any_random_length(),
+            2 => crate::arbitrary::ident::bare_ident_any_random_length(),
+        ]
+        .prop_map(ProcedureName)
+        .boxed()
     }
 
     type Strategy = proptest::prelude::BoxedStrategy<Self>;
