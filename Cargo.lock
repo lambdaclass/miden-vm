@@ -1632,6 +1632,7 @@ dependencies = [
 name = "miden-test-utils"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "miden-air",
  "miden-assembly",
  "miden-core",
