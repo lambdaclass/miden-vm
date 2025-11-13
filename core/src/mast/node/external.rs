@@ -164,11 +164,6 @@ impl MastNodeExt for ExternalNode {
         self.decorator_store.after_exit(forest)
     }
 
-    /// Removes all decorators from this node.
-    fn remove_decorators(&mut self) {
-        self.decorator_store.remove_decorators();
-    }
-
     fn to_display<'a>(&'a self, mast_forest: &'a MastForest) -> Box<dyn fmt::Display + 'a> {
         Box::new(ExternalNode::to_display(self, mast_forest))
     }
@@ -214,6 +209,27 @@ impl MastNodeExt for ExternalNode {
                 builder = builder.with_before_enter(before_enter).with_after_exit(after_exit);
                 builder
             },
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    fn verify_node_in_forest(&self, forest: &MastForest) {
+        if let Some(id) = self.decorator_store.linked_id() {
+            // Verify that this node is the one stored at the given ID in the forest
+            let self_ptr = self as *const Self;
+            let forest_node = &forest.nodes[id];
+            let forest_node_ptr = match forest_node {
+                crate::mast::MastNode::External(external) => {
+                    external as *const ExternalNode as *const ()
+                },
+                _ => panic!("Node type mismatch at {:?}", id),
+            };
+            let self_as_void = self_ptr as *const ();
+            debug_assert_eq!(
+                self_as_void, forest_node_ptr,
+                "Node pointer mismatch: expected node at {:?} to be self",
+                id
+            );
         }
     }
 }
