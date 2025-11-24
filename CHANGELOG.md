@@ -4,6 +4,7 @@
 
 #### Enhancements
 
+- Added new `adv.push_mapval_count` instruction ([#2349](https://github.com/0xMiden/miden-vm/pull/2349)).
 - Added new `memcopy_elements` procedure for the `std::mem` module. ([#2352](https://github.com/0xMiden/miden-vm/pull/2352)).
 
 #### Changes
