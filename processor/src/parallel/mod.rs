@@ -925,15 +925,12 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 // 1. Add SPAN start trace row
                 self.add_basic_block_start_trace_row(first_op_batch, num_groups_left_in_block)?;
 
-                // Initialize the span context for the current basic block. After SPAN operation is
-                // executed, we decrement the number of remaining groups by 1 because executing
-                // SPAN consumes the first group of the batch.
-                // TODO(plafer): use `initialize_basic_block_context` once the potential off-by-one
-                // issue is resolved.
-                self.basic_block_context = Some(BasicBlockContext {
-                    group_ops_left: first_op_batch.groups()[0],
-                    num_groups_left: num_groups_left_in_block - ONE,
-                });
+                // Initialize the basic block context for the current basic block. After SPAN
+                // operation is executed, we decrement the number of remaining
+                // groups by 1 because executing SPAN consumes the first group of
+                // the batch.
+                self.basic_block_context =
+                    initialize_basic_block_context(basic_block_node, 0, 0).into();
 
                 // 2. Execute batches one by one
                 let op_batches = basic_block_node.op_batches();
