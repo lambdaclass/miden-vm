@@ -57,14 +57,7 @@ use crate::{
 
 pub const CORE_TRACE_WIDTH: usize = SYS_TRACE_WIDTH + DECODER_TRACE_WIDTH + STACK_TRACE_WIDTH;
 
-mod basic_block;
-mod call;
-mod r#dyn;
-mod join;
-mod r#loop;
-
-mod split;
-mod trace_builder;
+mod trace_row;
 
 #[cfg(test)]
 mod tests;
@@ -576,7 +569,6 @@ fn initialize_chiplets(
 }
 
 fn pad_trace_columns(trace_columns: &mut [Vec<Felt>], main_trace_len: usize) {
-    // TODO(plafer): parallelize this function
     let total_program_rows = trace_columns[0].len();
     assert!(total_program_rows + NUM_RAND_ROWS - 1 <= main_trace_len);
 
@@ -683,7 +675,7 @@ struct CoreTraceFragmentFiller<'a> {
     fragment_start_clk: RowIndex,
     fragment: &'a mut CoreTraceFragment<'a>,
     context: CoreTraceFragmentContext,
-    span_context: Option<BasicBlockContext>,
+    basic_block_context: Option<BasicBlockContext>,
     stack_rows: Option<[Felt; STACK_TRACE_WIDTH]>,
     system_rows: Option<[Felt; SYS_TRACE_WIDTH]>,
 }
@@ -698,7 +690,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             fragment_start_clk: context.state.system.clk,
             fragment: uninit_fragment,
             context,
-            span_context: None,
+            basic_block_context: None,
             stack_rows: None,
             system_rows: None,
         }
@@ -739,8 +731,11 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 );
 
                 // Initialize the span context for the current basic block
-                self.span_context =
-                    Some(initialize_span_context(basic_block_node, batch_index, op_idx_in_batch));
+                self.basic_block_context = Some(initialize_basic_block_context(
+                    basic_block_node,
+                    batch_index,
+                    op_idx_in_batch,
+                ));
 
                 // Execute remaining operations in the specified batch
                 {
@@ -754,13 +749,13 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
                 // Execute remaining batches
                 for op_batch in op_batches.iter().skip(batch_index + 1) {
-                    self.respan(op_batch)?;
+                    self.add_respan_trace_row(op_batch)?;
 
                     self.execute_op_batch(op_batch, None, &initial_mast_forest)?;
                 }
 
                 // Add END trace row to complete the basic block
-                self.add_span_end_trace_row(basic_block_node)?;
+                self.add_basic_block_end_trace_row(basic_block_node)?;
             },
             NodeExecutionState::Start(node_id) => {
                 self.execute_mast_node(node_id, &initial_mast_forest)?;
@@ -773,7 +768,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 };
                 let current_batch = &basic_block_node.op_batches()[batch_index];
 
-                self.span_context = {
+                self.basic_block_context = {
                     let current_op_group = current_batch.groups()[0];
                     let num_groups_left: usize = basic_block_node
                         .op_batches()
@@ -790,13 +785,13 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
                 // Execute remaining batches
                 for op_batch in basic_block_node.op_batches().iter().skip(batch_index) {
-                    self.respan(op_batch)?;
+                    self.add_respan_trace_row(op_batch)?;
 
                     self.execute_op_batch(op_batch, None, &initial_mast_forest)?;
                 }
 
                 // Add END trace row to complete the basic block
-                self.add_span_end_trace_row(basic_block_node)?;
+                self.add_basic_block_end_trace_row(basic_block_node)?;
             },
             NodeExecutionState::LoopRepeat(node_id) => {
                 finish_loop_node(self, node_id, &initial_mast_forest, None)?;
@@ -838,7 +833,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                         self.add_end_trace_row(dyn_node.digest())?;
                     },
                     MastNode::Block(basic_block_node) => {
-                        self.add_span_end_trace_row(basic_block_node)?;
+                        self.add_basic_block_end_trace_row(basic_block_node)?;
                     },
                     MastNode::External(_external_node) => {
                         // External nodes don't generate trace rows directly, and hence will never
@@ -928,14 +923,14 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     .expect("Basic block should have at least one op batch");
 
                 // 1. Add SPAN start trace row
-                self.add_span_start_trace_row(first_op_batch, num_groups_left_in_block)?;
+                self.add_basic_block_start_trace_row(first_op_batch, num_groups_left_in_block)?;
 
                 // Initialize the span context for the current basic block. After SPAN operation is
                 // executed, we decrement the number of remaining groups by 1 because executing
                 // SPAN consumes the first group of the batch.
-                // TODO(plafer): use `initialize_span_context` once the potential off-by-one issue
-                // is resolved.
-                self.span_context = Some(BasicBlockContext {
+                // TODO(plafer): use `initialize_basic_block_context` once the potential off-by-one
+                // issue is resolved.
+                self.basic_block_context = Some(BasicBlockContext {
                     group_ops_left: first_op_batch.groups()[0],
                     num_groups_left: num_groups_left_in_block - ONE,
                 });
@@ -953,13 +948,13 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 // Execute the rest of the op batches
                 for op_batch in op_batches.iter().skip(1) {
                     // 3. Add RESPAN trace row between batches
-                    self.respan(op_batch)?;
+                    self.add_respan_trace_row(op_batch)?;
 
                     self.execute_op_batch(op_batch, None, current_forest)?;
                 }
 
                 // 4. Add END trace row
-                self.add_span_end_trace_row(basic_block_node)?;
+                self.add_basic_block_end_trace_row(basic_block_node)?;
 
                 ControlFlow::Continue(())
             },
@@ -1211,7 +1206,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
     /// Starts decoding a new operation group.
     pub fn start_op_group(&mut self, op_group: Felt) {
-        let ctx = self.span_context.as_mut().expect("not in span");
+        let ctx = self.basic_block_context.as_mut().expect("not in span");
 
         // reset the current group value and decrement the number of left groups by ONE
         debug_assert_eq!(ZERO, ctx.group_ops_left, "not all ops executed in current group");
@@ -1226,25 +1221,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     pub fn shift_stack_left_and_start_context(&mut self) -> (usize, Felt) {
         self.decrement_size(&mut NoopTracer);
         self.context.state.stack.start_context()
-    }
-
-    fn append_opcode(&mut self, opcode: u8, row_idx: usize) {
-        use miden_air::trace::{
-            DECODER_TRACE_OFFSET,
-            decoder::{NUM_OP_BITS, OP_BITS_OFFSET},
-        };
-
-        // Append the opcode bits to the trace row
-        let bits: [Felt; NUM_OP_BITS] = core::array::from_fn(|i| Felt::from((opcode >> i) & 1));
-        for (i, bit) in bits.iter().enumerate() {
-            self.fragment.columns[DECODER_TRACE_OFFSET + OP_BITS_OFFSET + i][row_idx] = *bit;
-        }
-
-        // Set extra bit columns for degree reduction
-        self.fragment.columns[DECODER_TRACE_OFFSET + OP_BITS_EXTRA_COLS_OFFSET][row_idx] =
-            bits[6] * (ONE - bits[5]) * bits[4];
-        self.fragment.columns[DECODER_TRACE_OFFSET + OP_BITS_EXTRA_COLS_OFFSET + 1][row_idx] =
-            bits[6] * bits[5];
     }
 
     fn done_generating(&mut self) -> bool {
@@ -1286,7 +1262,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 /// other words, it figures out how many operations are left in the current operation group, and how
 /// many operation groups are left in the basic block, given that we are starting execution from the
 /// specified operation.
-fn initialize_span_context(
+fn initialize_basic_block_context(
     basic_block_node: &BasicBlockNode,
     batch_index: usize,
     op_idx_in_batch: usize,
