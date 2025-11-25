@@ -165,7 +165,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         &mut self,
         basic_block_node: &BasicBlockNode,
     ) -> ControlFlow<()> {
-        let (ended_node_addr, flags) = self.update_decoder_state_on_node_end();
+        let (ended_node_addr, flags) =
+            self.context.state.decoder.replay_node_end(&mut self.context.replay);
 
         let decoder_row = DecoderRow::new_control_flow(
             Operation::End.op_code(),
@@ -443,7 +444,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     /// This method also updates the decoder state by popping the block from the stack.
     pub fn add_end_trace_row(&mut self, node_digest: Word) -> ControlFlow<()> {
         // Pop the block from stack and use its info for END operations
-        let (ended_node_addr, flags) = self.update_decoder_state_on_node_end();
+        let (ended_node_addr, flags) =
+            self.context.state.decoder.replay_node_end(&mut self.context.replay);
 
         self.add_end_trace_row_impl(node_digest, flags, ended_node_addr)
     }

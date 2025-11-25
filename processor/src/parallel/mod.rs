@@ -42,9 +42,8 @@ use crate::{
         execution_tracer::TraceGenerationContext,
         trace_state::{
             AceReplay, AdviceReplay, BitwiseOp, BitwiseReplay, CoreTraceFragmentContext,
-            DecoderState, ExecutionContextSystemInfo, HasherOp, HasherRequestReplay,
-            HasherResponseReplay, KernelReplay, MemoryReadsReplay, MemoryWritesReplay,
-            NodeExecutionState, NodeFlags,
+            ExecutionContextSystemInfo, HasherOp, HasherRequestReplay, HasherResponseReplay,
+            KernelReplay, MemoryReadsReplay, MemoryWritesReplay, NodeExecutionState,
         },
     },
     host::default::NoopHost,
@@ -810,7 +809,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                         self.add_end_trace_row(split_node.digest())?;
                     },
                     MastNode::Loop(loop_node) => {
-                        let (ended_node_addr, flags) = self.update_decoder_state_on_node_end();
+                        let (ended_node_addr, flags) =
+                            self.context.state.decoder.replay_node_end(&mut self.context.replay);
 
                         // If the loop was entered, we need to shift the stack to the left
                         if flags.loop_entered() == ONE {
@@ -914,7 +914,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
         match mast_node {
             MastNode::Block(basic_block_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 let num_groups_left_in_block = Felt::from(basic_block_node.num_op_groups() as u32);
                 let first_op_batch = basic_block_node
@@ -956,7 +956,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 ControlFlow::Continue(())
             },
             MastNode::Join(join_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 // 1. Add "start JOIN" row
                 self.add_join_start_trace_row(join_node, current_forest)?;
@@ -971,7 +971,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 self.add_end_trace_row(join_node.digest())
             },
             MastNode::Split(split_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 let condition = self.get(0);
                 self.decrement_size(&mut NoopTracer);
@@ -990,7 +990,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 self.add_end_trace_row(split_node.digest())
             },
             MastNode::Loop(loop_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 // Read condition from the stack and decrement stack size. This happens as part of
                 // the LOOP operation, and so is done before writing that trace row.
@@ -1014,7 +1014,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 finish_loop_node(self, node_id, current_forest, Some(condition))
             },
             MastNode::Call(call_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 self.context.state.stack.start_context();
 
@@ -1041,7 +1041,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 self.add_end_trace_row(call_node.digest())
             },
             MastNode::Dyn(dyn_node) => {
-                self.update_decoder_state_on_node_start();
+                self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
                 let callee_hash = {
                     let mem_addr = self.context.state.stack.get(0);
@@ -1099,37 +1099,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 self.execute_mast_node(resolved_node_id, &resolved_forest)
             },
         }
-    }
-
-    // TODO(plafer): clean this up; it's probably not clear from the `TraceFragmentContext` that
-    // this is the relationship between the replays and the `DecoderState` (only made clear when
-    // looking at this function)
-    /// This function is called when start executing a node (e.g. `JOIN`, `SPLIT`, etc). It emulates
-    /// pushing a new node onto the block stack, and updates the decoder state to point to the
-    /// current node in the block stack (which could be renamed to "node stack"). Hence, the
-    /// `current_addr` is set to the (replayed) address of the current node, and the `parent_addr`
-    /// is set to the (replayed) address of the parent node (i.e. the node previously on top of the
-    /// block stack).
-    fn update_decoder_state_on_node_start(&mut self) {
-        let DecoderState { current_addr, parent_addr } = &mut self.context.state.decoder;
-
-        *current_addr = self.context.replay.hasher.replay_block_address();
-        *parent_addr = self.context.replay.block_stack.replay_node_start();
-    }
-
-    /// This function is called when we hit an `END` operation, signaling the end of execution for a
-    /// node. It updates the decoder state to point to the previous node in the block stack (which
-    /// could be renamed to "node stack"), and returns the address of the node that just ended,
-    /// along with any flags associated with it.
-    fn update_decoder_state_on_node_end(&mut self) -> (Felt, NodeFlags) {
-        let DecoderState { current_addr, parent_addr } = &mut self.context.state.decoder;
-
-        let node_end_data = self.context.replay.block_stack.replay_node_end();
-
-        *current_addr = node_end_data.prev_addr;
-        *parent_addr = node_end_data.prev_parent_addr;
-
-        (node_end_data.ended_node_addr, node_end_data.flags)
     }
 
     /// Restores the execution context to the state it was in before the last `call`, `syscall` or

@@ -355,7 +355,7 @@ impl ExecutionTracer {
 
         let block_addr = self.hasher_chiplet_shim.record_hash_control_block();
         let parent_addr = self.block_stack.push(block_addr, block_type, ctx_info);
-        self.block_stack_replay.record_node_start(parent_addr);
+        self.block_stack_replay.record_node_start_parent_addr(parent_addr);
     }
 
     /// Records the block address and flags for an END operation based on the block being popped.
@@ -473,7 +473,7 @@ impl Tracer for ExecutionTracer {
                         self.hasher_chiplet_shim.record_hash_basic_block(basic_block_node);
                     let parent_addr =
                         self.block_stack.push(block_addr, BlockType::BasicBlock, None);
-                    self.block_stack_replay.record_node_start(parent_addr);
+                    self.block_stack_replay.record_node_start_parent_addr(parent_addr);
                 },
                 MastNode::External(_) => unreachable!(
                     "start_clock_cycle is guaranteed not to be called on external nodes"
