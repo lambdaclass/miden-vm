@@ -21,8 +21,7 @@ use miden_core::{
 
 use super::CoreTraceFragmentFiller;
 use crate::{
-    decoder::{BasicBlockContext, block_stack::ExecutionContextInfo},
-    fast::trace_state::NodeFlags,
+    decoder::block_stack::ExecutionContextInfo, parallel::BasicBlockContext,
     processor::StackInterface,
 };
 
@@ -112,7 +111,7 @@ impl DecoderRow {
             let user_op_helpers = user_op_helpers.unwrap_or([ZERO; NUM_USER_OP_HELPERS]);
 
             let word1 = [
-                basic_block_ctx.group_ops_left,
+                basic_block_ctx.current_op_group,
                 parent_addr,
                 user_op_helpers[0],
                 user_op_helpers[1],
@@ -128,7 +127,7 @@ impl DecoderRow {
             hasher_state,
             addr: current_addr,
             in_basic_block: true,
-            group_count: basic_block_ctx.num_groups_left,
+            group_count: basic_block_ctx.group_count_in_block,
             op_index: Felt::from(op_idx_in_group as u32),
             op_batch_flags: [ZERO; NUM_OP_BATCH_FLAGS],
         }
@@ -145,14 +144,19 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     /// a basic block execution.
     pub fn add_basic_block_start_trace_row(
         &mut self,
-        first_op_batch: &OpBatch,
-        num_groups: Felt,
+        basic_block_node: &BasicBlockNode,
     ) -> ControlFlow<()> {
+        let group_count_for_block = Felt::from(basic_block_node.num_op_groups() as u32);
+        let first_op_batch = basic_block_node
+            .op_batches()
+            .first()
+            .expect("Basic block should have at least one op batch");
+
         let decoder_row = DecoderRow::new_basic_block_batch(
             Operation::Span,
             first_op_batch,
             self.context.state.decoder.parent_addr,
-            num_groups,
+            group_count_for_block,
         );
         self.add_trace_row(decoder_row)
     }
@@ -174,9 +178,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             ended_node_addr,
         );
 
-        // Reset the span context after completing the basic block
-        self.basic_block_context = None;
-
         self.add_trace_row(decoder_row)
     }
 
@@ -188,20 +189,18 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     ///
     /// This method updates the processor state and adds a corresponding trace row
     /// to the main trace fragment.
-    pub fn add_respan_trace_row(&mut self, op_batch: &OpBatch) -> ControlFlow<()> {
+    pub fn add_respan_trace_row(
+        &mut self,
+        op_batch: &OpBatch,
+        basic_block_context: &mut BasicBlockContext,
+    ) -> ControlFlow<()> {
         // Add RESPAN trace row
         {
-            let group_count = self
-                .basic_block_context
-                .as_ref()
-                .expect("Basic block context should be initialized for RESPAN")
-                .num_groups_left;
-
             let decoder_row = DecoderRow::new_basic_block_batch(
                 Operation::Respan,
                 op_batch,
                 self.context.state.decoder.current_addr,
-                group_count,
+                basic_block_context.group_count_in_block,
             );
             self.add_trace_row(decoder_row)?;
         }
@@ -209,13 +208,9 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         // Update block address for the upcoming block
         self.context.state.decoder.current_addr += HASH_CYCLE_LEN;
 
-        // Update span context
-        let basic_block_context = self
-            .basic_block_context
-            .as_mut()
-            .expect("Basic block context should be initialized for RESPAN");
-        basic_block_context.num_groups_left -= ONE;
-        basic_block_context.group_ops_left = op_batch.groups()[0];
+        // Update basic block context
+        basic_block_context.group_count_in_block -= ONE;
+        basic_block_context.current_op_group = op_batch.groups()[0];
 
         ControlFlow::Continue(())
     }
@@ -229,12 +224,10 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         operation: Operation,
         op_idx_in_group: usize,
         user_op_helpers: Option<[Felt; NUM_USER_OP_HELPERS]>,
+        basic_block_context: &mut BasicBlockContext,
     ) -> ControlFlow<()> {
         // update operations left to be executed in the group
-        {
-            let ctx = self.basic_block_context.as_mut().expect("not in span");
-            ctx.group_ops_left = remove_opcode_from_group(ctx.group_ops_left, operation);
-        }
+        basic_block_context.remove_operation_from_current_op_group();
 
         // Add trace row
         let decoder_row = DecoderRow::new_operation(
@@ -242,15 +235,14 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             self.context.state.decoder.current_addr,
             self.context.state.decoder.parent_addr,
             op_idx_in_group,
-            self.basic_block_context.as_ref().expect("not in span"),
+            basic_block_context,
             user_op_helpers,
         );
         self.add_trace_row(decoder_row)?;
 
         // Update number of groups left if the operation had an immediate value
         if operation.imm_value().is_some() {
-            let ctx = self.basic_block_context.as_mut().expect("not in span");
-            ctx.num_groups_left -= ONE;
+            basic_block_context.group_count_in_block -= ONE;
         }
 
         ControlFlow::Continue(())
@@ -447,23 +439,11 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         let (ended_node_addr, flags) =
             self.context.state.decoder.replay_node_end(&mut self.context.replay);
 
-        self.add_end_trace_row_impl(node_digest, flags, ended_node_addr)
-    }
-
-    pub fn add_end_trace_row_impl(
-        &mut self,
-        node_digest: Word,
-        flags: NodeFlags,
-        ended_node_addr: Felt,
-    ) -> ControlFlow<()> {
         let decoder_row = DecoderRow::new_control_flow(
             Operation::End.op_code(),
             (node_digest, flags.to_hasher_state_second_word()),
             ended_node_addr,
         );
-
-        // Reset the span context after completing the basic block
-        self.basic_block_context = None;
 
         self.add_trace_row(decoder_row)
     }
@@ -606,14 +586,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 // HELPERS
 // ===============================================================================================
 
-/// Removes the specified operation from the op group and returns the resulting op group.
-pub(crate) fn remove_opcode_from_group(op_group: Felt, op: Operation) -> Felt {
-    let opcode = op.op_code() as u64;
-    let result = Felt::new((op_group.as_int() - opcode) >> NUM_OP_BITS);
-    debug_assert!(op_group.as_int() >= result.as_int(), "op group underflow");
-    result
-}
-
 /// Returns op batch flags for the specified group count.
 fn get_op_batch_flags(num_groups_left: Felt) -> [Felt; 3] {
     use miden_air::trace::decoder::{
@@ -627,8 +599,6 @@ fn get_op_batch_flags(num_groups_left: Felt) -> [Felt; 3] {
         4 => OP_BATCH_4_GROUPS,
         2 => OP_BATCH_2_GROUPS,
         1 => OP_BATCH_1_GROUPS,
-        _ => panic!(
-            "invalid number of groups in a batch: {num_groups}, group count: {num_groups_left}"
-        ),
+        _ => panic!("invalid number of groups in a batch: {num_groups}, must be 1, 2, 4, or 8"),
     }
 }

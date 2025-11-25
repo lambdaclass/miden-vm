@@ -33,10 +33,7 @@ use crate::{
     chiplets::{Chiplets, CircuitEvaluation},
     continuation_stack::Continuation,
     crypto::RpoRandomCoin,
-    decoder::{
-        AuxTraceBuilder as DecoderAuxTraceBuilder, BasicBlockContext,
-        block_stack::ExecutionContextInfo,
-    },
+    decoder::{AuxTraceBuilder as DecoderAuxTraceBuilder, block_stack::ExecutionContextInfo},
     fast::{
         ExecutionOutput, NoopTracer, Tracer, eval_circuit_fast_,
         execution_tracer::TraceGenerationContext,
@@ -56,6 +53,7 @@ use crate::{
 
 pub const CORE_TRACE_WIDTH: usize = SYS_TRACE_WIDTH + DECODER_TRACE_WIDTH + STACK_TRACE_WIDTH;
 
+mod execution;
 mod trace_row;
 
 #[cfg(test)]
@@ -101,7 +99,7 @@ pub fn build_trace(
     let core_trace_len = {
         let core_trace_len: usize = core_trace_columns[0].len();
 
-        // TODO(plafer): We need to do a "- 1" here to be consistent with Process::execute(), which
+        // We need to do a "- 1" here to be consistent with Process::execute(), which
         // has a bug that causes it to not always insert a HALT row at the end of execution,
         // documented in [#1383](https://github.com/0xMiden/miden-vm/issues/1383). We correctly insert a HALT row
         // when generating the core trace fragments, so this "- 1" accounts for that extra row.
@@ -674,7 +672,6 @@ struct CoreTraceFragmentFiller<'a> {
     fragment_start_clk: RowIndex,
     fragment: &'a mut CoreTraceFragment<'a>,
     context: CoreTraceFragmentContext,
-    basic_block_context: Option<BasicBlockContext>,
     stack_rows: Option<[Felt; STACK_TRACE_WIDTH]>,
     system_rows: Option<[Felt; SYS_TRACE_WIDTH]>,
 }
@@ -689,7 +686,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             fragment_start_clk: context.state.system.clk,
             fragment: uninit_fragment,
             context,
-            basic_block_context: None,
             stack_rows: None,
             system_rows: None,
         }
@@ -699,104 +695,63 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     pub fn fill_fragment(mut self) -> ([Felt; STACK_TRACE_WIDTH], [Felt; SYS_TRACE_WIDTH], usize) {
         let execution_state = self.context.initial_execution_state.clone();
         // Execute fragment generation and always finalize at the end
-        let _ = self.execute_fragment_generation(execution_state);
+        let _ = self.fill_fragment_impl(execution_state);
         let final_stack_rows = self.stack_rows.unwrap_or([ZERO; STACK_TRACE_WIDTH]);
         let final_system_rows = self.system_rows.unwrap_or([ZERO; SYS_TRACE_WIDTH]);
         let num_rows_built = self.num_rows_built();
         (final_stack_rows, final_system_rows, num_rows_built)
     }
 
-    /// Internal method that performs fragment generation with automatic early returns
-    fn execute_fragment_generation(
-        &mut self,
-        execution_state: NodeExecutionState,
-    ) -> ControlFlow<()> {
+    /// Internal method that fills the fragment with automatic early returns
+    fn fill_fragment_impl(&mut self, execution_state: NodeExecutionState) -> ControlFlow<()> {
         let initial_mast_forest = self.context.initial_mast_forest.clone();
 
         // Finish the current node given its execution state
         match execution_state {
             NodeExecutionState::BasicBlock { node_id, batch_index, op_idx_in_batch } => {
-                let basic_block_node = {
-                    let mast_node =
-                        initial_mast_forest.get_node_by_id(node_id).expect("node should exist");
-                    mast_node.get_basic_block().expect("Expected a basic block node")
-                };
+                let basic_block_node = initial_mast_forest
+                    .get_node_by_id(node_id)
+                    .expect("node should exist")
+                    .unwrap_basic_block();
 
-                let op_batches = basic_block_node.op_batches();
-                assert!(
-                    batch_index < op_batches.len(),
-                    "Batch index out of bounds: {batch_index} >= {}",
-                    op_batches.len()
-                );
-
-                // Initialize the span context for the current basic block
-                self.basic_block_context = Some(initialize_basic_block_context(
+                let mut basic_block_context =
+                    BasicBlockContext::new_at_op(basic_block_node, batch_index, op_idx_in_batch);
+                self.finish_basic_block_node_from_op(
                     basic_block_node,
+                    &initial_mast_forest,
                     batch_index,
                     op_idx_in_batch,
-                ));
-
-                // Execute remaining operations in the specified batch
-                {
-                    let current_batch = &op_batches[batch_index];
-                    self.execute_op_batch(
-                        current_batch,
-                        Some(op_idx_in_batch),
-                        &initial_mast_forest,
-                    )?;
-                }
-
-                // Execute remaining batches
-                for op_batch in op_batches.iter().skip(batch_index + 1) {
-                    self.add_respan_trace_row(op_batch)?;
-
-                    self.execute_op_batch(op_batch, None, &initial_mast_forest)?;
-                }
-
-                // Add END trace row to complete the basic block
-                self.add_basic_block_end_trace_row(basic_block_node)?;
+                    &mut basic_block_context,
+                )?;
             },
             NodeExecutionState::Start(node_id) => {
                 self.execute_mast_node(node_id, &initial_mast_forest)?;
             },
             NodeExecutionState::Respan { node_id, batch_index } => {
-                let basic_block_node = {
-                    let mast_node =
-                        initial_mast_forest.get_node_by_id(node_id).expect("node should exist");
-                    mast_node.get_basic_block().expect("Expected a basic block node")
-                };
-                let current_batch = &basic_block_node.op_batches()[batch_index];
+                let basic_block_node = initial_mast_forest
+                    .get_node_by_id(node_id)
+                    .expect("node should exist")
+                    .unwrap_basic_block();
 
-                self.basic_block_context = {
-                    let current_op_group = current_batch.groups()[0];
-                    let num_groups_left: usize = basic_block_node
-                        .op_batches()
-                        .iter()
-                        .skip(batch_index)
-                        .map(|batch| batch.num_groups())
-                        .sum();
+                let mut basic_block_context =
+                    BasicBlockContext::new_at_batch_start(basic_block_node, batch_index);
 
-                    Some(BasicBlockContext {
-                        group_ops_left: current_op_group,
-                        num_groups_left: Felt::new(num_groups_left as u64),
-                    })
-                };
+                self.add_respan_trace_row(
+                    &basic_block_node.op_batches()[batch_index],
+                    &mut basic_block_context,
+                )?;
 
-                // Execute remaining batches
-                for op_batch in basic_block_node.op_batches().iter().skip(batch_index) {
-                    self.add_respan_trace_row(op_batch)?;
-
-                    self.execute_op_batch(op_batch, None, &initial_mast_forest)?;
-                }
-
-                // Add END trace row to complete the basic block
-                self.add_basic_block_end_trace_row(basic_block_node)?;
+                self.finish_basic_block_node_from_op(
+                    basic_block_node,
+                    &initial_mast_forest,
+                    batch_index,
+                    0,
+                    &mut basic_block_context,
+                )?;
             },
             NodeExecutionState::LoopRepeat(node_id) => {
-                finish_loop_node(self, node_id, &initial_mast_forest, None)?;
+                self.finish_loop_node(node_id, &initial_mast_forest, None)?;
             },
-            // TODO(plafer): there's a big overlap between `NodeExecutionPhase::End` and
-            // `Continuation::Finish*`. We can probably reconcile.
             NodeExecutionState::End(node_id) => {
                 let mast_node =
                     initial_mast_forest.get_node_by_id(node_id).expect("node should exist");
@@ -808,29 +763,14 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     MastNode::Split(split_node) => {
                         self.add_end_trace_row(split_node.digest())?;
                     },
-                    MastNode::Loop(loop_node) => {
-                        let (ended_node_addr, flags) =
-                            self.context.state.decoder.replay_node_end(&mut self.context.replay);
-
-                        // If the loop was entered, we need to shift the stack to the left
-                        if flags.loop_entered() == ONE {
-                            self.decrement_size(&mut NoopTracer);
-                        }
-
-                        self.add_end_trace_row_impl(loop_node.digest(), flags, ended_node_addr)?;
+                    MastNode::Loop(_loop_node) => {
+                        self.finish_loop_node(node_id, &initial_mast_forest, None)?;
                     },
                     MastNode::Call(call_node) => {
-                        let ctx_info = self.context.replay.block_stack.replay_execution_context();
-                        self.restore_context_from_replay(&ctx_info);
-                        self.add_end_trace_row(call_node.digest())?;
+                        self.finish_call_node(call_node)?;
                     },
                     MastNode::Dyn(dyn_node) => {
-                        if dyn_node.is_dyncall() {
-                            let ctx_info =
-                                self.context.replay.block_stack.replay_execution_context();
-                            self.restore_context_from_replay(&ctx_info);
-                        }
-                        self.add_end_trace_row(dyn_node.digest())?;
+                        self.finish_dyn_node(dyn_node)?;
                     },
                     MastNode::Block(basic_block_node) => {
                         self.add_basic_block_end_trace_row(basic_block_node)?;
@@ -863,30 +803,22 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     self.add_end_trace_row(mast_node.digest())?;
                 },
                 Continuation::FinishLoop(node_id) => {
-                    finish_loop_node(self, node_id, &current_forest, None)?;
+                    self.finish_loop_node(node_id, &current_forest, None)?;
                 },
                 Continuation::FinishCall(node_id) => {
-                    let mast_node =
-                        current_forest.get_node_by_id(node_id).expect("node should exist");
+                    let call_node = current_forest
+                        .get_node_by_id(node_id)
+                        .expect("node should exist")
+                        .unwrap_call();
 
-                    // Restore context
-                    let ctx_info = self.context.replay.block_stack.replay_execution_context();
-                    self.restore_context_from_replay(&ctx_info);
-
-                    // write END row to trace
-                    self.add_end_trace_row(mast_node.digest())?;
+                    self.finish_call_node(call_node)?;
                 },
                 Continuation::FinishDyn(node_id) => {
                     let dyn_node = current_forest
                         .get_node_by_id(node_id)
                         .expect("node should exist")
                         .unwrap_dyn();
-                    if dyn_node.is_dyncall() {
-                        let ctx_info = self.context.replay.block_stack.replay_execution_context();
-                        self.restore_context_from_replay(&ctx_info);
-                    }
-
-                    self.add_end_trace_row(dyn_node.digest())?;
+                    self.finish_dyn_node(dyn_node)?;
                 },
                 Continuation::FinishExternal(_node_id) => {
                     // Execute after_exit decorators when returning from an external node
@@ -916,58 +848,25 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             MastNode::Block(basic_block_node) => {
                 self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
-                let num_groups_left_in_block = Felt::from(basic_block_node.num_op_groups() as u32);
-                let first_op_batch = basic_block_node
-                    .op_batches()
-                    .first()
-                    .expect("Basic block should have at least one op batch");
+                self.add_basic_block_start_trace_row(basic_block_node)?;
 
-                // 1. Add SPAN start trace row
-                self.add_basic_block_start_trace_row(first_op_batch, num_groups_left_in_block)?;
-
-                // Initialize the basic block context for the current basic block. After SPAN
-                // operation is executed, we decrement the number of remaining
-                // groups by 1 because executing SPAN consumes the first group of
-                // the batch.
-                self.basic_block_context =
-                    initialize_basic_block_context(basic_block_node, 0, 0).into();
-
-                // 2. Execute batches one by one
-                let op_batches = basic_block_node.op_batches();
-
-                // Execute first op batch
-                {
-                    let first_op_batch =
-                        op_batches.first().expect("Basic block should have at least one op batch");
-                    self.execute_op_batch(first_op_batch, None, current_forest)?;
-                }
-
-                // Execute the rest of the op batches
-                for op_batch in op_batches.iter().skip(1) {
-                    // 3. Add RESPAN trace row between batches
-                    self.add_respan_trace_row(op_batch)?;
-
-                    self.execute_op_batch(op_batch, None, current_forest)?;
-                }
-
-                // 4. Add END trace row
-                self.add_basic_block_end_trace_row(basic_block_node)?;
-
-                ControlFlow::Continue(())
+                let mut basic_block_context = BasicBlockContext::new_at_op(basic_block_node, 0, 0);
+                self.finish_basic_block_node_from_op(
+                    basic_block_node,
+                    current_forest,
+                    0,
+                    0,
+                    &mut basic_block_context,
+                )
             },
             MastNode::Join(join_node) => {
                 self.context.state.decoder.replay_node_start(&mut self.context.replay);
 
-                // 1. Add "start JOIN" row
                 self.add_join_start_trace_row(join_node, current_forest)?;
 
-                // 2. Execute first child
                 self.execute_mast_node(join_node.first(), current_forest)?;
-
-                // 3. Execute second child
                 self.execute_mast_node(join_node.second(), current_forest)?;
 
-                // 4. Add "end JOIN" row
                 self.add_end_trace_row(join_node.digest())
             },
             MastNode::Split(split_node) => {
@@ -1011,7 +910,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     self.decrement_size(&mut NoopTracer);
                 }
 
-                finish_loop_node(self, node_id, current_forest, Some(condition))
+                self.finish_loop_node(node_id, current_forest, Some(condition))
             },
             MastNode::Call(call_node) => {
                 self.context.state.decoder.replay_node_start(&mut self.context.replay);
@@ -1123,6 +1022,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         batch: &OpBatch,
         start_op_idx: Option<usize>,
         current_forest: &MastForest,
+        basic_block_context: &mut BasicBlockContext,
     ) -> ControlFlow<()> {
         let start_op_idx = start_op_idx.unwrap_or(0);
         let end_indices = batch.end_indices();
@@ -1139,7 +1039,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 } else {
                     // Note that the `op_idx_in_block` is only used in case of error, so we set it
                     // to 0.
-                    // TODO(plafer): remove op_idx_in_block from u32_sub's error?
                     self.execute_sync_op(
                         op,
                         0,
@@ -1155,7 +1054,12 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 };
 
                 // write the operation to the trace
-                self.add_operation_trace_row(*op, op_idx_in_group, user_op_helpers)?;
+                self.add_operation_trace_row(
+                    *op,
+                    op_idx_in_group,
+                    user_op_helpers,
+                    basic_block_context,
+                )?;
             }
 
             // if we executed all operations in a group and haven't reached the end of the batch
@@ -1163,21 +1067,11 @@ impl<'a> CoreTraceFragmentFiller<'a> {
             if op_idx_in_batch + 1 == end_indices[op_group_idx]
                 && let Some(next_op_group_idx) = batch.next_op_group_index(op_group_idx)
             {
-                self.start_op_group(batch.groups()[next_op_group_idx]);
+                basic_block_context.start_op_group(batch.groups()[next_op_group_idx]);
             }
         }
 
         ControlFlow::Continue(())
-    }
-
-    /// Starts decoding a new operation group.
-    pub fn start_op_group(&mut self, op_group: Felt) {
-        let ctx = self.basic_block_context.as_mut().expect("not in span");
-
-        // reset the current group value and decrement the number of left groups by ONE
-        debug_assert_eq!(ZERO, ctx.group_ops_left, "not all ops executed in current group");
-        ctx.group_ops_left = op_group;
-        ctx.num_groups_left -= ONE;
     }
 
     // HELPERS
@@ -1217,82 +1111,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 // HELPERS
 // ===============================================================================================
 
-/// Given that a trace fragment can start executing from the middle of a basic block, we need to
-/// initialize the `BasicBlockContext` correctly to reflect the state of the decoder at that point.
-/// This function does that initialization.
-///
-/// Recall that `BasicBlockContext` keeps track of the state needed to correctly fill in the decoder
-/// columns associated with a SPAN of operations (i.e. a basic block). This function takes in a
-/// basic block node, the index of the current operation batch within that block, and the index of
-/// the current operation within that batch, and initializes the `BasicBlockContext` accordingly. In
-/// other words, it figures out how many operations are left in the current operation group, and how
-/// many operation groups are left in the basic block, given that we are starting execution from the
-/// specified operation.
-fn initialize_basic_block_context(
-    basic_block_node: &BasicBlockNode,
-    batch_index: usize,
-    op_idx_in_batch: usize,
-) -> BasicBlockContext {
-    let op_batches = basic_block_node.op_batches();
-    let (current_op_group_idx, op_idx_in_group) = op_batches[batch_index]
-        .op_idx_in_batch_to_group(op_idx_in_batch)
-        .expect("invalid batch");
-
-    let group_ops_left = {
-        // Note: this here relies on NOOP's opcode to be 0, since `current_op_group_idx` could point
-        // to an op group that contains a NOOP inserted at runtime (i.e. padding at the end of the
-        // batch), and hence not encoded in the basic block directly. But since NOOP's opcode is 0,
-        // this works out correctly (since empty groups are also represented by 0).
-        let current_op_group = op_batches[batch_index].groups()[current_op_group_idx];
-
-        // Shift out all operations that are already executed in this group.
-        //
-        // Note: `group_ops_left` encodes the bits of the operations left to be executed after the
-        // current one, and so we would expect to shift `NUM_OP_BITS` by `op_idx_in_group + 1`.
-        // However, we will apply that shift right before writing to the trace, so we only shift by
-        // `op_idx_in_group` here.
-        Felt::new(current_op_group.as_int() >> (NUM_OP_BITS * op_idx_in_group))
-    };
-
-    let num_groups_left = {
-        // TODO(plafer): do we have to look at all op groups in the block? Can't we just look at the
-        // current batch's groups?
-        let total_groups = basic_block_node.num_op_groups();
-
-        // Count groups consumed by completed batches (all batches before current one).
-        let mut groups_consumed = 0;
-        for op_batch in op_batches.iter().take(batch_index) {
-            groups_consumed += op_batch.num_groups().next_power_of_two();
-        }
-
-        // We run through previous operations of our current op group, and increment the number of
-        // groups consumed for each operation that has an immediate value
-        {
-            // Note: This is a hacky way of doing this because `OpBatch` doesn't store the
-            // information of which operation belongs to which group.
-            let mut current_op_group =
-                op_batches[batch_index].groups()[current_op_group_idx].as_int();
-            for _ in 0..op_idx_in_group {
-                let current_op = (current_op_group & 0b1111111) as u8;
-                if current_op == OPCODE_PUSH {
-                    groups_consumed += 1;
-                }
-
-                current_op_group >>= NUM_OP_BITS; // Shift to the next operation in the group
-            }
-        }
-
-        // Add the number of complete groups before the current group in this batch. Add 1 to
-        // account for the current group (since `num_groups_left` is the number of groups left
-        // *after* being done with the current group)
-        groups_consumed += current_op_group_idx + 1;
-
-        Felt::from((total_groups - groups_consumed) as u32)
-    };
-
-    BasicBlockContext { group_ops_left, num_groups_left }
-}
-
 /// Splits the core trace columns into fragments of the specified size, returning a vector of
 /// `CoreTraceFragment`s that each borrow from the original columns.
 fn create_fragments_from_trace_columns(
@@ -1322,9 +1140,6 @@ fn create_fragments_from_trace_columns(
         }
     }
 }
-
-// REQUIRED METHODS
-// ===============================================================================================
 
 impl<'a> StackInterface for CoreTraceFragmentFiller<'a> {
     fn top(&self) -> &[Felt] {
@@ -1710,52 +1525,133 @@ impl OperationHelperRegisters for TraceGenerationHelpers {
     }
 }
 
-// HELPERS
+// BASIC BLOCK CONTEXT
 // ================================================================================================
 
-/// Executes a loop node by processing its body repeatedly while the condition is true.
-///
-/// This function is shared between `NodeExecutionState::LoopRepeat` and `Continuation::FinishLoop`
-/// to eliminate code duplication. Both cases have identical logic for handling loop execution.
-#[inline(always)]
-fn finish_loop_node(
-    processor: &mut CoreTraceFragmentFiller,
-    node_id: MastNodeId,
-    mast_forest: &MastForest,
-    condition: Option<Felt>,
-) -> ControlFlow<()> {
-    let loop_node = mast_forest.get_node_by_id(node_id).expect("node should exist").unwrap_loop();
+/// Keeps track of the info needed to decode a currently executing BASIC BLOCK. The info includes:
+/// - Operations which still need to be executed in the current group. The operations are encoded as
+///   opcodes (7 bits) appended one after another into a single field element, with the next
+///   operation to be executed located at the least significant position.
+/// - Number of operation groups left to be executed in the entire BASIC BLOCK.
+#[derive(Default)]
+struct BasicBlockContext {
+    pub current_op_group: Felt,
+    pub group_count_in_block: Felt,
+}
 
-    // If no condition is provided, read it from the stack
-    let mut condition = if let Some(cond) = condition {
-        cond
-    } else {
-        let cond = processor.get(0);
-        processor.decrement_size(&mut NoopTracer);
-        cond
-    };
+impl BasicBlockContext {
+    /// Initializes a `BasicBlockContext` for the case where execution starts at the beginning of an
+    /// operation batch (i.e. at a SPAN or RESPAN row).
+    fn new_at_batch_start(basic_block_node: &BasicBlockNode, batch_index: usize) -> Self {
+        let current_batch = &basic_block_node.op_batches()[batch_index];
 
-    while condition == ONE {
-        processor.add_loop_repeat_trace_row(
-            loop_node,
-            mast_forest,
-            processor.context.state.decoder.current_addr,
-        )?;
-
-        processor.execute_mast_node(loop_node.body(), mast_forest)?;
-
-        condition = processor.get(0);
-        processor.decrement_size(&mut NoopTracer);
+        Self {
+            current_op_group: current_batch.groups()[0],
+            group_count_in_block: Felt::new(
+                basic_block_node
+                    .op_batches()
+                    .iter()
+                    .skip(batch_index)
+                    .map(|batch| batch.num_groups())
+                    .sum::<usize>() as u64,
+            ),
+        }
     }
 
-    // 3. Add "end LOOP" row
-    //
-    // Note that we don't confirm that the condition is properly ZERO here, as
-    // the FastProcessor already ran that check.
-    processor.add_end_trace_row(loop_node.digest())?;
+    /// Given that a trace fragment can start executing from the middle of a basic block, we need to
+    /// initialize the `BasicBlockContext` correctly to reflect the state of the decoder at that
+    /// point. This function does that initialization.
+    ///
+    /// Recall that `BasicBlockContext` keeps track of the state needed to correctly fill in the
+    /// decoder columns associated with a SPAN of operations (i.e. a basic block). This function
+    /// takes in a basic block node, the index of the current operation batch within that block,
+    /// and the index of the current operation within that batch, and initializes the
+    /// `BasicBlockContext` accordingly. In other words, it figures out how many operations are
+    /// left in the current operation group, and how many operation groups are left in the basic
+    /// block, given that we are starting execution from the specified operation.
+    fn new_at_op(
+        basic_block_node: &BasicBlockNode,
+        batch_index: usize,
+        op_idx_in_batch: usize,
+    ) -> Self {
+        let op_batches = basic_block_node.op_batches();
+        let (current_op_group_idx, op_idx_in_group) = op_batches[batch_index]
+            .op_idx_in_batch_to_group(op_idx_in_batch)
+            .expect("invalid batch");
 
-    ControlFlow::Continue(())
+        let current_op_group = {
+            // Note: this here relies on NOOP's opcode to be 0, since `current_op_group_idx` could
+            // point to an op group that contains a NOOP inserted at runtime (i.e.
+            // padding at the end of the batch), and hence not encoded in the basic
+            // block directly. But since NOOP's opcode is 0, this works out correctly
+            // (since empty groups are also represented by 0).
+            let current_op_group = op_batches[batch_index].groups()[current_op_group_idx];
+
+            // Shift out all operations that are already executed in this group.
+            //
+            // Note: `group_ops_left` encodes the bits of the operations left to be executed after
+            // the current one, and so we would expect to shift `NUM_OP_BITS` by
+            // `op_idx_in_group + 1`. However, we will apply that shift right before
+            // writing to the trace, so we only shift by `op_idx_in_group` here.
+            Felt::new(current_op_group.as_int() >> (NUM_OP_BITS * op_idx_in_group))
+        };
+
+        let group_count_in_block = {
+            let total_groups = basic_block_node.num_op_groups();
+
+            // Count groups consumed by completed batches (all batches before current one).
+            let mut groups_consumed = 0;
+            for op_batch in op_batches.iter().take(batch_index) {
+                groups_consumed += op_batch.num_groups().next_power_of_two();
+            }
+
+            // We run through previous operations of our current op group, and increment the number
+            // of groups consumed for each operation that has an immediate value
+            {
+                // Note: This is a hacky way of doing this because `OpBatch` doesn't store the
+                // information of which operation belongs to which group.
+                let mut current_op_group =
+                    op_batches[batch_index].groups()[current_op_group_idx].as_int();
+                for _ in 0..op_idx_in_group {
+                    let current_op = (current_op_group & 0b1111111) as u8;
+                    if current_op == OPCODE_PUSH {
+                        groups_consumed += 1;
+                    }
+
+                    current_op_group >>= NUM_OP_BITS; // Shift to the next operation in the group
+                }
+            }
+
+            // Add the number of complete groups before the current group in this batch. Add 1 to
+            // account for the current group (since `num_groups_left` is the number of groups left
+            // *after* being done with the current group)
+            groups_consumed += current_op_group_idx + 1;
+
+            Felt::from((total_groups - groups_consumed) as u32)
+        };
+
+        Self { current_op_group, group_count_in_block }
+    }
+
+    /// Removes the operation that was just executed from the current operation group.
+    fn remove_operation_from_current_op_group(&mut self) {
+        let prev_op_group = self.current_op_group.as_int();
+        self.current_op_group = Felt::new(prev_op_group >> NUM_OP_BITS);
+
+        debug_assert!(prev_op_group >= self.current_op_group.as_int(), "op group underflow");
+    }
+
+    /// Starts decoding a new operation group.
+    pub fn start_op_group(&mut self, op_group: Felt) {
+        // reset the current group value and decrement the number of left groups by ONE
+        debug_assert_eq!(ZERO, self.current_op_group, "not all ops executed in current group");
+        self.current_op_group = op_group;
+        self.group_count_in_block -= ONE;
+    }
 }
+
+// HELPERS
+// ================================================================================================
 
 /// Identical to `[chiplets::ace::eval_circuit]` but adapted for use with
 /// `[CoreTraceFragmentGenerator]`.

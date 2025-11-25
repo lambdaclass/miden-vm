@@ -294,7 +294,7 @@ pub struct ExecutionReplay {
 /// Replay data for the block stack.
 #[derive(Debug, Default)]
 pub struct BlockStackReplay {
-    /// The parent address - needed for each node start operation (JOIN, SPLIT, etc).
+    /// The parent address, recorded when a new node is started (JOIN, SPLIT, etc).
     node_start_parent_addr: VecDeque<Felt>,
     /// The data needed to recover the state on an END operation.
     node_end: VecDeque<NodeEndData>,
