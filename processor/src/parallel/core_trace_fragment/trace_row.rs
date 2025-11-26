@@ -21,7 +21,7 @@ use miden_core::{
 
 use super::CoreTraceFragmentFiller;
 use crate::{
-    decoder::block_stack::ExecutionContextInfo, parallel::BasicBlockContext,
+    decoder::block_stack::ExecutionContextInfo, parallel::core_trace_fragment::BasicBlockContext,
     processor::StackInterface,
 };
 

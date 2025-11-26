@@ -8,7 +8,7 @@ use miden_core::{
 
 use crate::{
     fast::NoopTracer,
-    parallel::{BasicBlockContext, CoreTraceFragmentFiller},
+    parallel::core_trace_fragment::{BasicBlockContext, CoreTraceFragmentFiller},
     processor::StackInterface,
 };
 
@@ -59,7 +59,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     // LOOP NODE HANDLING
     // ------------------------------------------------------------------------------------------
 
-    /// Executes a loop node by processing its body repeatedly while the condition is true.
+    /// Finishes executing a loop node by processing its body repeatedly while the condition is
+    /// true.
     #[inline(always)]
     pub(super) fn finish_loop_node(
         &mut self,
@@ -102,6 +103,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
     // CALL NODE HANDLING
     // ------------------------------------------------------------------------------------------
 
+    /// Performs necessary operations to finish executing a call node, and inserting its
+    /// corresponding END row.
     #[inline(always)]
     pub(super) fn finish_call_node(&mut self, call_node: &CallNode) -> ControlFlow<()> {
         // Restore context
@@ -112,6 +115,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         self.add_end_trace_row(call_node.digest())
     }
 
+    /// Performs necessary operations to finish executing a dyn node, and inserting its
+    /// corresponding END row.
     #[inline(always)]
     pub(super) fn finish_dyn_node(&mut self, dyn_node: &DynNode) -> ControlFlow<()> {
         if dyn_node.is_dyncall() {
