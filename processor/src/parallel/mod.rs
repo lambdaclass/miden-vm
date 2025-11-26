@@ -947,10 +947,14 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     self.context.replay.memory_reads.replay_read_word(mem_addr)
                 };
 
-                // 1. Add "start DYN/DYNCALL" row
+                // Drop the memory address off the stack. This needs to be done before saving the
+                // context.
+                self.decrement_size(&mut NoopTracer);
+
+                // Add "start DYN/DYNCALL" row
                 if dyn_node.is_dyncall() {
                     let (stack_depth, next_overflow_addr) =
-                        self.shift_stack_left_and_start_context();
+                        self.context.state.stack.start_context();
                     // For DYNCALL, we need to save the current context state
                     // and prepare for dynamic execution
                     let ctx_info = ExecutionContextInfo::new(
@@ -966,12 +970,10 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
                     self.add_dyncall_start_trace_row(callee_hash, ctx_info)?;
                 } else {
-                    // Pop the memory address off the stack, and write the DYN trace row
-                    self.decrement_size(&mut NoopTracer);
                     self.add_dyn_start_trace_row(callee_hash)?;
                 };
 
-                // 2. Execute the callee
+                // Execute the callee
                 match current_forest.find_procedure_root(callee_hash) {
                     Some(callee_id) => self.execute_mast_node(callee_id, current_forest)?,
                     None => {
@@ -988,7 +990,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     self.restore_context_from_replay(&ctx_info);
                 }
 
-                // 3. Add "end DYN/DYNCALL" row
+                // Add "end DYN/DYNCALL" row
                 self.add_end_trace_row(dyn_node.digest())
             },
             MastNode::External(_) => {
@@ -1076,12 +1078,6 @@ impl<'a> CoreTraceFragmentFiller<'a> {
 
     // HELPERS
     // -------------------------------------------------------------------------------------------
-
-    // TODO(plafer): Should this be a `StackState` method?
-    pub fn shift_stack_left_and_start_context(&mut self) -> (usize, Felt) {
-        self.decrement_size(&mut NoopTracer);
-        self.context.state.stack.start_context()
-    }
 
     fn done_generating(&mut self) -> bool {
         // If we have built all the rows in the fragment, we are done
