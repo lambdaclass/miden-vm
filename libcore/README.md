@@ -15,7 +15,7 @@ Currently, Miden core library contains just a few modules, which are listed belo
 - [miden::core::collections::mmr](./docs/collections/mmr.md)
 - [miden::core::collections::smt](./docs/collections/smt.md)
 - [miden::core::collections::sorted_array](./docs/collections/sorted_array.md)
-- [miden::core::crypto::dsa::ecdsa_secp256k1](./docs/crypto/dsa/ecdsa_secp256k1.md)
+- [miden::core::crypto::dsa::ecdsa_k256_keccak](./docs/crypto/dsa/ecdsa_k256_keccak.md)
 - [miden::core::crypto::dsa::falcon512rpo](./docs/crypto/dsa/falcon512rpo.md)
 - [miden::core::crypto::hashes::rpo256](./docs/crypto/hashes/rpo256.md)
 - [miden::core::crypto::hashes::blake3](./docs/crypto/hashes/blake3.md)

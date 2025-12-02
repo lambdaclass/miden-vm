@@ -15,7 +15,7 @@ use miden::core::word
 # CONSTANTS
 # ================================================================================================
 
-const ECDSA_VERIFY_EVENT = event("miden::core::crypto::dsa::ecdsa::verify")
+const ECDSA_VERIFY_EVENT = event("miden::core::crypto::dsa::ecdsa_k256_keccak::verify")
 
 const PK_LEN_FELTS = 9     # 33.div_ceil(4)
 const DIGEST_LEN_FELTS = 8 # 32.div_ceil(4)
@@ -136,7 +136,7 @@ end
 #! - `digest_ptr`: word-aligned memory address containing 32-byte digest
 #! - `sig_ptr`: word-aligned memory address containing 66-byte signature
 #! - `COMM`: commitment to calldata computed as
-#!       `Rpo256(Rpo256(Rpo256(pk) || Rpo256(digest)) || Rpo256(sig))`
+#!       `rpo(rpo(rpo(pk) || rpo(digest)) || rpo(sig))`
 #! - `TAG`: `[ECDSA_VERIFY_EVENT, result, 0, 0]`
 #! - `result`: 1 if signature is valid, 0 if invalid
 pub proc verify_impl
@@ -147,24 +147,24 @@ pub proc verify_impl
     adv_push.1
     # => [result, pk_ptr, digest_ptr, sig_ptr, ...]
 
-    # Compute commitment: COMM = Rpo256(Rpo256(Rpo256(pk) || Rpo256(digest)) || Rpo256(sig))
-    # Compute COMM_PK = Rpo256(pk)
+    # Compute commitment: COMM = rpo(rpo(rpo(pk) || rpo(digest)) || rpo(sig))
+    # Compute COMM_PK = rpo(pk)
     push.PK_LEN_FELTS movup.2 exec.rpo::hash_elements
     # => [COMM_PK, result, digest_ptr, sig_ptr]
 
-    # Compute COMM_DIGEST = Rpo256(digest_bytes)
+    # Compute COMM_DIGEST = rpo(digest_bytes)
     push.DIGEST_LEN_FELTS movup.6 exec.rpo::hash_elements
     # => [COMM_DIGEST, COMM_PK, result, sig_ptr]
 
-    # Merge COMM_PK and COMM_DIGEST into COMM_PK_DIGEST = Rpo256(Rpo256(pk) || Rpo256(digest))
+    # Merge COMM_PK and COMM_DIGEST into COMM_PK_DIGEST = rpo(rpo(pk) || rpo(digest))
     hmerge
     # => [COMM_PK_DIGEST, result, sig_ptr]
 
-    # Compute COMM_SIG = Rpo256(sig_bytes)
+    # Compute COMM_SIG = rpo(sig_bytes)
     push.SIG_LEN_FELTS movup.6 exec.rpo::hash_elements
     # => [COMM_SIG, COMM_PK_DIGEST, result]
 
-    # Merge into final commitment COMM = Rpo256(COMM_PK_DIGEST || COMM_SIG)
+    # Merge into final commitment COMM = rpo(COMM_PK_DIGEST || COMM_SIG)
     hmerge
     # => [COMM, result]
 

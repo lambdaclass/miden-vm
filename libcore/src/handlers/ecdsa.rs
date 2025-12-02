@@ -48,7 +48,7 @@ use crate::handlers::{bytes_to_packed_u32_felts, read_memory_packed_u32};
 
 /// Qualified event name for the ECDSA signature verification event.
 pub const ECDSA_VERIFY_EVENT_NAME: EventName =
-    EventName::new("miden::core::crypto::dsa::ecdsa::verify");
+    EventName::new("miden::core::crypto::dsa::ecdsa_k256_keccak::verify");
 
 const PUBLIC_KEY_LEN_BYTES: usize = 33;
 const MESSAGE_DIGEST_LEN_BYTES: usize = 32;

@@ -46,7 +46,7 @@ fn test_ecdsa_verify_cases() {
 
         let source = format!(
             "
-                use miden::core::crypto::dsa::ecdsa::secp256k1
+                use miden::core::crypto::dsa::ecdsa_k256_keccak
                 use miden::core::sys
 
                 begin
@@ -55,7 +55,7 @@ fn test_ecdsa_verify_cases() {
 
                     # Call verify: [ptr_pk, ptr_digest, ptr_sig]
                     push.{SIG_ADDR}.{DIGEST_ADDR}.{PK_ADDR}
-                    exec.secp256k1::verify
+                    exec.ecdsa_k256_keccak::verify
                     # => [result, ...]
 
                     exec.sys::truncate_stack
@@ -91,7 +91,7 @@ fn test_ecdsa_verify_impl_commitment() {
 
         let source = format!(
             "
-            use miden::core::crypto::dsa::ecdsa::secp256k1
+            use miden::core::crypto::dsa::ecdsa_k256_keccak
             use miden::core::sys
 
             begin
@@ -100,7 +100,7 @@ fn test_ecdsa_verify_impl_commitment() {
 
                 # Call verify_impl: [ptr_pk, ptr_digest, ptr_sig]
                 push.{SIG_ADDR}.{DIGEST_ADDR}.{PK_ADDR}
-                exec.secp256k1::verify_impl
+                exec.ecdsa_k256_keccak::verify_impl
                 # => [COMM, TAG, result, ...]
 
                 exec.sys::truncate_stack
@@ -189,13 +189,13 @@ fn test_ecdsa_verify_bis_wrapper() {
 
     let source = format!(
         "
-        use miden::core::crypto::dsa::ecdsa::secp256k1
+        use miden::core::crypto::dsa::ecdsa_k256_keccak
 
         begin
             push.{message} push.{pk_commitment}
             debug.stack
             emit.event(\"{EVENT_ECDSA_SIG_TO_STACK}\")
-            exec.secp256k1::verify_ecdsa_k256_keccak
+            exec.ecdsa_k256_keccak::verify_ecdsa_k256_keccak
         end
         ",
     );
