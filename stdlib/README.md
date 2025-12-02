@@ -18,7 +18,6 @@ Currently, Miden standard library contains just a few modules, which are listed 
 - [std::pcs::fri::frie2f4](./docs/pcs/frie2f4.md)
 - [std::math::u256](./docs/math/u256.md)
 - [std::math::u64](./docs/math/u64.md)
-- [std::math::secp256k1](./docs/math/secp256k1/group.md)
 - [std::mem](./docs/mem.md)
 - [std::sys](./docs/sys.md)
 
