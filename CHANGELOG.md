@@ -33,6 +33,7 @@
 - Rename the MASM standard library to "miden::core", the crate to `miden-libcore`, and various other MASM module refactors ([#2260](https://github.com/0xMiden/miden-vm/issues/2260))
 - Add a compaction function for achieving maximal sharing out of a `MastForest` with stripped decorators ([#2408](https://github.com/0xMiden/miden-vm/pull/2408)).
 - Refactor and remove tech debt from parallel trace generation ([#2382](https://github.com/0xMiden/miden-vm/pull/2382))
+- [BREAKING] Added `kind` field to `Package` struct to indicate package type (Executable, AccountComponent, NoteScript, TxScript, AuthComponent) ([#2403](https://github.com/0xMiden/miden-vm/pull/2403)).
 
 ## 0.19.1 (2025-11-6)
 
