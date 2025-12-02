@@ -27,14 +27,14 @@ const N: usize = 512;
 const J: u64 = (N * M as usize * M as usize) as u64;
 
 const PROBABILISTIC_PRODUCT_SOURCE: &str = "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
         #=> [PK, ...]
         push.0
         #=> [h_ptr, PK, ...]
 
-        exec.rpo_falcon512::load_h_s2_and_product
+        exec.falcon512rpo::load_h_s2_and_product
         #=> [...]
     end
     ";
@@ -88,10 +88,10 @@ pub enum FalconError {
 #[test]
 fn test_falcon512_norm_sq() {
     let source = "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
-        exec.rpo_falcon512::norm_sq
+        exec.falcon512rpo::norm_sq
     end
     ";
 
@@ -108,10 +108,10 @@ fn test_falcon512_norm_sq() {
 #[test]
 fn test_falcon512_diff_mod_m() {
     let source = "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
-        exec.rpo_falcon512::diff_mod_M
+        exec.falcon512rpo::diff_mod_M
     end
     ";
     let v = Felt::MODULUS - 1;
@@ -153,10 +153,10 @@ proptest! {
     fn diff_mod_m_proptest(v in 0..Felt::MODULUS, w in 0..J, u in 0..J) {
 
           let source = "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
-        exec.rpo_falcon512::diff_mod_M
+        exec.falcon512rpo::diff_mod_M
     end
     ";
 
@@ -219,11 +219,11 @@ fn test_move_sig_to_adv_stack() {
     let message = rand_value::<Word>();
 
     let source = "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
-        exec.rpo_falcon512::move_sig_from_map_to_adv_stack
-        exec.rpo_falcon512::verify
+        exec.falcon512rpo::move_sig_from_map_to_adv_stack
+        exec.falcon512rpo::verify
     end
     ";
 
@@ -311,11 +311,11 @@ fn generate_test(
 ) -> (String, Vec<u64>, Vec<u64>, MerkleStore, Vec<(Word, Vec<Felt>)>) {
     let source = format!(
         "
-    use miden::core::crypto::dsa::rpo_falcon512
+    use miden::core::crypto::dsa::falcon512rpo
 
     begin
         emit.event(\"{EVENT_FALCON_SIG_TO_STACK}\")
-        exec.rpo_falcon512::verify
+        exec.falcon512rpo::verify
     end
     "
     );
