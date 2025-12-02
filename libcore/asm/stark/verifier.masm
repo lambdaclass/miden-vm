@@ -1,12 +1,12 @@
-use std::pcs::fri::frie2f4
-use std::pcs::fri::helper
+use miden::core::pcs::fri::frie2f4
+use miden::core::pcs::fri::helper
 
-use std::stark::deep_queries
-use std::stark::random_coin
-use std::stark::ood_frames
-use std::stark::public_inputs
-use std::stark::constants
-use std::stark::utils
+use miden::core::stark::deep_queries
+use miden::core::stark::random_coin
+use miden::core::stark::ood_frames
+use miden::core::stark::public_inputs
+use miden::core::stark::constants
+use miden::core::stark::utils
 
 #! Verifies a STARK proof.
 #!

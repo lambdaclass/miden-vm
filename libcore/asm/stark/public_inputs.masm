@@ -1,4 +1,4 @@
-use std::stark::constants
+use miden::core::stark::constants
 
 #! Processes the public inputs.
 #!

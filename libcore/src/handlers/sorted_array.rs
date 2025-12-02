@@ -5,11 +5,11 @@ use miden_processor::{AdviceMutation, EventError, MemoryError, ProcessState};
 
 /// Event name for the lowerbound_array operation.
 pub const LOWERBOUND_ARRAY_EVENT_NAME: EventName =
-    EventName::new("core::collections::sorted_array::lowerbound_array");
+    EventName::new("miden::core::collections::sorted_array::lowerbound_array");
 
 /// Event name for the lowerbound_key_value operation.
 pub const LOWERBOUND_KEY_VALUE_EVENT_NAME: EventName =
-    EventName::new("core::collections::sorted_array::lowerbound_key_value");
+    EventName::new("miden::core::collections::sorted_array::lowerbound_key_value");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum KeySize {

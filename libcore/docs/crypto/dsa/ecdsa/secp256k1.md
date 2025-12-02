@@ -1,5 +1,5 @@
 
-## std::crypto::dsa::ecdsa::secp256k1
+## miden::core::crypto::dsa::ecdsa::secp256k1
 | Procedure | Description |
 | ----------- | ------------- |
 | verify_ecdsa_k256_keccak | Verifies an secp256k1 ECDSA signature compatible with `miden-crypto::ecdsa_k256_keccak`.<br /><br />This wrapper mirrors the materialization performed in `miden-crypto::ecdsa_k256_keccak`: given<br />a public key commitment and the original message, it reconstructs the calldata expected by the<br />precompile (public key bytes, Keccak256(message), signature). The public key and signature are<br />supplied via the advice stack, and can be obtained with the `ecdsa_k256_keccak` function.<br /><br />Inputs:<br />Operand stack: [PK_COMM, MSG, ...]<br />Advice stack:  [PK[9] \| SIG_BYTES[17] \| ...]<br />Outputs:<br />Operand stack: []<br />Advice stack:  []<br /><br />Local memory layout (element addresses):<br />- locaddr[0 ..9 ] : compressed public key (33 bytes packed as 9 felts)<br />- locaddr[12..20] : message bytes (MSG written as eight u32 limbs)<br />- locaddr[20..28] : keccak256(message) digest (8 felts)<br />- locaddr[28..45] : signature (66 bytes packed as 17 felts)<br /><br />The procedure traps if the public key in the advice stack does not hash to `PK_COMM`;<br />otherwise it returns cleanly after emitting the deferred verification request.<br /> |

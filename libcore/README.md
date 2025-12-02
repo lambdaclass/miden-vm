@@ -12,14 +12,29 @@ The second goal can be achieved because calls to procedures in the core library 
 ## Available modules
 Currently, Miden core library contains just a few modules, which are listed below. Over time, we plan to add many more modules which will include various cryptographic primitives, additional numeric data types and operations, and many others.
 
-- [std::crypto::hashes::blake3](./docs/crypto/hashes/blake3.md)
-- [std::crypto::hashes::keccak256](./docs/crypto/hashes/keccak256.md)
-- [std::crypto::hashes::sha256](./docs/crypto/hashes/sha256.md)
-- [std::pcs::fri::frie2f4](./docs/pcs/frie2f4.md)
-- [std::math::u256](./docs/math/u256.md)
-- [std::math::u64](./docs/math/u64.md)
-- [std::mem](./docs/mem.md)
-- [std::sys](./docs/sys.md)
+- [miden::core::collections::mmr](./docs/collections/mmr.md)
+- [miden::core::collections::smt](./docs/collections/smt.md)
+- [miden::core::collections::sorted_array](./docs/collections/sorted_array.md)
+- [miden::core::crypto::dsa::ecdsa_secp256k1](./docs/crypto/dsa/ecdsa_secp256k1.md)
+- [miden::core::crypto::dsa::falcon512rpo](./docs/crypto/dsa/falcon512rpo.md)
+- [miden::core::crypto::hashes::rpo256](./docs/crypto/hashes/rpo256.md)
+- [miden::core::crypto::hashes::blake3](./docs/crypto/hashes/blake3.md)
+- [miden::core::crypto::hashes::keccak256](./docs/crypto/hashes/keccak256.md)
+- [miden::core::crypto::hashes::sha256](./docs/crypto/hashes/sha256.md)
+- [miden::core::math::u256](./docs/math/u256.md)
+- [miden::core::math::u64](./docs/math/u64.md)
+- [miden::core::mem](./docs/mem.md)
+- [miden::core::pcs::fri::frie2f4](./docs/pcs/frie2f4.md)
+- [miden::core::stark](./docs/stark/mod.md)
+- [miden::core::stark::constants](./docs/stark/constants.md)
+- [miden::core::stark::deep_queries](./docs/stark/deep_queries.md)
+- [miden::core::stark::ood_frames](./docs/stark/ood_frames.md)
+- [miden::core::stark::public_inputs](./docs/stark/public_inputs.md)
+- [miden::core::stark::random_coin](./docs/stark/random_coin.md)
+- [miden::core::stark::utils](./docs/stark/utils.md)
+- [miden::core::stark::verifier](./docs/stark/verifier.md)
+- [miden::core::sys](./docs/sys.md)
+- [miden::core::word](./docs/word.md)
 
 ## Status
 At this point, all implementations listed above are considered to be experimental and are subject to change.

@@ -4,14 +4,14 @@ sidebar_position: 2
 ---
 
 # Collections
-Namespace `std::collections` contains modules for commonly-used authenticated data structures. This includes:
+Namespace `miden::core::collections` contains modules for commonly-used authenticated data structures. This includes:
 
 - A Merkle Mountain range.
 - A Sparse Merkle Tree with 64-bit keys.
 - A Sparse Merkle Tree with 256-bit keys.
 
 ## Merkle Mountain Range
-Module `std::collections::mmr` contains procedures for manipulating [Merkle Mountain Range](https://github.com/opentimestamps/opentimestamps-server/blob/master/doc/merkle-mountain-range.md) data structure which can be used as an append-only log.
+Module `miden::core::collections::mmr` contains procedures for manipulating [Merkle Mountain Range](https://github.com/opentimestamps/opentimestamps-server/blob/master/doc/merkle-mountain-range.md) data structure which can be used as an append-only log.
 
 The following procedures are available to read data from and make updates to a Merkle Mountain Range.
 
@@ -29,7 +29,7 @@ The following procedures are available to read data from and make updates to a M
 
 ## Sparse Merkle Tree
 
-Module `std::collections::smt` contains procedures for manipulating key-value maps with 4-element keys and 4-element values. The underlying implementation is a Sparse Merkle Tree where leaves can exist only at depth 64. Initially, when a tree is empty, it is equivalent to an empty Sparse Merkle Tree of depth 64 (i.e., leaves at depth 64 are set and hash to [ZERO; 4]). When inserting non-empty values into the tree, the most significant element of the key is used to identify the corresponding leaf. All key-value pairs that map to a given leaf are inserted (ordered) in the leaf.
+Module `miden::core::collections::smt` contains procedures for manipulating key-value maps with 4-element keys and 4-element values. The underlying implementation is a Sparse Merkle Tree where leaves can exist only at depth 64. Initially, when a tree is empty, it is equivalent to an empty Sparse Merkle Tree of depth 64 (i.e., leaves at depth 64 are set and hash to [ZERO; 4]). When inserting non-empty values into the tree, the most significant element of the key is used to identify the corresponding leaf. All key-value pairs that map to a given leaf are inserted (ordered) in the leaf.
 
 The following procedures are available to read data from and make updates to a Sparse Merkle Tree.
 

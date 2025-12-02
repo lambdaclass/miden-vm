@@ -1,4 +1,4 @@
-use std::stark::verifier
+use miden::core::stark::verifier
 
 #! Verifies a STARK proof.
 #!

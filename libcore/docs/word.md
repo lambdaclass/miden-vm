@@ -1,5 +1,5 @@
 
-## std::word
+## miden::core::word
 | Procedure | Description |
 | ----------- | ------------- |
 | reverse | Reverses order of the first four elements on the stack<br /><br />Note: This functionality is also available as the `reversew` instruction<br /><br />Inputs:  [a, b, c, d, ...]<br />Outputs: [d, c, b, a, ...]<br /><br />Cycles: 3<br /> |

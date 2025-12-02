@@ -1,5 +1,5 @@
 
-## std::crypto::hashes::keccak256
+## miden::core::crypto::hashes::keccak256
 | Procedure | Description |
 | ----------- | ------------- |
 | hash_bytes | Computes Keccak256 hash of data stored in memory.<br /><br />Input: [ptr, len_bytes, ...]<br />Output: [DIGEST_U32[8], ...]<br /><br />Where:<br />- ptr: word-aligned memory address containing INPUT_U32[len_u32] where len_u32=⌈len_bytes/4⌉<br />- len_bytes: number of bytes to hash<br />- INPUT_U32[len_u32] ~ INPUT_U8[len_bytes] with u32 packing (unused bytes in final u32 must be 0)<br />- DIGEST_U32[8] = [d_0, ..., d_7] = Keccak256(INPUT_U8[len_bytes])<br /> |

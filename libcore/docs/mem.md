@@ -1,5 +1,5 @@
 
-## std::mem
+## miden::core::mem
 | Procedure | Description |
 | ----------- | ------------- |
 | memcopy_words | Copies `n` words from `read_ptr` to `write_ptr`.<br /><br />`read_ptr` and `write_ptr` pointers *must be* word-aligned.<br /><br />Inputs:  [n, read_ptr, write_ptr]<br />Outputs: []<br /><br />Where:<br />- n is the number of words which should be copied.<br />- read_ptr is the memory pointer where the words to copy are stored.<br />- write_ptr is the memory pointer where the words will be copied.<br /><br />Total cycles: 15 + 16 * num_words<br /> |

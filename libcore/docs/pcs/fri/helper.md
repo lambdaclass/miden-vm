@@ -1,5 +1,5 @@
 
-## std::pcs::fri::helper
+## miden::core::pcs::fri::helper
 | Procedure | Description |
 | ----------- | ------------- |
 | evaluate_fri_remainder_poly_max_degree_plus_1_half | Evaluates FRI remainder polynomial of degree strictly less than `(max_degree + 1) / 2`.<br /> |

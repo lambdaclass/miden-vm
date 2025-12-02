@@ -1,4 +1,4 @@
-use std::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo
 
 #! Processes the out-of-domain (OOD) evaluations of all committed polynomials.
 #!

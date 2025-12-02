@@ -1,4 +1,4 @@
 
-## std::stark::public_inputs
+## miden::core::stark::public_inputs
 | Procedure | Description |
 | ----------- | ------------- |

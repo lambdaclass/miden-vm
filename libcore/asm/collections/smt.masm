@@ -1,14 +1,14 @@
-use std::crypto::hashes::rpo
-use std::collections::sorted_array
-use std::math::u64
-use std::mem
-use std::sys
-use std::word
+use miden::core::crypto::hashes::rpo
+use miden::core::collections::sorted_array
+use miden::core::math::u64
+use miden::core::mem
+use miden::core::sys
+use miden::core::word
 
 # CONSTANTS
 # ================================================================================================
 
-const SMT_PEEK_EVENT = event("core::collections::smt::smt_peek")
+const SMT_PEEK_EVENT = event("miden::core::collections::smt::smt_peek")
 
 # Constant value for the depth at which leaves sit
 const LEAF_DEPTH = 64

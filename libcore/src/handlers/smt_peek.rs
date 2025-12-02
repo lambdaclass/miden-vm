@@ -13,7 +13,8 @@ use miden_core::{
 use miden_processor::{AdviceMutation, EventError, ProcessState};
 
 /// Event name for the smt_peek operation.
-pub const SMT_PEEK_EVENT_NAME: EventName = EventName::new("core::collections::smt::smt_peek");
+pub const SMT_PEEK_EVENT_NAME: EventName =
+    EventName::new("miden::core::collections::smt::smt_peek");
 
 /// SMT_PEEK system event handler.
 ///

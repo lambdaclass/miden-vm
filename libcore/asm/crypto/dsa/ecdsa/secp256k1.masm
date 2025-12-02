@@ -1,7 +1,7 @@
-use std::crypto::hashes::keccak256
-use std::crypto::hashes::rpo
-use std::sys
-use std::word
+use miden::core::crypto::hashes::keccak256
+use miden::core::crypto::hashes::rpo
+use miden::core::sys
+use miden::core::word
 
 # ENCODING CONVENTIONS
 # ================================================================================================
@@ -15,7 +15,7 @@ use std::word
 # CONSTANTS
 # ================================================================================================
 
-const ECDSA_VERIFY_EVENT = event("core::crypto::dsa::ecdsa::verify")
+const ECDSA_VERIFY_EVENT = event("miden::core::crypto::dsa::ecdsa::verify")
 
 const PK_LEN_FELTS = 9     # 33.div_ceil(4)
 const DIGEST_LEN_FELTS = 8 # 32.div_ceil(4)

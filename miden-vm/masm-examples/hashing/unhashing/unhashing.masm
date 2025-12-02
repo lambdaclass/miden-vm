@@ -4,7 +4,7 @@
 # 1. Read data from the advice provider and store it simultaneously on the stack and
 # 2. Apply a permutation of the RPO256 hash function
 
-use std::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo
 
 begin
     # Reads 100 words from the advice provider, stores them in memory, and computes their hash.

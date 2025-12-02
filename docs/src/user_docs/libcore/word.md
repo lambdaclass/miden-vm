@@ -5,7 +5,7 @@ sidebar_position: 8
 
 # Word procedures
 
-Module `std::word` contains utilities for manipulating _words_ &mdash; sequences of four _field elements_.
+Module `miden::core::word` contains utilities for manipulating _words_ &mdash; sequences of four _field elements_.
 See [Terms and notations](./index.md#terms-and-notations) for more information.
 
 | Procedure | Description                                                                                                                                                                                                                                                                                                                                                                                   |

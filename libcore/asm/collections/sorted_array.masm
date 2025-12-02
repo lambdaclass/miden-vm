@@ -1,9 +1,9 @@
-use std::word
+use miden::core::word
 
 # CONSTANTS
 # =================================================================================================
-const LOWERBOUND_ARRAY_EVENT = event("core::collections::sorted_array::lowerbound_array")
-const LOWERBOUND_KEY_VALUE_EVENT = event("core::collections::sorted_array::lowerbound_key_value")
+const LOWERBOUND_ARRAY_EVENT = event("miden::core::collections::sorted_array::lowerbound_array")
+const LOWERBOUND_KEY_VALUE_EVENT = event("miden::core::collections::sorted_array::lowerbound_key_value")
 
 # ===== ARRAY UTILITIES ============================================================================
 

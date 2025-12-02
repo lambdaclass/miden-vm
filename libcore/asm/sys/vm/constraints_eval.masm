@@ -1,6 +1,6 @@
-use std::crypto::hashes::rpo
-use std::stark::constants
-use std::stark::utils
+use miden::core::crypto::hashes::rpo
+use miden::core::stark::constants
+use miden::core::stark::utils
 
 # CONSTANTS
 # =================================================================================================

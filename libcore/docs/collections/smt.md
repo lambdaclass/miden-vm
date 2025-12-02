@@ -1,5 +1,5 @@
 
-## std::collections::smt
+## miden::core::collections::smt
 | Procedure | Description |
 | ----------- | ------------- |
 | get | Returns the value located under the specified key in the Sparse Merkle Tree defined by the<br />specified root.<br /><br />If no values had been previously inserted under the specified key, an empty word (i.e.,<br />[ZERO; 4]) is returned.<br /><br />Inputs:<br />Operand stack: [K, R, ...]<br /><br />Outputs:<br />Operand stack: [V, R, ...]<br /><br />Fails if the tree with the specified root does not exits in the VM's advice provider.<br /><br />Cycles<br />Leaf empty: 66 cycles<br />Leaf single: 115 cycles<br />Leaf multiple, non-empty value: 189 + 3 * pair_count<br />Leaf multiple, empty value: 186 + 3 * pair_count<br /> |

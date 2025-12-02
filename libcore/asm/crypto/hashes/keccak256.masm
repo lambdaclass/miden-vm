@@ -1,6 +1,6 @@
-use std::sys
-use std::word
-use std::crypto::hashes::rpo
+use miden::core::sys
+use miden::core::word
+use miden::core::crypto::hashes::rpo
 
 # ENCODING CONVENTIONS
 # ================================================================================================
@@ -15,7 +15,7 @@ use std::crypto::hashes::rpo
 # CONSTANTS
 # ================================================================================================
 
-const KECCAK_HASH_BYTES_EVENT = event("core::hash::keccak256::hash_bytes")
+const KECCAK_HASH_BYTES_EVENT = event("miden::core::hash::keccak256::hash_bytes")
 
 # PROCEDURES
 # ================================================================================================

@@ -137,21 +137,21 @@ If the libcore was added to the available libraries list `!use` command will pri
 ```
 >> !use
 Modules available for importing:
-std::collections::mmr
-std::collections::smt
+miden::core::collections::mmr
+miden::core::collections::smt
 ...
-std::mem
-std::sys
-std::utils
+miden::core::mem
+miden::core::sys
+miden::core::utils
 ```
 
 Using the `!use` command with a module name will add the specified module to the program imports:
 
 ```
->> !use std::math::u64
+>> !use miden::core::math::u64
 
 >> !program
-use std::math::u64
+use miden::core::math::u64
 
 begin
 

@@ -48,7 +48,7 @@ fn stark_verifier_e2f4(#[case] kernel: Option<&str>) {
 
     // Verify inside Miden VM
     let source = "
-        use std::sys::vm
+        use miden::core::sys::vm
         begin
             exec.vm::verify_proof
         end
@@ -177,9 +177,9 @@ fn variable_length_public_inputs(#[case] num_kernel_proc_digests: usize) {
 
     let source = format!(
         "
-        use std::stark::random_coin
-        use std::stark::constants
-        use std::sys::vm::public_inputs
+        use miden::core::stark::random_coin
+        use miden::core::stark::constants
+        use miden::core::sys::vm::public_inputs
 
         begin
             # 1) Initialize the FS transcript
@@ -339,8 +339,8 @@ const KERNEL_EVEN_NUM_PROC: &str = r#"
 const TEST_RANDOM_INDICES_GENERATION: &str = r#"
         const QUERY_ADDRESS = 1024
 
-        use std::stark::random_coin
-        use std::stark::constants
+        use miden::core::stark::random_coin
+        use miden::core::stark::constants
 
         begin
             exec.constants::set_lde_domain_size

@@ -4,10 +4,10 @@ sidebar_position: 3
 ---
 
 # Cryptographic hashes
-Namespace `std::crypto::hashes` contains modules for commonly used cryptographic hash functions.
+Namespace `miden::core::crypto::hashes` contains modules for commonly used cryptographic hash functions.
 
 ## BLAKE3
-Module `std::crypto::hashes::blake3` contains procedures for computing hashes using [BLAKE3](https://blake3.io/) hash function. The input and output elements are assumed to contain one 32-bit value per element.
+Module `miden::core::crypto::hashes::blake3` contains procedures for computing hashes using [BLAKE3](https://blake3.io/) hash function. The input and output elements are assumed to contain one 32-bit value per element.
 
 | Procedure   | Description                                                                                                                                                                                                                 |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@ Module `std::crypto::hashes::blake3` contains procedures for computing hashes us
 | hash_2to1   | Computes BLAKE3 2-to-1 hash.<br/><br/>Input: 64-bytes stored in the first 16 elements of the stack (32 bits per element).<br /> <br/>Output: A 32-byte digest stored in the first 8 elements of stack (32 bits per element) |
 
 ## Keccak256
-Module `std::crypto::hashes::keccak256` contains procedures for computing hashes using [Keccak256](https://keccak.team/keccak.html) hash function.
+Module `miden::core::crypto::hashes::keccak256` contains procedures for computing hashes using [Keccak256](https://keccak.team/keccak.html) hash function.
 
 Data is represented using u32 arrays and u8 arrays with the following conventions:
 - **`VALUE_U32[n]`** = arrays of `n` u32 values, denoted as `[v_0, ..., v_{n-1}]`
@@ -35,7 +35,7 @@ Internally, the result of the computation is provided non-deterministically. The
 | hash_2to1   | Merges two 256-bit digests via Keccak256 hash.<br /><br />Input: `[INPUT_L_U32[8], INPUT_R_U32[8], ...]`<br />Output: `[DIGEST_U32[8], ...]`<br /><br />Where<br />- `INPUT_L_U32[8] = [l_0, ..., l_7] = [INPUT_L_LO, INPUT_L_HI] ~ INPUT_L_U8[32]`<br />- `INPUT_R_U32[8] = [r_0, ..., r_7] = [INPUT_R_LO, INPUT_R_HI] ~ INPUT_R_U8[32]`<br />- `DIGEST_U32[8] = [d_0, ..., d_7] = Keccak256(INPUT_L_U8[32] \|\| INPUT_R_U8[32])`<br />                                                           |
 
 ## SHA256
-Module `std::crypto::hashes::sha256` contains procedures for computing hashes using [SHA256](https://en.wikipedia.org/wiki/SHA-2) hash function. The input and output elements are assumed to contain one 32-bit value per element.
+Module `miden::core::crypto::hashes::sha256` contains procedures for computing hashes using [SHA256](https://en.wikipedia.org/wiki/SHA-2) hash function. The input and output elements are assumed to contain one 32-bit value per element.
 
 | Procedure   | Description                                                                                                                                                                                                                  |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,7 @@ Module `std::crypto::hashes::sha256` contains procedures for computing hashes us
 | hash_2to1   | Computes SHA256 2-to-1 hash.<br/><br/>Input: 64-bytes stored in the first 16 elements of the stack (32 bits per element).<br /> <br/>Output: A 32-byte digest stored in the first 8 elements of stack (32 bits per element). |
 
 ## RPO256
-Module `std::crypto::hashes::rpo` contains procedures for computing and managing hashes using [Rescue Prime Optimized](https://docs.rs/miden-crypto/latest/miden_crypto/hash/rpo/struct.Rpo256.html) hash function.
+Module `miden::core::crypto::hashes::rpo` contains procedures for computing and managing hashes using [Rescue Prime Optimized](https://docs.rs/miden-crypto/latest/miden_crypto/hash/rpo/struct.Rpo256.html) hash function.
 
 | Procedure                       | Description                                         |
 |---------------------------------|-----------------------------------------------------|

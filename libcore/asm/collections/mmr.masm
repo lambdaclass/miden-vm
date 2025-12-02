@@ -1,6 +1,6 @@
-use std::mem
-use std::crypto::hashes::rpo
-use std::math::u64
+use miden::core::mem
+use miden::core::crypto::hashes::rpo
+use miden::core::math::u64
 
 #! Loads the leaf at the absolute `pos` in the MMR.
 #!

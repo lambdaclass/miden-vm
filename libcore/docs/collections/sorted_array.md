@@ -1,5 +1,5 @@
 
-## std::collections::sorted_array
+## miden::core::collections::sorted_array
 | Procedure | Description |
 | ----------- | ------------- |
 | find_word | Finds a value in a sorted array of words.<br /><br />This function will crash if the following conditions aren't met:<br />- words must be sorted in non-decreasing order,<br />- start_ptr, end_ptr are word-aligned<br />- `start_ptr <= end_ptr`<br /><br />Input:  [VALUE, start_ptr, end_ptr]<br />Output: [is_value_found, value_ptr, start_ptr, end_ptr]<br /><br />Cycles:<br />Value exists: 46 cycles<br />Value doesn't exist and the array is empty: 25 cycles<br />Value doesn't exist and is smaller than all elements: 151 cycles<br />Value doesn't exist and is larger than all elements: 149 cycles<br />Value doesn't exist: 286 cycles<br /> |

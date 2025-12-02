@@ -4,7 +4,7 @@ sidebar_position: 6
 ---
 
 # Memory procedures
-Module `std::mem` contains a set of utility procedures for working with random access memory.
+Module `miden::core::mem` contains a set of utility procedures for working with random access memory.
 
 | Procedure                              | Description   |
 | -------------------------------------- | ------------- |

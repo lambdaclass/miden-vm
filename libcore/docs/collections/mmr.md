@@ -1,5 +1,5 @@
 
-## std::collections::mmr
+## miden::core::collections::mmr
 | Procedure | Description |
 | ----------- | ------------- |
 | get | Loads the leaf at the absolute `pos` in the MMR.<br /><br />This MMR implementation supports only u32 positions.<br /><br />Stack transition:<br />Input: [pos, mmr_ptr, ...]<br />Output: [N, ...] where `N` is the leaf and `R` is the MMR peak that owns the leaf.<br /><br />Cycles: 118<br /> |

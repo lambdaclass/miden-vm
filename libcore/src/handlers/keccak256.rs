@@ -37,7 +37,7 @@ use crate::handlers::{BYTES_PER_U32, bytes_to_packed_u32_felts, read_memory_pack
 
 /// Event name for the keccak256 hash_bytes operation.
 pub const KECCAK_HASH_BYTES_EVENT_NAME: EventName =
-    EventName::new("core::hash::keccak256::hash_bytes");
+    EventName::new("miden::core::hash::keccak256::hash_bytes");
 
 pub struct KeccakPrecompile;
 

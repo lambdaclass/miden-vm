@@ -46,12 +46,12 @@ impl MarkdownRenderer {
 fn markdown_file_name(ns: &str) -> String {
     let parts: Vec<&str> = ns.split("::").collect();
 
-    // Remove the "std::" prefix
-    if parts.len() > 1 && parts[0] == "std" {
-        // Use the full module path without "std::" prefix, add .md extension
-        format!("{}.md", parts[1..].join("/"))
+    // Remove the "miden::core::" prefix
+    if parts.len() > 2 && parts[0] == "miden" && parts[1] == "core" {
+        // Use the full module path without "miden::core::" prefix, add .md extension
+        format!("{}.md", parts[2..].join("/"))
     } else {
-        // Fallback for modules without std:: prefix
+        // Fallback for modules without miden::core:: prefix
         format!("{}.md", parts.join("/"))
     }
 }
@@ -136,7 +136,7 @@ fn find_masm_modules(base_dir: &Path, current_dir: &Path) -> io::Result<Vec<(Str
                     .collect::<Vec<_>>()
                     .join("::");
 
-                let label = format!("std::{}", module_path);
+                let label = format!("miden::core::{}", module_path);
 
                 modules.push((label, path));
             }
@@ -195,11 +195,11 @@ fn parse_module_with_ast(label: &str, file_path: &Path) -> io::Result<DocPayload
 // ================================================================================================
 
 /// Read and parse the contents from `./asm` into a `LibraryContents` struct, serializing it into
-/// `assets` folder under `std` namespace.
+/// `assets` folder under `core` namespace.
 fn main() -> Result<(), Report> {
     use miden_assembly::diagnostics::reporting::ReportHandlerOpts;
 
-    // re-build the `[OUT_DIR]/assets/std.masl` file iff something in the `./asm` directory
+    // re-build the `[OUT_DIR]/assets/core.masl` file iff something in the `./asm` directory
     // or its builder changed:
     println!("cargo:rerun-if-changed=asm");
     println!("cargo:rerun-if-env-changed=MIDEN_BUILD_LIBCORE_DOCS");
@@ -219,7 +219,7 @@ fn main() -> Result<(), Report> {
     let asm_dir = Path::new(manifest_dir).join(ASM_DIR_PATH);
 
     let assembler = Assembler::default().with_debug_mode(cfg!(feature = "with-debug-info"));
-    let namespace = "::std".parse::<masm::PathBuf>().expect("invalid base namespace");
+    let namespace = "::miden::core".parse::<masm::PathBuf>().expect("invalid base namespace");
     let libcore = assembler.assemble_library_from_dir(&asm_dir, namespace)?;
 
     // write the masl output
@@ -227,7 +227,7 @@ fn main() -> Result<(), Report> {
     let build_dir = Path::new(&build_dir);
     let output_file = build_dir
         .join(ASL_DIR_PATH)
-        .join("std")
+        .join("core")
         .with_extension(Library::LIBRARY_EXTENSION);
     libcore
         .write_to_file(output_file)

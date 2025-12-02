@@ -4,13 +4,13 @@ sidebar_position: 1
 ---
 
 # Digital signatures
-Namespace `std::crypto::dsa` contains a set of  digital signature schemes supported by default in the Miden VM. Currently, these schemes are:
+Namespace `miden::core::crypto::dsa` contains a set of  digital signature schemes supported by default in the Miden VM. Currently, these schemes are:
 
 * `RPO Falcon512`: a variant of the [Falcon](https://falcon-sign.info/) signature scheme.
 
 ## RPO Falcon512
 
-Module `std::crypto::dsa::rpo_falcon512` contains procedures for verifying `RPO Falcon512` signatures. These signatures differ from the standard Falcon signatures in that instead of using `SHAKE256` hash function in the *hash-to-point* algorithm we use `RPO256`. This makes the signature more efficient to verify in the Miden VM.
+Module `miden::core::crypto::dsa::rpo_falcon512` contains procedures for verifying `RPO Falcon512` signatures. These signatures differ from the standard Falcon signatures in that instead of using `SHAKE256` hash function in the *hash-to-point* algorithm we use `RPO256`. This makes the signature more efficient to verify in the Miden VM.
 
 The module exposes the following procedures:
 

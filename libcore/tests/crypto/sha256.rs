@@ -22,7 +22,7 @@ fn sha256_hash_bytes() {
 
     let source = format!(
         "
-    use std::crypto::hashes::sha256
+    use miden::core::crypto::hashes::sha256
 
     begin
         # push inputs on the stack
@@ -72,7 +72,7 @@ fn sha256_hash_bytes() {
 #[test]
 fn sha256_2_to_1_hash() {
     let source = "
-    use std::crypto::hashes::sha256
+    use miden::core::crypto::hashes::sha256
 
     begin
         exec.sha256::merge
@@ -107,7 +107,7 @@ fn sha256_2_to_1_hash() {
 #[test]
 fn sha256_1_to_1_hash() {
     let source = "
-    use std::crypto::hashes::sha256
+    use miden::core::crypto::hashes::sha256
 
     begin
         exec.sha256::hash

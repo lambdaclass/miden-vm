@@ -58,7 +58,7 @@ impl From<&CoreLibrary> for HostLibrary {
 impl CoreLibrary {
     /// Serialized representation of the Miden core library.
     pub const SERIALIZED: &'static [u8] =
-        include_bytes!(concat!(env!("OUT_DIR"), "/assets/std.masl"));
+        include_bytes!(concat!(env!("OUT_DIR"), "/assets/core.masl"));
 
     /// Returns a reference to the [MastForest] underlying the Miden core library.
     pub fn mast_forest(&self) -> &Arc<MastForest> {
@@ -108,7 +108,7 @@ impl Default for CoreLibrary {
 
 /// Signs the provided message with the supplied secret key and encodes this signature and the
 /// associated public key into a vector of field elements in the format expected by
-/// `core::crypto::dsa::ecdsa::secp256k1::verify_ecdsa_k256_keccak` procedure.
+/// `miden::core::crypto::dsa::ecdsa::secp256k1::verify_ecdsa_k256_keccak` procedure.
 ///
 /// See [encode_ecdsa_signature()] for more info.
 pub fn ecdsa_sign(sk: &ecdsa_k256_keccak::SecretKey, msg: Word) -> Vec<Felt> {
@@ -119,7 +119,7 @@ pub fn ecdsa_sign(sk: &ecdsa_k256_keccak::SecretKey, msg: Word) -> Vec<Felt> {
 
 /// Infers the pubic key from the provided signature and message, and encodes this public key and
 /// signature into a vector of field elements in the format expected by
-/// `core::crypto::dsa::ecdsa::secp256k1::verify_ecdsa_k256_keccak` procedure.
+/// `miden::core::crypto::dsa::ecdsa::secp256k1::verify_ecdsa_k256_keccak` procedure.
 ///
 /// See [encode_ecdsa_signature()] for more info.
 ///
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn test_compile() {
-        let path = Path::new("::std::math::u64::overflowing_add");
+        let path = Path::new("::miden::core::math::u64::overflowing_add");
         let libcore = CoreLibrary::default();
         let exists = libcore.0.module_infos().any(|module| {
             module.procedures().any(|(_, proc)| &module.path().join(&proc.name) == path)

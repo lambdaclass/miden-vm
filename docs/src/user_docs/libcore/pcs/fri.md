@@ -4,11 +4,11 @@ sidebar_position: 2
 ---
 
 # FRI verification procedures
-Namespace `std::pcs::fri` contains modules for verifying [FRI](https://eccc.weizmann.ac.il/report/2017/134/) proofs.
+Namespace `miden::core::pcs::fri` contains modules for verifying [FRI](https://eccc.weizmann.ac.il/report/2017/134/) proofs.
 
 ## FRI Extension 2, Fold 4
 
-Module `std::pcs::fri::frie2f4` contains procedures for verifying FRI proofs generated over the quadratic extension of the Miden VM's base field. Moreover, the procedures assume that layer folding during the commit phase of FRI protocol was performed using folding factor 4.
+Module `miden::core::pcs::fri::frie2f4` contains procedures for verifying FRI proofs generated over the quadratic extension of the Miden VM's base field. Moreover, the procedures assume that layer folding during the commit phase of FRI protocol was performed using folding factor 4.
 
 | Procedure | Description |
 | ----------- | ------------- |

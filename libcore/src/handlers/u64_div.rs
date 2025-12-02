@@ -11,7 +11,7 @@ use miden_processor::{AdviceMutation, EventError, ProcessState};
 use crate::handlers::u64_to_u32_elements;
 
 /// Event name for the u64_div operation.
-pub const U64_DIV_EVENT_NAME: EventName = EventName::new("core::math::u64::u64_div");
+pub const U64_DIV_EVENT_NAME: EventName = EventName::new("miden::core::math::u64::u64_div");
 
 /// U64_DIV system event handler.
 ///

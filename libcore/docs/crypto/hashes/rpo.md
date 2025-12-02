@@ -1,5 +1,5 @@
 
-## std::crypto::hashes::rpo
+## miden::core::crypto::hashes::rpo
 | Procedure | Description |
 | ----------- | ------------- |
 | init_no_padding | Prepares the top of the stack with the hasher initial state.<br /><br />This procedures does not handle padding, therefore, the user is expected to<br />consume an amount of data which is a multiple of the rate (2 words).<br /><br />Input: []<br />Output: [PERM, PERM, PERM, ...]<br /><br />Cycles: 12<br /> |

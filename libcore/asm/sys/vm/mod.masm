@@ -1,11 +1,11 @@
-use std::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo
 
-use std::sys::vm::deep_queries
-use std::sys::vm::constraints_eval
-use std::sys::vm::ood_frames
-use std::sys::vm::public_inputs
+use miden::core::sys::vm::deep_queries
+use miden::core::sys::vm::constraints_eval
+use miden::core::sys::vm::ood_frames
+use miden::core::sys::vm::public_inputs
 
-use std::stark::verifier
+use miden::core::stark::verifier
 
 # Indicates the existence of auxiliary trace segment.
 const IS_AUX_TRACE = 1
