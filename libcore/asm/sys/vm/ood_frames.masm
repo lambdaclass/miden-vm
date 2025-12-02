@@ -1,4 +1,4 @@
-use miden::core::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo256
 
 #! Processes the out-of-domain (OOD) evaluations of all committed polynomials.
 #!
@@ -16,6 +16,6 @@ pub proc process_row_ood_evaluations
     repeat.24
         adv_pipe
         horner_eval_ext
-        exec.rpo::permute
+        exec.rpo256::permute
     end
 end

@@ -1,5 +1,5 @@
 use miden::core::mem
-use miden::core::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo256
 use miden::core::math::u64
 
 #! Loads the leaf at the absolute `pos` in the MMR.
@@ -155,14 +155,14 @@ pub proc unpack
 
   # hash the first 16 words (28 cycles)
   padw padw padw
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
-  adv_pipe exec.rpo::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
+  adv_pipe exec.rpo256::permute
   # => [C, B, A, mmr_ptr+68, mmt_ptr_end, HASH, ...]
 
   # handle MMR with more than 16 elements (10 + 9 * words cycles)
@@ -170,7 +170,7 @@ pub proc unpack
   # => [C, B, A, mmr_ptr+17, HASH, ...]
 
   # drop anything but the hash result, word B (11 cycles)
-  exec.rpo::squeeze_digest movup.4 drop
+  exec.rpo256::squeeze_digest movup.4 drop
   # => [B, HASH, ...]
 
   # assert on the resulting hash (11 cycles)
@@ -201,8 +201,8 @@ pub proc pack
 
   # hash the memory contents (25 + 3 * num_peaks)
   padw padw padw
-  exec.rpo::absorb_double_words_from_memory
-  exec.rpo::squeeze_digest
+  exec.rpo256::absorb_double_words_from_memory
+  exec.rpo256::squeeze_digest
   # => [HASH, peaks_end, peaks_end, mmr_ptr, ...]
 
   # prepare stack for adv.insert_mem (4 cycles)

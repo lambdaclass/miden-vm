@@ -43,7 +43,7 @@ Module `miden::core::crypto::hashes::sha256` contains procedures for computing h
 | hash_2to1   | Computes SHA256 2-to-1 hash.<br/><br/>Input: 64-bytes stored in the first 16 elements of the stack (32 bits per element).<br /> <br/>Output: A 32-byte digest stored in the first 8 elements of stack (32 bits per element). |
 
 ## RPO256
-Module `miden::core::crypto::hashes::rpo` contains procedures for computing and managing hashes using [Rescue Prime Optimized](https://docs.rs/miden-crypto/latest/miden_crypto/hash/rpo/struct.Rpo256.html) hash function.
+Module `miden::core::crypto::hashes::rpo256` contains procedures for computing and managing hashes using [Rescue Prime Optimized](https://docs.rs/miden-crypto/latest/miden_crypto/hash/rpo/struct.Rpo256.html) hash function.
 
 | Procedure                       | Description                                         |
 |---------------------------------|-----------------------------------------------------|

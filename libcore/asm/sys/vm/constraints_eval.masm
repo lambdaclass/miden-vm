@@ -1,4 +1,4 @@
-use miden::core::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo256
 use miden::core::stark::constants
 use miden::core::stark::utils
 
@@ -85,9 +85,9 @@ proc load_ace_circuit_description
     padw padw padw
     repeat.14
         adv_pipe
-        exec.rpo::permute
+        exec.rpo256::permute
     end
-    exec.rpo::squeeze_digest
+    exec.rpo256::squeeze_digest
     movup.4 drop
     assert_eqw.err=ERR_FAILED_TO_LOAD_CIRCUIT_DESCRIPTION
     # => []

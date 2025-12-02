@@ -6,13 +6,13 @@ use miden_utils_testing::{build_expected_hash, build_expected_perm, expect_exec_
 fn test_invalid_end_addr() {
     // end_addr can not be smaller than start_addr
     let empty_range = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.0999 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
     end
     ";
     let test = build_test!(empty_range, &[]);
@@ -28,7 +28,7 @@ fn test_invalid_end_addr() {
 fn test_hash_empty() {
     // computes the hash for 8 consecutive zeros using mem_stream directly
     let two_zeros_mem_stream = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         # mem_stream state
@@ -36,7 +36,7 @@ fn test_hash_empty() {
         mem_stream hperm
 
         # drop everything except the hash
-        exec.rpo::squeeze_digest movup.4 drop
+        exec.rpo256::squeeze_digest movup.4 drop
 
         # truncate stack
         swapw dropw
@@ -52,14 +52,13 @@ fn test_hash_empty() {
 
     // checks the hash compute from 8 zero elements is the same when using hash_words
     let two_zeros = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1008 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
-
+        exec.rpo256::hash_words
         # truncate stack
         swapw dropw
     end
@@ -72,7 +71,7 @@ fn test_hash_empty() {
 fn test_single_iteration() {
     // computes the hash of 1 using mem_stream
     let one_memstream = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         # insert 1 to memory
@@ -83,7 +82,7 @@ fn test_single_iteration() {
         mem_stream hperm
 
         # drop everything except the hash
-        exec.rpo::squeeze_digest movup.4 drop
+        exec.rpo256::squeeze_digest movup.4 drop
 
         # truncate stack
         swapw dropw
@@ -101,7 +100,7 @@ fn test_single_iteration() {
     // Note: This is testing the hashing of two words, so no padding is added
     // here
     let one_element = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         # insert 1 to memory
@@ -110,7 +109,7 @@ fn test_single_iteration() {
         push.1008 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
 
         # truncate stack
         swapw dropw
@@ -133,7 +132,7 @@ fn test_hash_one_word() {
 
     // checks the hash of 1 is the same when using hash_words
     let one_element = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.1000 mem_store # push data to memory
@@ -141,7 +140,7 @@ fn test_hash_one_word() {
         push.1004 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
 
         # truncate stack
         swapw dropw
@@ -155,7 +154,7 @@ fn test_hash_one_word() {
 fn test_hash_even_words() {
     // checks the hash of two words
     let even_words = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.0.0.0.1000 mem_storew_be dropw
@@ -164,7 +163,7 @@ fn test_hash_even_words() {
         push.1008 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
 
         # truncate stack
         swapw dropw
@@ -183,7 +182,7 @@ fn test_hash_even_words() {
 fn test_hash_odd_words() {
     // checks the hash of three words
     let odd_words = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.0.0.0.1000 mem_storew_be dropw
@@ -193,7 +192,7 @@ fn test_hash_odd_words() {
         push.1012 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
 
         # truncate stack
         swapw dropw
@@ -213,7 +212,7 @@ fn test_hash_odd_words() {
 fn test_absorb_double_words_from_memory() {
     let even_words = "
     use miden::core::sys
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.0.0.0.1000 mem_storew_be dropw
@@ -222,7 +221,7 @@ fn test_absorb_double_words_from_memory() {
         push.1008      # end address
         push.1000      # start address
         padw padw padw # hasher state
-        exec.rpo::absorb_double_words_from_memory
+        exec.rpo256::absorb_double_words_from_memory
 
         # truncate stack
         exec.sys::truncate_stack
@@ -248,7 +247,7 @@ fn test_hash_double_words() {
     // test the standard case
     let double_words = "
     use miden::core::sys
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         # store four words (two double words) in memory
@@ -261,7 +260,7 @@ fn test_hash_double_words() {
         push.1000      # start address
         # => [start_addr, end_addr]
 
-        exec.rpo::hash_double_words
+        exec.rpo256::hash_double_words
         # => [HASH]
 
         # truncate stack
@@ -283,13 +282,13 @@ fn test_hash_double_words() {
     // test the corner case when the end pointer equals to the start pointer
     let empty_double_words = r#"
     use miden::core::sys
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1000.1000 # start and end addresses
         # => [start_addr, end_addr]
 
-        exec.rpo::hash_double_words
+        exec.rpo256::hash_double_words
         # => [HASH]
 
         # assert that the resulting hash is equal to the empty word
@@ -307,7 +306,7 @@ fn test_hash_double_words() {
 #[test]
 fn test_squeeze_digest() {
     let even_words = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.0.0.0.1000 mem_storew_be dropw
@@ -318,9 +317,9 @@ fn test_squeeze_digest() {
         push.1016      # end address
         push.1000      # start address
         padw padw padw # hasher state
-        exec.rpo::absorb_double_words_from_memory
+        exec.rpo256::absorb_double_words_from_memory
 
-        exec.rpo::squeeze_digest
+        exec.rpo256::squeeze_digest
 
         # truncate stack
         swapdw dropw dropw
@@ -346,7 +345,7 @@ fn test_squeeze_digest() {
 fn test_copy_digest() {
     let copy_digest = r#"
     use miden::core::sys
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.0.0.0.1000 mem_storew_be dropw
@@ -355,7 +354,7 @@ fn test_copy_digest() {
         push.1008      # end address
         push.1000      # start address
         padw padw padw # hasher state
-        exec.rpo::absorb_double_words_from_memory
+        exec.rpo256::absorb_double_words_from_memory
         # => [C, B, A, end_ptr, end_ptr]
 
         # drop the pointers
@@ -363,7 +362,7 @@ fn test_copy_digest() {
         # => [C, B, A]
 
         # copy the result of the permutation (second word, B)
-        exec.rpo::copy_digest
+        exec.rpo256::copy_digest
         # => [B, C, B, A]
 
         # assert that the copied word is equal to the second word in the hasher state
@@ -396,7 +395,7 @@ fn test_copy_digest() {
 fn test_hash_elements() {
     // hash fewer than 8 elements
     let compute_inputs_hash_5 = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.2.3.4.1000 mem_storew_be dropw
@@ -405,7 +404,7 @@ fn test_hash_elements() {
 
         push.5.1000
 
-        exec.rpo::hash_elements
+        exec.rpo256::hash_elements
 
         # truncate stack
         swapdw dropw dropw
@@ -422,7 +421,7 @@ fn test_hash_elements() {
 
     // hash exactly 8 elements
     let compute_inputs_hash_8 = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.2.3.4.1000 mem_storew_be dropw
@@ -431,7 +430,7 @@ fn test_hash_elements() {
 
         push.8.1000
 
-        exec.rpo::hash_elements
+        exec.rpo256::hash_elements
 
         # truncate stack
         swapdw dropw dropw
@@ -448,7 +447,7 @@ fn test_hash_elements() {
 
     // hash more than 8 elements
     let compute_inputs_hash_15 = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1.2.3.4.1000 mem_storew_be dropw
@@ -459,7 +458,7 @@ fn test_hash_elements() {
 
         push.15.1000
 
-        exec.rpo::hash_elements
+        exec.rpo256::hash_elements
 
         # truncate stack
         swapdw dropw dropw
@@ -483,14 +482,14 @@ fn test_hash_elements_empty() {
     // absorb_double_words_from_memory
     let source = "
     use miden::core::sys
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1000      # end address
         push.1000      # start address
         padw padw padw # hasher state
 
-        exec.rpo::absorb_double_words_from_memory
+        exec.rpo256::absorb_double_words_from_memory
 
         # truncate stack
         exec.sys::truncate_stack
@@ -505,13 +504,13 @@ fn test_hash_elements_empty() {
 
     // hash_words
     let source = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.1000 # end address
         push.1000 # start address
 
-        exec.rpo::hash_words
+        exec.rpo256::hash_words
 
         # truncate stack
         swapw dropw
@@ -522,13 +521,13 @@ fn test_hash_elements_empty() {
 
     // hash_elements
     let source = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
         push.0    # number of elements to hash
         push.1000 # start address
 
-        exec.rpo::hash_elements
+        exec.rpo256::hash_elements
 
         # truncate stack
         swapw dropw
@@ -543,10 +542,10 @@ fn test_rpo_hash_function() {
     // Test that the public hash function works - it should execute without error
     // and produce a valid 4-element digest from 8-element input
     let source = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
-        exec.rpo::hash
+        exec.rpo256::hash
         swapw dropw
     end
     ";
@@ -565,10 +564,10 @@ fn test_rpo_merge_function() {
     // Test that the public merge function works - it should execute without error
     // and produce a valid 4-element digest from two 4-element digests
     let source = "
-    use miden::core::crypto::hashes::rpo
+    use miden::core::crypto::hashes::rpo256
 
     begin
-        exec.rpo::merge
+        exec.rpo256::merge
         swapw dropw
     end
     ";

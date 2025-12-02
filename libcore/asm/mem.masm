@@ -1,4 +1,4 @@
-use miden::core::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo256
 
 # ===== MEMORY FUNCTIONS ==========================================================================
 
@@ -124,7 +124,7 @@ pub proc pipe_double_words_to_memory
   # loop until write_ptr reaches end_ptr (6 cycles per iteration + 1)
   # LOOP: [b, C, B, A, write_ptr, end_ptr, ...]
   while.true
-    adv_pipe exec.rpo::permute # (2 cycles)
+    adv_pipe exec.rpo256::permute # (2 cycles)
     # => [C', B', A', write_ptr', end_ptr, ...]
 
     dup.13 dup.13 neq # (4 cycles)
@@ -210,7 +210,7 @@ pub proc pipe_words_to_memory
     # => [C, B', A, write_ptr+1, ...]
 
     # Run RPO permutation (1 cycles)
-    exec.rpo::permute
+    exec.rpo256::permute
     # => [C', B', A', write_ptr+1, ...]
   end
 end
@@ -237,7 +237,7 @@ pub proc pipe_preimage_to_memory
   # => [C, B, A, write_ptr', COMMITMENT, ...]
 
   # Leave only the digest on the stack
-  exec.rpo::squeeze_digest
+  exec.rpo256::squeeze_digest
   # => [B, write_ptr', COMMITMENT, ...]
 
   # Save the write_ptr (2 cycles)
@@ -275,7 +275,7 @@ pub proc pipe_double_words_preimage_to_memory
   # Setup the initial hasher state, which starts with a capacity word `A`.
   # For us, the capacity word is entirely empty.
   # (12 cycles).
-  exec.rpo::init_no_padding
+  exec.rpo256::init_no_padding
   # => [C, B, A, write_ptr, end_ptr, COMMITMENT, ...]
 
   # (9 + 3 * num_words cycles)
@@ -284,7 +284,7 @@ pub proc pipe_double_words_preimage_to_memory
   # => [C, B, A, write_ptr', COMMITMENT, ...]
 
   # Leave just the digest on the stack (9 cycles).
-  exec.rpo::squeeze_digest
+  exec.rpo256::squeeze_digest
   # => [B, write_ptr', COMMITMENT, ...]
 
   # Move write_ptr out of the way so we can assert the commitment (2 cycles).

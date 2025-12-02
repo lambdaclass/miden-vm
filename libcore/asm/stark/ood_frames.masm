@@ -1,5 +1,5 @@
 use miden::core::stark::constants
-use miden::core::crypto::hashes::rpo
+use miden::core::crypto::hashes::rpo256
 use miden::core::stark::random_coin
 
 #! Loads the execution trace and the quotient trace evaluation frames.
