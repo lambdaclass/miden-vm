@@ -356,8 +356,6 @@ end
 
 #! Computes hash of Felt values starting at the specified memory address.
 #!
-#! Notice that this procedure does not pad the elements to hash to the next multiple of 8.
-#!
 #! This procedure divides the hashing process into two parts: hashing pairs of words using
 #! `absorb_double_words_from_memory` procedure and hashing the remaining values using the `permute`
 #! procedure.
