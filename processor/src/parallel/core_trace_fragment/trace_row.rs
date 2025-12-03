@@ -22,10 +22,8 @@ use miden_core::{
 use super::CoreTraceFragmentFiller;
 use crate::{
     decoder::block_stack::ExecutionContextInfo, parallel::core_trace_fragment::BasicBlockContext,
-    processor::StackInterface,
+    processor::StackInterface, utils::HASH_CYCLE_LEN_FELT,
 };
-
-const HASH_CYCLE_LEN: Felt = Felt::new(miden_air::trace::chiplets::hasher::HASH_CYCLE_LEN as u64);
 
 // DECODER ROW
 // ================================================================================================
@@ -206,7 +204,7 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         }
 
         // Update block address for the upcoming block
-        self.context.state.decoder.current_addr += HASH_CYCLE_LEN;
+        self.context.state.decoder.current_addr += HASH_CYCLE_LEN_FELT;
 
         // Update basic block context
         basic_block_context.group_count_in_block -= ONE;

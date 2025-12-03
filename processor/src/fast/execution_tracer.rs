@@ -29,12 +29,8 @@ use crate::{
     },
     stack::OverflowTable,
     system::ContextId,
-    utils::split_u32_into_u16,
+    utils::{HASH_CYCLE_LEN_FELT, split_u32_into_u16},
 };
-
-/// The number of rows in the execution trace required to compute a permutation of Rescue Prime
-/// Optimized.
-const HASH_CYCLE_LEN: Felt = Felt::new(miden_air::trace::chiplets::hasher::HASH_CYCLE_LEN as u64);
 
 /// Execution state snapshot, used to record the state at the start of a trace fragment.
 #[derive(Debug)]
@@ -480,7 +476,7 @@ impl Tracer for ExecutionTracer {
                 ),
             },
             NodeExecutionState::Respan { node_id: _, batch_index: _ } => {
-                self.block_stack.peek_mut().addr += HASH_CYCLE_LEN;
+                self.block_stack.peek_mut().addr += HASH_CYCLE_LEN_FELT;
             },
             NodeExecutionState::LoopRepeat(_) => {
                 // do nothing, REPEAT doesn't affect the block stack
