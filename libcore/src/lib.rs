@@ -15,6 +15,7 @@ use miden_processor::{EventHandler, HostLibrary};
 use miden_utils_sync::LazyLock;
 
 use crate::handlers::{
+    aead_decrypt::{AEAD_DECRYPT_EVENT_NAME, handle_aead_decrypt},
     bytes_to_packed_u32_felts,
     ecdsa::{ECDSA_VERIFY_EVENT_NAME, EcdsaPrecompile},
     falcon_div::{FALCON_DIV_EVENT_NAME, handle_falcon_div},
@@ -80,6 +81,7 @@ impl CoreLibrary {
             (FALCON_DIV_EVENT_NAME, Arc::new(handle_falcon_div)),
             (LOWERBOUND_ARRAY_EVENT_NAME, Arc::new(handle_lowerbound_array)),
             (LOWERBOUND_KEY_VALUE_EVENT_NAME, Arc::new(handle_lowerbound_key_value)),
+            (AEAD_DECRYPT_EVENT_NAME, Arc::new(handle_aead_decrypt)),
         ]
     }
 
