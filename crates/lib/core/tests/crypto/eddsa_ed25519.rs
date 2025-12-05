@@ -14,7 +14,7 @@ use miden_core::{
     utils::{Deserializable, Serializable},
 };
 use miden_core_lib::{
-    eddsa_sign,
+    dsa::eddsa_ed25519::sign as eddsa_sign,
     handlers::{
         bytes_to_packed_u32_felts,
         eddsa_ed25519::{EddsaPrecompile, EddsaRequest},
