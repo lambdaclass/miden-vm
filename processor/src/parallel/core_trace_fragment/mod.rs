@@ -445,11 +445,8 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 let user_op_helpers = if let Operation::Emit = op {
                     None
                 } else {
-                    // Note that the `op_idx_in_block` is only used in case of error, so we set it
-                    // to 0.
                     self.execute_sync_op(
                         op,
-                        0,
                         current_forest,
                         &mut NoopHost,
                         &(),
