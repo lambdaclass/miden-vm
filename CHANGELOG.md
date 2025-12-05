@@ -12,6 +12,7 @@
 - Added new `peek` procedure for the `std::collections::smt` module ([#2387](https://github.com/0xMiden/miden-vm/pull/2387)).
 - Added new `pad_and_hash_elements` procedure to the `std::crypto::hashes::rpo` module ([#2395](https://github.com/0xMiden/miden-vm/pull/2395)).
 - Add padding option for the `adv.push_mapvaln` instruction ([#2398](https://github.com/0xMiden/miden-vm/pull/2398)).
+- Added missing modules to libcore documentation ([#2416](https://github.com/0xMiden/miden-vm/pull/2416)).
 
 #### Changes
 
