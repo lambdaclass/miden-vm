@@ -102,9 +102,10 @@ Length: `(num_blocks + 1) * 8` elements
 1. Computes tag location: `src_ptr + (num_blocks + 1) * 8`
 2. Emits event for host to decrypt ciphertext (data blocks + padding block)
 3. Loads plaintext data blocks from advice into `dst_ptr`
-4. Re-encrypts data + padding to compute authentication tag
-5. Compares computed tag with tag from memory
-6. Halts execution with assertion failure if tags don't match
+4. Calls encrypt which reads data blocks and adds padding automatically
+5. Re-encrypts data + padding to compute authentication tag
+6. Compares computed tag with tag from memory at src_ptr + (num_blocks + 1) * 8
+7. Halts execution with assertion failure if tags don't match
 
 **Security:**
 - Tag verification happens in the MASM procedure via re-encryption
