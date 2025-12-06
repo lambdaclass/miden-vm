@@ -55,7 +55,7 @@ miden-processor = { path = "./processor", version = "0.20", default-features = f
 miden-test-serde-macros = { path = "./crates/test-serde-macros", default-features = false }
 miden-prover = { path = "./prover", version = "0.20", default-features = false }
 miden-core-lib = { path = "./crates/lib/core", version = "0.20", default-features = false }
-miden-utils-core-derive = { path = "./crates/utils-core-derive", default-features = false }
+miden-utils-core-derive = { path = "./crates/utils-core-derive", version = "0.20", default-features = false }
 miden-utils-diagnostics = { path = "./crates/utils-diagnostics", version = "0.20", default-features = false }
 miden-utils-indexing = { path = "./crates/utils-indexing", version = "0.20", default-features = false }
 miden-utils-sync = { path = "./crates/utils-sync", version = "0.20", default-features = false }
