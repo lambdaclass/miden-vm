@@ -3,8 +3,8 @@ use std::sync::Arc;
 use miden_core::DebugOptions;
 use miden_debug_types::{DefaultSourceManager, Location, SourceFile, SourceManager, SourceSpan};
 use miden_processor::{
-    AdviceMutation, AsyncHost, BaseHost, EventError, ExecutionError, FutureMaybeSend, MastForest,
-    ProcessState, SyncHost,
+    AdviceMutation, AsyncHost, BaseHost, DebugError, EventError, FutureMaybeSend, MastForest,
+    ProcessState, SyncHost, TraceError,
 };
 use miden_prover::Word;
 
@@ -35,16 +35,12 @@ impl BaseHost for TestHost {
         &mut self,
         _process: &mut ProcessState,
         options: &DebugOptions,
-    ) -> Result<(), ExecutionError> {
+    ) -> Result<(), DebugError> {
         self.debug_handler.push(options.to_string());
         Ok(())
     }
 
-    fn on_trace(
-        &mut self,
-        _process: &mut ProcessState,
-        trace_id: u32,
-    ) -> Result<(), ExecutionError> {
+    fn on_trace(&mut self, _process: &mut ProcessState, trace_id: u32) -> Result<(), TraceError> {
         self.trace_handler.push(trace_id);
         Ok(())
     }
@@ -64,14 +60,13 @@ impl SyncHost for TestHost {
 }
 
 impl AsyncHost for TestHost {
-    #[allow(clippy::manual_async_fn)]
     fn get_mast_forest(
         &self,
         _node_digest: &Word,
     ) -> impl FutureMaybeSend<Option<Arc<MastForest>>> {
         async move { None }
     }
-    #[allow(clippy::manual_async_fn)]
+
     fn on_event(
         &mut self,
         process: &ProcessState<'_>,

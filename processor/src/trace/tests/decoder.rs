@@ -6,7 +6,10 @@ use miden_air::trace::{
 };
 use miden_core::{
     FieldElement, ONE, Operation, Program, Word, ZERO,
-    mast::{MastForest, MastNodeExt},
+    mast::{
+        BasicBlockNodeBuilder, JoinNodeBuilder, LoopNodeBuilder, MastForest, MastForestContributor,
+        MastNodeExt, SplitNodeBuilder,
+    },
 };
 use miden_utils_testing::rand::rand_array;
 
@@ -19,7 +22,7 @@ use super::{
     Felt,
 };
 use crate::{
-    BasicBlockNode, ContextId, JoinNode,
+    ContextId,
     decoder::{BlockHashTableRow, build_op_group},
 };
 
@@ -27,7 +30,7 @@ use crate::{
 // ================================================================================================
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p1_span_with_respan() {
     let (ops, _) = build_span_with_respan_ops();
     let trace = build_trace_from_ops(ops, &[]);
@@ -70,14 +73,20 @@ fn decoder_p1_span_with_respan() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p1_join() {
     let program = {
         let mut mast_forest = MastForest::new();
 
-        let basic_block_1_id = mast_forest.add_block(vec![Operation::Mul], Vec::new()).unwrap();
-        let basic_block_2_id = mast_forest.add_block(vec![Operation::Add], Vec::new()).unwrap();
-        let join_id = mast_forest.add_join(basic_block_1_id, basic_block_2_id).unwrap();
+        let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Mul], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Add], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let join_id = JoinNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
         mast_forest.make_root(join_id);
 
         Program::new(mast_forest.into(), join_id)
@@ -137,14 +146,20 @@ fn decoder_p1_join() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p1_split() {
     let program = {
         let mut mast_forest = MastForest::new();
 
-        let basic_block_1_id = mast_forest.add_block(vec![Operation::Mul], Vec::new()).unwrap();
-        let basic_block_2_id = mast_forest.add_block(vec![Operation::Add], Vec::new()).unwrap();
-        let split_id = mast_forest.add_split(basic_block_1_id, basic_block_2_id).unwrap();
+        let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Mul], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Add], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let split_id = SplitNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
         mast_forest.make_root(split_id);
 
         Program::new(mast_forest.into(), split_id)
@@ -191,15 +206,21 @@ fn decoder_p1_split() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p1_loop_with_repeat() {
     let program = {
         let mut mast_forest = MastForest::new();
 
-        let basic_block_1_id = mast_forest.add_block(vec![Operation::Pad], Vec::new()).unwrap();
-        let basic_block_2_id = mast_forest.add_block(vec![Operation::Drop], Vec::new()).unwrap();
-        let join_id = mast_forest.add_join(basic_block_1_id, basic_block_2_id).unwrap();
-        let loop_node_id = mast_forest.add_loop(join_id).unwrap();
+        let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Pad], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Drop], Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let join_id = JoinNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
+        let loop_node_id = LoopNodeBuilder::new(join_id).add_to_forest(&mut mast_forest).unwrap();
         mast_forest.make_root(loop_node_id);
 
         Program::new(mast_forest.into(), loop_node_id)
@@ -315,13 +336,15 @@ fn decoder_p1_loop_with_repeat() {
 // ================================================================================================
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p2_span_with_respan() {
     let program = {
         let mut mast_forest = MastForest::new();
 
         let (ops, _) = build_span_with_respan_ops();
-        let basic_block_id = mast_forest.add_block(ops, Vec::new()).unwrap();
+        let basic_block_id = BasicBlockNodeBuilder::new(ops, Vec::new())
+            .add_to_forest(&mut mast_forest)
+            .unwrap();
         mast_forest.make_root(basic_block_id);
 
         Program::new(mast_forest.into(), basic_block_id)
@@ -352,18 +375,23 @@ fn decoder_p2_span_with_respan() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p2_join() {
     let mut mast_forest = MastForest::new();
 
-    let basic_block_1 = BasicBlockNode::new(vec![Operation::Mul], Vec::new()).unwrap();
-    let basic_block_1_id = mast_forest.add_node(basic_block_1.clone()).unwrap();
+    let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Mul], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Add], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
 
-    let basic_block_2 = BasicBlockNode::new(vec![Operation::Add], Vec::new()).unwrap();
-    let basic_block_2_id = mast_forest.add_node(basic_block_2.clone()).unwrap();
-
-    let join = JoinNode::new([basic_block_1_id, basic_block_2_id], &mast_forest).unwrap();
-    let join_id = mast_forest.add_node(join.clone()).unwrap();
+    let join_id = JoinNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_1 = mast_forest[basic_block_1_id].clone();
+    let basic_block_2 = mast_forest[basic_block_2_id].clone();
+    let join = mast_forest[join_id].clone();
     mast_forest.make_root(join_id);
 
     let program = Program::new(mast_forest.into(), join_id);
@@ -415,15 +443,22 @@ fn decoder_p2_join() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p2_split_true() {
     // build program
     let mut mast_forest = MastForest::new();
 
-    let basic_block_1 = BasicBlockNode::new(vec![Operation::Mul], Vec::new()).unwrap();
-    let basic_block_1_id = mast_forest.add_node(basic_block_1.clone()).unwrap();
-    let basic_block_2_id = mast_forest.add_block(vec![Operation::Add], Vec::new()).unwrap();
-    let split_id = mast_forest.add_split(basic_block_1_id, basic_block_2_id).unwrap();
+    let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Mul], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Add], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_1 = mast_forest[basic_block_1_id].clone();
+    let _basic_block_2 = mast_forest[basic_block_2_id].clone();
+    let split_id = SplitNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
     mast_forest.make_root(split_id);
 
     let program = Program::new(mast_forest.into(), split_id);
@@ -467,18 +502,23 @@ fn decoder_p2_split_true() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p2_split_false() {
     // build program
     let mut mast_forest = MastForest::new();
 
-    let basic_block_1 = BasicBlockNode::new(vec![Operation::Mul], Vec::new()).unwrap();
-    let basic_block_1_id = mast_forest.add_node(basic_block_1.clone()).unwrap();
+    let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Mul], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Add], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let _basic_block_1 = mast_forest[basic_block_1_id].clone();
+    let basic_block_2 = mast_forest[basic_block_2_id].clone();
 
-    let basic_block_2 = BasicBlockNode::new(vec![Operation::Add], Vec::new()).unwrap();
-    let basic_block_2_id = mast_forest.add_node(basic_block_2.clone()).unwrap();
-
-    let split_id = mast_forest.add_split(basic_block_1_id, basic_block_2_id).unwrap();
+    let split_id = SplitNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
     mast_forest.make_root(split_id);
 
     let program = Program::new(mast_forest.into(), split_id);
@@ -522,21 +562,26 @@ fn decoder_p2_split_false() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p2_loop_with_repeat() {
     // build program
     let mut mast_forest = MastForest::new();
 
-    let basic_block_1 = BasicBlockNode::new(vec![Operation::Pad], Vec::new()).unwrap();
-    let basic_block_1_id = mast_forest.add_node(basic_block_1.clone()).unwrap();
+    let basic_block_1_id = BasicBlockNodeBuilder::new(vec![Operation::Pad], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_2_id = BasicBlockNodeBuilder::new(vec![Operation::Drop], Vec::new())
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
 
-    let basic_block_2 = BasicBlockNode::new(vec![Operation::Drop], Vec::new()).unwrap();
-    let basic_block_2_id = mast_forest.add_node(basic_block_2.clone()).unwrap();
+    let join_id = JoinNodeBuilder::new([basic_block_1_id, basic_block_2_id])
+        .add_to_forest(&mut mast_forest)
+        .unwrap();
+    let basic_block_1 = mast_forest[basic_block_1_id].clone();
+    let basic_block_2 = mast_forest[basic_block_2_id].clone();
+    let join = mast_forest[join_id].clone();
 
-    let join = JoinNode::new([basic_block_1_id, basic_block_2_id], &mast_forest).unwrap();
-    let join_id = mast_forest.add_node(join.clone()).unwrap();
-
-    let loop_node_id = mast_forest.add_loop(join_id).unwrap();
+    let loop_node_id = LoopNodeBuilder::new(join_id).add_to_forest(&mut mast_forest).unwrap();
     mast_forest.make_root(loop_node_id);
 
     let program = Program::new(mast_forest.into(), loop_node_id);
@@ -654,7 +699,7 @@ fn decoder_p3_trace_empty_table() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p3_trace_one_batch() {
     let stack = [1, 2, 3, 4, 5, 6, 7, 8];
     let ops = vec![
@@ -720,7 +765,7 @@ fn decoder_p3_trace_one_batch() {
 }
 
 #[test]
-#[allow(clippy::needless_range_loop)]
+#[expect(clippy::needless_range_loop)]
 fn decoder_p3_trace_two_batches() {
     let (ops, iv) = build_span_with_respan_ops();
     let trace = build_trace_from_ops(ops, &[]);

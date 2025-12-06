@@ -1,179 +1,89 @@
-mod analysis;
+//! Assembly of a Miden Assembly project is comprised of four phases:
+//!
+//! 1. _Parsing_, where MASM sources are parsed into the AST data structure. Some light validation
+//!    is done in this phase, to catch invalid syntax, invalid immediate values (e.g. overflow), and
+//!    other simple checks that require little to no reasoning about surrounding context.
+//! 2. _Semantic analysis_, where initial validation of the AST is performed. This step catches
+//!    unused imports, references to undefined local symbols, orphaned doc comments, and other
+//!    checks that only require minimal module-local context. Initial symbol resolution is performed
+//!    here based on module-local context, as well as constant folding of expressions that can be
+//!    resolved locally. Symbols which refer to external items are unable to be fully processed as
+//!    part of this phase, and is instead left to the linking phase.
+//! 3. _Linking_, the most critical phase of compilation. During this phase, the assembler has the
+//!    full compilation graph available to it, and so this is where inter-module symbol references
+//!    are finally able to be resolved (or not, in which case appropriate errors are raised). This
+//!    is the phase where we catch cyclic references, references to undefined symbols, references to
+//!    non-public symbols from other modules, etc. Once all symbols are linked, the assembler is
+//!    free to compile all of the procedures to MAST, and generate a [crate::Library].
+//! 4. _Assembly_, the final phase, where all of the linked items provided to the assembler are
+//!    lowered to MAST, or to their final representations in the [crate::Library] produced as the
+//!    output of assembly. During this phase, it is expected that the compilation graph has been
+//!    validated by the linker, and we're simply processing the conversion to MAST.
+//!
+//! This module provides the implementation of the linker and its associated data structures. There
+//! are three primary parts:
+//!
+//! 1. The _call graph_, this is what tracks dependencies between procedures in the compilation
+//!    graph, and is used to ensure that all procedure references can be resolved to a MAST root
+//!    during final assembly.
+//! 2. The _symbol resolver_, this is what is responsible for computing symbol resolutions using
+//!    context-sensitive details about how a symbol is referenced. This context sensitivity is how
+//!    we are able to provide better diagnostics when invalid references are found. The resolver
+//!    shares part of it's implementation with the same infrastructure used for symbol resolution
+//!    that is performed during semantic analysis - the difference is that at link-time, we are
+//!    stricter about what happens when a symbol cannot be resolved correctly.
+//! 3. A set of _rewrites_, applied to symbols/modules at link-time, which rewrite the AST so that
+//!    all symbol references and constant expressions are fully resolved/folded. This is where any
+//!    final issues are discovered, and the AST is prepared for lowering to MAST.
 mod callgraph;
 mod debug;
 mod errors;
-mod name_resolver;
+mod library;
+mod module;
+mod resolver;
 mod rewrites;
+mod symbols;
 
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
-use core::ops::Index;
+use alloc::{boxed::Box, collections::BTreeMap, string::ToString, sync::Arc, vec::Vec};
+use core::{
+    cell::{Cell, RefCell},
+    ops::{ControlFlow, Index},
+};
 
-use miden_assembly_syntax::ast::AttributeSet;
-use miden_core::{Kernel, Word};
+use miden_assembly_syntax::{
+    ast::{
+        self, AliasTarget, AttributeSet, GlobalItemIndex, InvocationTarget, InvokeKind, ItemIndex,
+        Module, ModuleIndex, Path, SymbolResolution, Visibility, types,
+    },
+    debuginfo::{SourceManager, SourceSpan, Span, Spanned},
+    library::{ItemInfo, ModuleInfo},
+};
+use miden_core::{AdviceMap, Kernel, Word};
 use smallvec::{SmallVec, smallvec};
 
-use self::{analysis::MaybeRewriteCheck, rewrites::ModuleRewriter};
 pub use self::{
     callgraph::{CallGraph, CycleError},
     errors::LinkerError,
-    name_resolver::{CallerInfo, NameResolver, ResolvedTarget},
+    library::{LinkLibrary, LinkLibraryKind},
+    resolver::{ResolverCache, SymbolResolutionContext, SymbolResolver},
+    symbols::{Symbol, SymbolItem},
 };
-use super::{GlobalProcedureIndex, ModuleIndex};
-use crate::{
-    Library, LibraryNamespace, LibraryPath, SourceManager, Spanned,
-    ast::{
-        self, Export, InvocationTarget, InvokeKind, Module, ProcedureIndex, ProcedureName,
-        ResolvedProcedure, types,
-    },
-    library::{ModuleInfo, ProcedureInfo},
+use self::{
+    module::{LinkModule, ModuleSource},
+    resolver::*,
 };
 
-// LINKER INPUTS
-// ================================================================================================
-
-/// Represents a linked procedure in the procedure graph of the [`Linker`]
-pub enum ProcedureLink<'a> {
-    /// A procedure which we have the original AST for, and may require additional processing
-    Ast(&'a Export),
-    /// A procedure which we have the MAST for, no additional processing required
-    Info(&'a ProcedureInfo),
-}
-
-impl ProcedureLink<'_> {
-    /// Returns the name of the procedure.
-    pub fn name(&self) -> &ProcedureName {
-        match self {
-            Self::Ast(p) => p.name(),
-            Self::Info(p) => &p.name,
-        }
-    }
-
-    /// Returns the wrapped procedure if in the `Ast` representation, or panics otherwise.
-    ///
-    /// # Panics
-    /// - Panics if the wrapped procedure is not in the `Ast` representation.
-    pub fn unwrap_ast(&self) -> &Export {
-        match self {
-            Self::Ast(proc) => proc,
-            Self::Info(_) => panic!("expected AST procedure, but was compiled"),
-        }
-    }
-
-    /// Returns true if the wrapped procedure is in the `Ast` representation.
-    pub fn is_ast(&self) -> bool {
-        matches!(self, Self::Ast(_))
-    }
-}
-
-/// Represents a linked module in the module graph of the [`Linker`]
-#[derive(Clone)]
-pub enum ModuleLink {
-    /// A module which we have the original AST for, and may require additional processing
-    Ast(Arc<Module>),
-    /// A previously-assembled module we have MAST for, no additional processing required
-    Info(ModuleInfo),
-}
-
-impl ModuleLink {
-    /// Returns the library path of the wrapped module.
-    pub fn path(&self) -> &LibraryPath {
-        match self {
-            Self::Ast(m) => m.path(),
-            Self::Info(m) => m.path(),
-        }
-    }
-
-    /// Returns the wrapped module if in the `Ast` representation, or panics otherwise.
-    ///
-    /// # Panics
-    /// - Panics if the wrapped module is not in the `Ast` representation.
-    pub fn unwrap_ast(&self) -> &Arc<Module> {
-        match self {
-            Self::Ast(module) => module,
-            Self::Info(_) => {
-                panic!("expected module to be in AST representation, but was compiled")
-            },
-        }
-    }
-
-    /// Resolves `name` to a procedure within the local scope of this module.
-    pub fn resolve(&self, name: &ProcedureName) -> Option<ResolvedProcedure> {
-        match self {
-            ModuleLink::Ast(module) => module.resolve(name),
-            ModuleLink::Info(module) => {
-                module.get_procedure_digest_by_name(name).map(ResolvedProcedure::MastRoot)
-            },
-        }
-    }
-
-    /// Resolves a user-expressed type, `ty`, to a concrete type
-    pub fn resolve_type(&self, ty: &ast::TypeExpr) -> Option<types::Type> {
-        match self {
-            Self::Ast(module) => module.resolve_type(ty),
-            // TODO(pauls): Ideally we ship user-defined types in packages so that we can
-            // reference them from dependencies, but we're punting on that for now.
-            Self::Info(_) => None,
-        }
-    }
-}
-
-/// Represents an AST module which has not been linked yet
-#[derive(Clone)]
-pub struct PreLinkModule {
-    pub module: Box<Module>,
-    pub module_index: ModuleIndex,
-}
-
-/// Represents an assembled module or modules to use when resolving references while linking,
-/// as well as the method by which referenced symbols will be linked into the assembled MAST.
-#[derive(Clone)]
-pub struct LinkLibrary {
-    /// The library to link
-    pub library: Arc<Library>,
-    /// How to link against this library
-    pub kind: LinkLibraryKind,
-}
-
-impl LinkLibrary {
-    /// Dynamically link against `library`
-    pub fn dynamic(library: Arc<Library>) -> Self {
-        Self { library, kind: LinkLibraryKind::Dynamic }
-    }
-
-    /// Statically link `library`
-    pub fn r#static(library: Arc<Library>) -> Self {
-        Self { library, kind: LinkLibraryKind::Static }
-    }
-}
-
-/// Represents how a library should be linked into the assembled MAST
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum LinkLibraryKind {
-    /// A dynamically-linked library.
-    ///
-    /// References to symbols of dynamically-linked libraries expect to have those symbols resolved
-    /// at runtime, i.e. it is expected that the library was loaded (or will be loaded on-demand),
-    /// and that the referenced symbol is resolvable by the VM.
-    ///
-    /// Concretely, the digest corresponding to a referenced procedure symbol will be linked as a
-    /// [`miden_core::mast::ExternalNode`], rather than including the procedure in the assembled
-    /// MAST, and referencing the procedure via [`miden_core::mast::MastNodeId`].
+/// Represents the current status of a symbol in the state of the [Linker]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+pub enum LinkStatus {
+    /// The module or item has not been visited by the linker
     #[default]
-    Dynamic,
-    /// A statically-linked library.
-    ///
-    /// References to symbols of statically-linked libraries expect to be resolvable by the linker,
-    /// during assembly, i.e. it is expected that the library was provided to the assembler/linker
-    /// as an input, and that the entire definition of the referenced symbol is available.
-    ///
-    /// Concretely, a statically linked procedure will have its root, and all reachable nodes found
-    /// in the MAST of the library, included in the assembled MAST, and referenced via
-    /// [`miden_core::mast::MastNodeId`].
-    ///
-    /// Statically linked symbols are thus merged into the assembled artifact as if they had been
-    /// defined in your own project, and the library they were originally defined in will not be
-    /// required to be provided at runtime, as is the case with dynamically-linked libraries.
-    Static,
+    Unlinked,
+    /// The module or item has been visited by the linker, but still refers to one or more
+    /// unresolved symbols.
+    PartiallyLinked,
+    /// The module or item has been visited by the linker, and is fully linked and resolved
+    Linked,
 }
 
 // LINKER
@@ -184,22 +94,21 @@ pub enum LinkLibraryKind {
 ///
 /// The core conceptual data structure of the linker is the _module graph_, which is implemented
 /// by a vector of module nodes, and a _call graph_, which is implemented as an adjacency matrix
-/// of procedure nodes and the outgoing edges from those nodes, representing references from that
-/// procedure to another symbol (typically as the result of procedure invocation, hence "call"
-/// graph).
+/// of item nodes and the outgoing edges from those nodes, representing references from that item
+/// to another symbol (typically as the result of procedure invocation, hence "call" graph).
 ///
-/// Each procedure known to the linker is given a _global procedure index_, which is actually a
-/// pair of indices: a _module index_ (which indexes into the vector of module nodes), and a
-/// _procedure index_ (which indexes into the set of procedures defined by a module). These global
-/// procedure indices function as a unique identifier within the linker, to a specific procedure,
-/// and can be resolved to either the procedure AST, or to metadata about the procedure MAST.
+/// Each item/symbol known to the linker is given a _global item index_, which is actually a pair
+/// of indices: a _module index_ (which indexes into the vector of module nodes), and an _item
+/// index_ (which indexes into the items defined by a module). These global item indices function
+/// as a unique identifier within the linker, to a specific item, and can be resolved to either the
+/// original syntax tree of the item, or to metadata about the item retrieved from previously-
+/// assembled MAST.
 ///
 /// The process of linking involves two phases:
 ///
-/// 1. Setting up the linker context, by providing the set of libraries and/or input modules to link
-/// 2. Analyzing and rewriting the module graph, as needed, to ensure that all procedure references
-///    are resolved to either a concrete definition, or a "phantom" reference in the form of a MAST
-///    root.
+/// 1. Setting up the linker context, by providing the set of inputs to link together
+/// 2. Analyzing and rewriting the symbols known to the linker, as needed, to ensure that all symbol
+///    references are resolved to concrete definitions.
 ///
 /// The assembler will call [`Self::link`] once it has provided all inputs that it wants to link,
 /// which will, when successful, return the set of module indices corresponding to the modules that
@@ -213,23 +122,14 @@ pub enum LinkLibraryKind {
 pub struct Linker {
     /// The set of libraries to link against.
     libraries: BTreeMap<Word, LinkLibrary>,
-    /// The nodes of the module graph data structure maintained by the linker.
-    modules: Vec<Option<ModuleLink>>,
-    /// The set of modules pending additional processing before adding them to the graph.
-    ///
-    /// When adding a set of inter-dependent modules to the graph, we process them as a group, so
-    /// that any references between them can be resolved, and the contents of the module
-    /// rewritten to reflect the changes.
-    ///
-    /// Once added to the graph, modules become immutable, and any additional modules added after
-    /// that must by definition only depend on modules in the graph, and not be depended upon.
-    pending: Vec<PreLinkModule>,
+    /// The global set of items known to the linker
+    modules: Vec<LinkModule>,
     /// The global call graph of calls, not counting those that are performed directly via MAST
     /// root.
     callgraph: CallGraph,
     /// The set of MAST roots which have procedure definitions in this graph. There can be
     /// multiple procedures bound to the same root due to having identical code.
-    procedures_by_mast_root: BTreeMap<Word, SmallVec<[GlobalProcedureIndex; 1]>>,
+    procedures_by_mast_root: BTreeMap<Word, SmallVec<[GlobalItemIndex; 1]>>,
     /// The index of the kernel module in `modules`, if present
     kernel_index: Option<ModuleIndex>,
     /// The kernel library being linked against.
@@ -248,7 +148,6 @@ impl Linker {
         Self {
             libraries: Default::default(),
             modules: Default::default(),
-            pending: Default::default(),
             callgraph: Default::default(),
             procedures_by_mast_root: Default::default(),
             kernel_index: None,
@@ -306,19 +205,43 @@ impl Linker {
         log::debug!(target: "linker", "adding pre-assembled module {} to module graph", module.path());
 
         let module_path = module.path();
-        let is_duplicate =
-            self.is_pending(module_path) || self.find_module_index(module_path).is_some();
+        let is_duplicate = self.find_module_index(module_path).is_some();
         if is_duplicate {
-            return Err(LinkerError::DuplicateModule { path: module_path.clone() });
+            return Err(LinkerError::DuplicateModule {
+                path: module_path.to_path_buf().into_boxed_path().into(),
+            });
         }
 
         let module_index = self.next_module_id();
-        for (proc_index, proc) in module.procedures() {
-            let gid = module_index + proc_index;
-            self.register_procedure_root(gid, proc.digest)?;
+        let items = module.items();
+        let mut symbols = Vec::with_capacity(items.len());
+        for (idx, item) in items {
+            let gid = module_index + idx;
             self.callgraph.get_or_insert_node(gid);
+            match &item {
+                ItemInfo::Procedure(item) => {
+                    self.register_procedure_root(gid, item.digest)?;
+                },
+                ItemInfo::Constant(_) | ItemInfo::Type(_) => (),
+            }
+            symbols.push(Symbol::new(
+                item.name().clone(),
+                Visibility::Public,
+                LinkStatus::Linked,
+                SymbolItem::Compiled(item.clone()),
+            ));
         }
-        self.modules.push(Some(ModuleLink::Info(module)));
+
+        let link_module = LinkModule::new(
+            module_index,
+            ast::ModuleKind::Library,
+            LinkStatus::Linked,
+            ModuleSource::Mast,
+            module_path.into(),
+        )
+        .with_symbols(symbols);
+
+        self.modules.push(link_module);
         Ok(module_index)
     }
 
@@ -329,7 +252,7 @@ impl Linker {
         &mut self,
         modules: impl IntoIterator<Item = Box<Module>>,
     ) -> Result<Vec<ModuleIndex>, LinkerError> {
-        modules.into_iter().map(|m| self.link_module(m)).collect()
+        modules.into_iter().map(|mut m| self.link_module(&mut m)).collect()
     }
 
     /// Registers an AST module with the linker.
@@ -343,31 +266,59 @@ impl Linker {
     ///
     /// This operation can fail for the following reasons:
     ///
-    /// * Module with same [LibraryPath] is in the graph already
+    /// * Module with same [Path] is in the graph already
     /// * Too many modules in the graph
     ///
     /// # Panics
     ///
     /// This function will panic if the number of modules exceeds the maximum representable
     /// [ModuleIndex] value, `u16::MAX`.
-    pub fn link_module(&mut self, module: Box<Module>) -> Result<ModuleIndex, LinkerError> {
+    pub fn link_module(&mut self, module: &mut Module) -> Result<ModuleIndex, LinkerError> {
         log::debug!(target: "linker", "adding unprocessed module {}", module.path());
-        let module_path = module.path();
 
-        let is_duplicate =
-            self.is_pending(module_path) || self.find_module_index(module_path).is_some();
+        let is_duplicate = self.find_module_index(module.path()).is_some();
         if is_duplicate {
-            return Err(LinkerError::DuplicateModule { path: module_path.clone() });
+            return Err(LinkerError::DuplicateModule { path: module.path().into() });
         }
 
         let module_index = self.next_module_id();
-        self.modules.push(None);
-        self.pending.push(PreLinkModule { module, module_index });
-        Ok(module_index)
-    }
+        let symbols = {
+            core::mem::take(module.items_mut())
+                .into_iter()
+                .enumerate()
+                .map(|(idx, item)| {
+                    let gid = module_index + ast::ItemIndex::new(idx);
+                    self.callgraph.get_or_insert_node(gid);
+                    Symbol::new(
+                        item.name().clone(),
+                        item.visibility(),
+                        LinkStatus::Unlinked,
+                        match item {
+                            ast::Export::Alias(alias) => {
+                                SymbolItem::Alias { alias, resolved: Cell::new(None) }
+                            },
+                            ast::Export::Type(item) => SymbolItem::Type(item),
+                            ast::Export::Constant(item) => SymbolItem::Constant(item),
+                            ast::Export::Procedure(item) => {
+                                SymbolItem::Procedure(RefCell::new(Box::new(item)))
+                            },
+                        },
+                    )
+                })
+                .collect()
+        };
+        let link_module = LinkModule::new(
+            module_index,
+            module.kind(),
+            LinkStatus::Unlinked,
+            ModuleSource::Ast,
+            module.path().into(),
+        )
+        .with_advice_map(module.advice_map().clone())
+        .with_symbols(symbols);
 
-    fn is_pending(&self, path: &LibraryPath) -> bool {
-        self.pending.iter().any(|m| m.module.path() == path)
+        self.modules.push(link_module);
+        Ok(module_index)
     }
 
     #[inline]
@@ -390,7 +341,11 @@ impl Linker {
         kernel_module: ModuleInfo,
     ) -> Self {
         assert!(!kernel.is_empty());
-        assert_eq!(kernel_module.path(), &LibraryPath::from(LibraryNamespace::Kernel));
+        assert!(
+            kernel_module.path().is_kernel_path(),
+            "invalid root kernel module path: {}",
+            kernel_module.path()
+        );
         log::debug!(target: "linker", "instantiating linker with kernel {}", kernel_module.path());
 
         let mut graph = Self::new(source_manager);
@@ -437,13 +392,20 @@ impl Linker {
     ///
     /// This differs from `link` in that we allow all AST modules in the module graph access to
     /// kernel features, e.g. `caller`, as if they are defined by the kernel module itself.
-    pub fn link_kernel(&mut self, kernel: Box<Module>) -> Result<Vec<ModuleIndex>, LinkerError> {
-        let module_index = self.link_module(kernel)?;
+    pub fn link_kernel(
+        &mut self,
+        mut kernel: Box<Module>,
+    ) -> Result<Vec<ModuleIndex>, LinkerError> {
+        let module_index = self.link_module(&mut kernel)?;
 
         // Set the module kind of all pending AST modules to Kernel, as we are linking a kernel
-        for module in self.pending.iter_mut() {
-            module.module.set_kind(crate::ast::ModuleKind::Kernel);
+        for module in self.modules.iter_mut().take(module_index.as_usize()) {
+            if matches!(module.source(), ModuleSource::Ast) {
+                module.set_kind(ast::ModuleKind::Kernel);
+            }
         }
+
+        self.kernel_index = Some(module_index);
 
         self.link_and_rewrite()?;
 
@@ -489,166 +451,114 @@ impl Linker {
     /// operation not supported by the current configuration. Basically, for any reason that would
     /// cause the resulting graph to represent an invalid program.
     fn link_and_rewrite(&mut self) -> Result<(), LinkerError> {
-        log::debug!(target: "linker", "processing {} new modules, and recomputing module graph", self.pending.len());
+        log::debug!(
+            target: "linker",
+            "processing {} unlinked/partially-linked modules, and recomputing module graph",
+            self.modules.iter().filter(|m| !m.is_linked()).count()
+        );
 
         // It is acceptable for there to be no changes, but if the graph is empty and no changes
         // are being made, we treat that as an error
-        if self.modules.is_empty() && self.pending.is_empty() {
+        if self.modules.is_empty() {
             return Err(LinkerError::Empty);
         }
 
         // If no changes are being made, we're done
-        if self.pending.is_empty() {
+        if self.modules.iter().all(|m| m.is_linked()) {
             return Ok(());
-        }
-
-        // Visit all of the pending modules, assigning them ids, and adding them to the module
-        // graph after rewriting any calls to use absolute paths
-        let high_water_mark = self.modules.len();
-        let pending = core::mem::take(&mut self.pending);
-        for PreLinkModule { module: pending_module, module_index } in pending.iter() {
-            log::debug!(
-                target: "linker",
-                "adding procedures from pending module {} (index {}) to call graph",
-                pending_module.path(),
-                module_index.as_usize()
-            );
-
-            // Apply module to call graph
-            for (index, _) in pending_module.procedures().enumerate() {
-                let procedure_id = ProcedureIndex::new(index);
-                let global_id = GlobalProcedureIndex {
-                    module: *module_index,
-                    index: procedure_id,
-                };
-
-                // Ensure all entrypoints and exported symbols are represented in the call
-                // graph, even if they have no edges, we need them
-                // in the graph for the topological sort
-                self.callgraph.get_or_insert_node(global_id);
-            }
         }
 
         // Obtain a set of resolvers for the pending modules so that we can do name resolution
         // before they are added to the graph
-        let mut resolver = NameResolver::new(self);
-        for module in pending.iter() {
-            resolver.push_pending(module);
-        }
+        let resolver = SymbolResolver::new(self);
         let mut edges = Vec::new();
-        let mut finished: Vec<PreLinkModule> = Vec::with_capacity(pending.len());
+        let mut cache = ResolverCache::default();
 
-        // Visit all of the newly-added modules and perform any rewrites to AST modules.
-        for PreLinkModule { mut module, module_index } in pending.into_iter() {
-            log::debug!(target: "linker", "rewriting pending module {} (index {})", module.path(), module_index.as_usize());
+        for (module_index, module) in self.modules.iter().enumerate() {
+            if !module.is_unlinked() {
+                continue;
+            }
 
-            let mut rewriter = ModuleRewriter::new(&resolver);
-            rewriter.apply(module_index, &mut module)?;
+            let module_index = ModuleIndex::new(module_index);
 
-            log::debug!(
-                target: "linker",
-                "processing procedures of pending module {} (index {})",
-                module.path(),
-                module_index.as_usize()
-            );
-            for (index, procedure) in module.procedures().enumerate() {
-                log::debug!(target: "linker", "  * processing {} at index {index}", procedure.name());
+            for (symbol_idx, symbol) in module.symbols().enumerate() {
+                assert!(
+                    symbol.is_unlinked(),
+                    "an unlinked module should only have unlinked symbols"
+                );
 
-                let procedure_id = ProcedureIndex::new(index);
-                let gid = GlobalProcedureIndex {
-                    module: module_index,
-                    index: procedure_id,
-                };
+                let gid = module_index + ItemIndex::new(symbol_idx);
 
-                // Add edge to the call graph to represent dependency on aliased procedures
-                if let Export::Alias(alias) = procedure {
-                    log::debug!(target: "linker", "  | resolving alias {}..", alias.target());
+                // Perform any applicable rewrites to this item
+                rewrites::rewrite_symbol(gid, symbol, &resolver, &mut cache)?;
 
-                    let caller = CallerInfo {
-                        span: alias.span(),
-                        module: module_index,
-                        kind: InvokeKind::ProcRef,
-                    };
-                    let target = alias.target().into();
-                    if let Some(callee) =
-                        resolver.resolve_target(&caller, &target)?.into_global_id()
-                    {
-                        log::debug!(
-                            target: "linker",
-                            "  | resolved alias to gid {:?}:{:?}",
-                            callee.module,
-                            callee.index
-                        );
-                        edges.push((gid, callee));
-                    }
-                }
+                // Update the linker graph
+                match symbol.item() {
+                    SymbolItem::Compiled(_) | SymbolItem::Type(_) | SymbolItem::Constant(_) => (),
+                    SymbolItem::Alias { alias, resolved } => {
+                        if let Some(resolved) = resolved.get() {
+                            log::debug!(target: "linker", "  | resolved alias {} to item {resolved}", alias.target());
+                            if self[resolved].is_procedure() {
+                                edges.push((gid, resolved));
+                            }
+                        } else {
+                            log::debug!(target: "linker", "  | resolving alias {}..", alias.target());
 
-                // Add edges to all transitive dependencies of this procedure due to calls
-                for invoke in procedure.invoked() {
-                    log::debug!(target: "linker", "  | recording {} dependency on {}", invoke.kind, &invoke.target);
+                            let context = SymbolResolutionContext {
+                                span: alias.target().span(),
+                                module: module_index,
+                                kind: None,
+                            };
+                            if let Some(callee) = resolver
+                                .resolve_alias_target(&context, alias.target())?
+                                .into_global_id()
+                            {
+                                log::debug!(
+                                    target: "linker",
+                                    "  | resolved alias to gid {:?}:{:?}",
+                                    callee.module,
+                                    callee.index
+                                );
+                                edges.push((gid, callee));
+                                resolved.set(Some(callee));
+                            }
+                        }
+                    },
+                    SymbolItem::Procedure(proc) => {
+                        // Add edges to all transitive dependencies of this item due to calls/symbol
+                        // refs
+                        let proc = proc.borrow();
+                        for invoke in proc.invoked() {
+                            log::debug!(target: "linker", "  | recording {} dependency on {}", invoke.kind, &invoke.target);
 
-                    let caller = CallerInfo {
-                        span: invoke.span(),
-                        module: module_index,
-                        kind: invoke.kind,
-                    };
-                    if let Some(callee) =
-                        resolver.resolve_target(&caller, &invoke.target)?.into_global_id()
-                    {
-                        log::debug!(
-                            target: "linker",
-                            "  | resolved dependency to gid {}:{}",
-                            callee.module.as_usize(),
-                            callee.index.as_usize()
-                        );
-                        edges.push((gid, callee));
-                    }
+                            let context = SymbolResolutionContext {
+                                span: invoke.span(),
+                                module: module_index,
+                                kind: None,
+                            };
+                            if let Some(callee) = resolver
+                                .resolve_invoke_target(&context, &invoke.target)?
+                                .into_global_id()
+                            {
+                                log::debug!(
+                                    target: "linker",
+                                    "  | resolved dependency to gid {}:{}",
+                                    callee.module.as_usize(),
+                                    callee.index.as_usize()
+                                );
+                                edges.push((gid, callee));
+                            }
+                        }
+                    },
                 }
             }
 
-            finished.push(PreLinkModule { module, module_index });
-        }
-
-        // Release the graph again
-        drop(resolver);
-
-        // Update the graph with the processed modules
-        for PreLinkModule { module, module_index } in finished {
-            self.modules[module_index.as_usize()] = Some(ModuleLink::Ast(Arc::from(module)));
+            module.set_status(LinkStatus::Linked);
         }
 
         edges
             .into_iter()
             .for_each(|(caller, callee)| self.callgraph.add_edge(caller, callee));
-
-        // Visit all of the (AST) modules in the base module graph, and modify them if any of the
-        // pending modules allow additional information to be inferred (such as the absolute path of
-        // imports, etc)
-        for module_index in 0..high_water_mark {
-            let module_index = ModuleIndex::new(module_index);
-            let module = self.modules[module_index.as_usize()].clone().unwrap_or_else(|| {
-                panic!(
-                    "expected module at index {} to have been processed, but it is None",
-                    module_index.as_usize()
-                )
-            });
-
-            match module {
-                ModuleLink::Ast(module) => {
-                    log::debug!(target: "linker", "re-analyzing module {} (index {})", module.path(), module_index.as_usize());
-                    // Re-analyze the module, and if we needed to clone-on-write, the new module
-                    // will be returned. Otherwise, `Ok(None)` indicates that
-                    // the module is unchanged, and `Err` indicates that
-                    // re-analysis has found an issue with this module.
-                    let new_module =
-                        self.reanalyze_module(module_index, module).map(ModuleLink::Ast)?;
-                    self.modules[module_index.as_usize()] = Some(new_module);
-                },
-                module => {
-                    self.modules[module_index.as_usize()] = Some(module);
-                },
-            }
-        }
 
         // Make sure the graph is free of cycles
         self.callgraph.toposort().map_err(|cycle| {
@@ -656,33 +566,13 @@ impl Linker {
             let mut nodes = Vec::with_capacity(iter.len());
             for node in iter {
                 let module = self[node.module].path();
-                let proc = self.get_procedure_unsafe(node);
-                nodes.push(format!("{}::{}", module, proc.name()));
+                let item = self[node].name();
+                nodes.push(module.join(item).to_string());
             }
             LinkerError::Cycle { nodes: nodes.into() }
         })?;
 
         Ok(())
-    }
-
-    fn reanalyze_module(
-        &mut self,
-        module_id: ModuleIndex,
-        module: Arc<Module>,
-    ) -> Result<Arc<Module>, LinkerError> {
-        let resolver = NameResolver::new(self);
-        let maybe_rewrite = MaybeRewriteCheck::new(&resolver);
-        if maybe_rewrite.check(module_id, &module)? {
-            // We need to rewrite this module again, so get an owned copy of the original
-            // and use that
-            let mut module = Box::new(Arc::unwrap_or_clone(module));
-            let mut rewriter = ModuleRewriter::new(&resolver);
-            rewriter.apply(module_id, &mut module)?;
-
-            Ok(Arc::from(module))
-        } else {
-            Ok(module)
-        }
     }
 }
 
@@ -697,23 +587,9 @@ impl Linker {
     /// Compute the topological sort of the callgraph rooted at `caller`
     pub fn topological_sort_from_root(
         &self,
-        caller: GlobalProcedureIndex,
-    ) -> Result<Vec<GlobalProcedureIndex>, CycleError> {
+        caller: GlobalItemIndex,
+    ) -> Result<Vec<GlobalItemIndex>, CycleError> {
         self.callgraph.toposort_caller(caller)
-    }
-
-    /// Fetch a [ProcedureLink] by its [GlobalProcedureIndex].
-    ///
-    /// # Panics
-    /// - Panics if index is invalid.
-    pub fn get_procedure_unsafe(&self, id: GlobalProcedureIndex) -> ProcedureLink<'_> {
-        match self.modules[id.module.as_usize()]
-            .as_ref()
-            .expect("invalid reference to pending module")
-        {
-            ModuleLink::Ast(m) => ProcedureLink::Ast(&m[id.index]),
-            ModuleLink::Info(m) => ProcedureLink::Info(m.get_procedure_by_index(id.index).unwrap()),
-        }
     }
 
     /// Returns a procedure index which corresponds to the provided procedure digest.
@@ -724,67 +600,99 @@ impl Linker {
     pub fn get_procedure_index_by_digest(
         &self,
         procedure_digest: &Word,
-    ) -> Option<GlobalProcedureIndex> {
+    ) -> Option<GlobalItemIndex> {
         self.procedures_by_mast_root.get(procedure_digest).map(|indices| indices[0])
     }
 
     /// Resolves `target` from the perspective of `caller`.
-    pub fn resolve_target(
+    pub fn resolve_invoke_target(
         &self,
-        caller: &CallerInfo,
+        caller: &SymbolResolutionContext,
         target: &InvocationTarget,
-    ) -> Result<ResolvedTarget, LinkerError> {
-        let resolver = NameResolver::new(self);
-        resolver.resolve_target(caller, target)
+    ) -> Result<SymbolResolution, LinkerError> {
+        let resolver = SymbolResolver::new(self);
+        resolver.resolve_invoke_target(caller, target)
+    }
+
+    /// Resolves `target` from the perspective of `caller`.
+    pub fn resolve_alias_target(
+        &self,
+        caller: &SymbolResolutionContext,
+        target: &AliasTarget,
+    ) -> Result<SymbolResolution, LinkerError> {
+        let resolver = SymbolResolver::new(self);
+        resolver.resolve_alias_target(caller, target)
+    }
+
+    /// Resolves `path` from the perspective of `caller`.
+    pub fn resolve_path(
+        &self,
+        caller: &SymbolResolutionContext,
+        path: &Path,
+    ) -> Result<SymbolResolution, LinkerError> {
+        let resolver = SymbolResolver::new(self);
+        resolver.resolve_path(caller, Span::new(caller.span, path))
     }
 
     /// Resolves the user-defined type signature of the given procedure to the HIR type signature
     pub(super) fn resolve_signature(
         &self,
-        gid: GlobalProcedureIndex,
+        gid: GlobalItemIndex,
     ) -> Result<Option<Arc<types::FunctionType>>, LinkerError> {
-        // Fetch procedure metadata from the graph
-        let module = match &self[gid.module] {
-            ModuleLink::Ast(module) => module,
-            ModuleLink::Info(module) => {
-                let proc = module
-                    .get_procedure_by_index(gid.index)
-                    .expect("invalid global procedure index");
-                return Ok(proc.signature.clone());
-            },
-        };
-
-        match &module[gid.index] {
-            Export::Procedure(proc) => match proc.signature() {
-                Some(ty) => self.translate_function_type(module, ty).map(Some),
-                None => Ok(None),
-            },
-            Export::Alias(alias) => {
-                let target = InvocationTarget::from(alias.target());
-                let caller = CallerInfo {
-                    span: target.span(),
-                    module: gid.module,
-                    kind: InvokeKind::ProcRef,
-                };
-                match self.resolve_target(&caller, &target)? {
-                    ResolvedTarget::Phantom(_) => Ok(None),
-                    ResolvedTarget::Exact { gid } | ResolvedTarget::Resolved { gid, .. } => {
-                        self.resolve_signature(gid)
-                    },
+        match self[gid].item() {
+            SymbolItem::Compiled(ItemInfo::Procedure(proc)) => Ok(proc.signature.clone()),
+            SymbolItem::Procedure(proc) => {
+                let proc = proc.borrow();
+                match proc.signature() {
+                    Some(ty) => self.translate_function_type(gid.module, ty).map(Some),
+                    None => Ok(None),
                 }
+            },
+            SymbolItem::Alias { alias, resolved } => {
+                if let Some(resolved) = resolved.get() {
+                    return self.resolve_signature(resolved);
+                }
+
+                let context = SymbolResolutionContext {
+                    span: alias.target().span(),
+                    module: gid.module,
+                    kind: Some(InvokeKind::ProcRef),
+                };
+                let resolution = self.resolve_alias_target(&context, alias.target())?;
+                match resolution {
+                    // If we get back a MAST root resolution, it's a phantom digest
+                    SymbolResolution::MastRoot(_) => Ok(None),
+                    SymbolResolution::Exact { gid, .. } => self.resolve_signature(gid),
+                    SymbolResolution::Module { .. }
+                    | SymbolResolution::Local(_)
+                    | SymbolResolution::External(_) => unreachable!(),
+                }
+            },
+            SymbolItem::Compiled(_) | SymbolItem::Constant(_) | SymbolItem::Type(_) => {
+                panic!("procedure index unexpectedly refers to non-procedure item")
             },
         }
     }
 
     fn translate_function_type(
         &self,
-        module: &Module,
+        module_index: ModuleIndex,
         ty: &ast::FunctionType,
     ) -> Result<Arc<types::FunctionType>, LinkerError> {
+        use miden_assembly_syntax::ast::TypeResolver;
+
         let cc = ty.cc;
         let mut args = Vec::with_capacity(ty.args.len());
+
+        let symbol_resolver = SymbolResolver::new(self);
+        let mut cache = ResolverCache::default();
+        let resolver = Resolver {
+            resolver: &symbol_resolver,
+            cache: &mut cache,
+            current_module: module_index,
+        };
         for arg in ty.args.iter() {
-            if let Some(arg) = module.resolve_type(arg) {
+            if let Some(arg) = resolver.resolve(arg)? {
                 args.push(arg);
             } else {
                 let span = arg.span();
@@ -796,7 +704,7 @@ impl Linker {
         }
         let mut results = Vec::with_capacity(ty.results.len());
         for result in ty.results.iter() {
-            if let Some(result) = module.resolve_type(result) {
+            if let Some(result) = resolver.resolve(result)? {
                 results.push(result);
             } else {
                 let span = result.span();
@@ -812,36 +720,58 @@ impl Linker {
     /// Resolves a [GlobalProcedureIndex] to the known attributes of that procedure
     pub(super) fn resolve_attributes(
         &self,
-        gid: GlobalProcedureIndex,
+        gid: GlobalItemIndex,
     ) -> Result<AttributeSet, LinkerError> {
-        // Fetch procedure metadata from the graph
-        let module = match &self[gid.module] {
-            ModuleLink::Ast(module) => module,
-            ModuleLink::Info(module) => {
-                let proc = module
-                    .get_procedure_by_index(gid.index)
-                    .expect("invalid global procedure index");
-                return Ok(proc.attributes.clone());
+        match self[gid].item() {
+            SymbolItem::Compiled(ItemInfo::Procedure(proc)) => Ok(proc.attributes.clone()),
+            SymbolItem::Procedure(proc) => {
+                let proc = proc.borrow();
+                Ok(proc.attributes().clone())
             },
-        };
+            SymbolItem::Alias { alias, resolved } => {
+                if let Some(resolved) = resolved.get() {
+                    return self.resolve_attributes(resolved);
+                }
 
-        match &module[gid.index] {
-            Export::Procedure(proc) => Ok(proc.attributes().clone()),
-            Export::Alias(alias) => {
-                let target = InvocationTarget::from(alias.target());
-                let caller = CallerInfo {
-                    span: target.span(),
+                let context = SymbolResolutionContext {
+                    span: alias.target().span(),
                     module: gid.module,
-                    kind: InvokeKind::ProcRef,
+                    kind: Some(InvokeKind::ProcRef),
                 };
-                match self.resolve_target(&caller, &target)? {
-                    ResolvedTarget::Phantom(_) => Ok(AttributeSet::default()),
-                    ResolvedTarget::Exact { gid } | ResolvedTarget::Resolved { gid, .. } => {
-                        self.resolve_attributes(gid)
+                let resolution = self.resolve_alias_target(&context, alias.target())?;
+                match resolution {
+                    SymbolResolution::MastRoot(_)
+                    | SymbolResolution::Local(_)
+                    | SymbolResolution::External(_) => Ok(AttributeSet::default()),
+                    SymbolResolution::Exact { gid, .. } => self.resolve_attributes(gid),
+                    SymbolResolution::Module { .. } => {
+                        unreachable!("expected resolver to raise error")
                     },
                 }
             },
+            SymbolItem::Compiled(_) | SymbolItem::Constant(_) | SymbolItem::Type(_) => {
+                panic!("procedure index unexpectedly refers to non-procedure item")
+            },
         }
+    }
+
+    /// Resolves a [GlobalItemIndex] to a concrete [ast::types::Type]
+    pub(super) fn resolve_type(
+        &self,
+        span: SourceSpan,
+        gid: GlobalItemIndex,
+    ) -> Result<ast::types::Type, LinkerError> {
+        use miden_assembly_syntax::ast::TypeResolver;
+
+        let symbol_resolver = SymbolResolver::new(self);
+        let mut cache = ResolverCache::default();
+        let resolver = Resolver {
+            cache: &mut cache,
+            resolver: &symbol_resolver,
+            current_module: gid.module,
+        };
+
+        resolver.get_type(span, gid)
     }
 
     /// Registers a [MastNodeId] as corresponding to a given [GlobalProcedureIndex].
@@ -854,7 +784,7 @@ impl Linker {
     /// of the referenced procedure, i.e. they are referentially transparent.
     pub(crate) fn register_procedure_root(
         &mut self,
-        id: GlobalProcedureIndex,
+        id: GlobalItemIndex,
         procedure_mast_root: Word,
     ) -> Result<(), LinkerError> {
         use alloc::collections::btree_map::Entry;
@@ -874,31 +804,49 @@ impl Linker {
         Ok(())
     }
 
-    /// Resolve a [LibraryPath] to a [ModuleIndex] in this graph
-    pub fn find_module_index(&self, name: &LibraryPath) -> Option<ModuleIndex> {
-        self.modules
-            .iter()
-            .position(|m| m.as_ref().is_some_and(|m| m.path() == name))
-            .map(ModuleIndex::new)
+    /// Resolve a [Path] to a [ModuleIndex] in this graph
+    pub fn find_module_index(&self, path: &Path) -> Option<ModuleIndex> {
+        self.modules.iter().position(|m| path == m.path()).map(ModuleIndex::new)
     }
 
-    /// Resolve a [LibraryPath] to a [Module] in this graph
-    pub fn find_module(&self, name: &LibraryPath) -> Option<ModuleLink> {
-        self.modules
-            .iter()
-            .find(|m| m.as_ref().is_some_and(|m| m.path() == name))
-            .cloned()
-            .unwrap_or(None)
+    /// Resolve a [Path] to a [Module] in this graph
+    pub fn find_module(&self, path: &Path) -> Option<&LinkModule> {
+        self.modules.iter().find(|m| path == m.path())
+    }
+}
+
+/// Const evaluation
+impl Linker {
+    /// Evaluate `expr` to a concrete constant value, in the context of the given item.
+    pub(super) fn const_eval(
+        &self,
+        gid: GlobalItemIndex,
+        expr: &ast::ConstantExpr,
+        cache: &mut ResolverCache,
+    ) -> Result<ast::ConstantValue, LinkerError> {
+        let symbol_resolver = SymbolResolver::new(self);
+        let mut resolver = Resolver {
+            resolver: &symbol_resolver,
+            cache,
+            current_module: gid.module,
+        };
+
+        ast::constants::eval::expr(expr, &mut resolver).map(|expr| expr.expect_value())
     }
 }
 
 impl Index<ModuleIndex> for Linker {
-    type Output = ModuleLink;
+    type Output = LinkModule;
 
     fn index(&self, index: ModuleIndex) -> &Self::Output {
-        self.modules
-            .index(index.as_usize())
-            .as_ref()
-            .expect("invalid reference to pending module")
+        &self.modules[index.as_usize()]
+    }
+}
+
+impl Index<GlobalItemIndex> for Linker {
+    type Output = Symbol;
+
+    fn index(&self, index: GlobalItemIndex) -> &Self::Output {
+        &self.modules[index.module.as_usize()][index.index]
     }
 }

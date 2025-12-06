@@ -9,7 +9,7 @@ use miden_utils_diagnostics::{
 #[cfg(feature = "std")]
 use crate::diagnostics::reporting::set_panic_hook;
 use crate::{
-    LibraryPath, Parse, ParseOptions,
+    Parse, ParseOptions, Path,
     ast::{Form, Module, ModuleKind},
 };
 
@@ -87,7 +87,7 @@ impl SyntaxTestContext {
     #[track_caller]
     pub fn parse_program(&self, source: impl Parse) -> Result<Box<Module>, Report> {
         source.parse_with_options(
-            self.source_manager.as_ref(),
+            self.source_manager.clone(),
             ParseOptions {
                 warnings_as_errors: self.warnings_as_errors,
                 ..Default::default()
@@ -99,11 +99,10 @@ impl SyntaxTestContext {
     ///
     /// This runs semantic analysis, and the returned module is guaranteed to be syntactically
     /// valid.
-    #[allow(unused)]
     #[track_caller]
     pub fn parse_kernel(&self, source: impl Parse) -> Result<Box<Module>, Report> {
         source.parse_with_options(
-            self.source_manager.as_ref(),
+            self.source_manager.clone(),
             ParseOptions {
                 warnings_as_errors: self.warnings_as_errors,
                 ..ParseOptions::for_kernel()
@@ -118,7 +117,7 @@ impl SyntaxTestContext {
     #[track_caller]
     pub fn parse_module(&self, source: impl Parse) -> Result<Box<Module>, Report> {
         source.parse_with_options(
-            self.source_manager.as_ref(),
+            self.source_manager.clone(),
             ParseOptions {
                 warnings_as_errors: self.warnings_as_errors,
                 ..ParseOptions::for_library()
@@ -130,14 +129,14 @@ impl SyntaxTestContext {
     #[track_caller]
     pub fn parse_module_with_path(
         &self,
-        path: LibraryPath,
+        path: impl AsRef<Path>,
         source: impl Parse,
     ) -> Result<Box<Module>, Report> {
         source.parse_with_options(
-            self.source_manager.as_ref(),
+            self.source_manager.clone(),
             ParseOptions {
                 warnings_as_errors: self.warnings_as_errors,
-                ..ParseOptions::new(ModuleKind::Library, path).unwrap()
+                ..ParseOptions::new(ModuleKind::Library, path)
             },
         )
     }

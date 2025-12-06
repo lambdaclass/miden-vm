@@ -4,10 +4,10 @@
 use alloc::{boxed::Box, string::String, sync::Arc, vec::Vec};
 
 use miden_assembly_syntax::{
-    Felt, LibraryPath,
-    ast::QualifiedProcedureName,
+    Felt, Path,
+    ast::{SymbolResolutionError, constants::ConstEvalError},
     debuginfo::{SourceFile, SourceSpan},
-    diagnostics::{Diagnostic, RelatedLabel, miette},
+    diagnostics::{Diagnostic, RelatedError, RelatedLabel, miette},
 };
 use miden_core::{FieldElement, utils::to_hex};
 
@@ -21,6 +21,18 @@ pub enum LinkerError {
     #[error("there are no modules to analyze")]
     #[diagnostic()]
     Empty,
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    SymbolResolution(#[from] Box<SymbolResolutionError>),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    ConstEval(#[from] Box<ConstEvalError>),
+    #[error("linking failed")]
+    #[diagnostic(help("see diagnostics for details"))]
+    Related {
+        #[related]
+        errors: Box<[RelatedError]>,
+    },
     #[error("linking failed")]
     #[diagnostic(help("see diagnostics for details"))]
     Failed {
@@ -32,7 +44,7 @@ pub enum LinkerError {
     Cycle { nodes: Box<[String]> },
     #[error("duplicate definition found for module '{path}'")]
     #[diagnostic()]
-    DuplicateModule { path: LibraryPath },
+    DuplicateModule { path: Arc<Path> },
     #[error("undefined module '{path}'")]
     #[diagnostic()]
     UndefinedModule {
@@ -40,7 +52,18 @@ pub enum LinkerError {
         span: SourceSpan,
         #[source_code]
         source_file: Option<Arc<SourceFile>>,
-        path: LibraryPath,
+        path: Arc<Path>,
+    },
+    #[error("undefined item '{path}'")]
+    #[diagnostic(help(
+        "you might be missing an import, or the containing library has not been linked"
+    ))]
+    UndefinedSymbol {
+        #[label]
+        span: SourceSpan,
+        #[source_code]
+        source_file: Option<Arc<SourceFile>>,
+        path: Arc<Path>,
     },
     #[error("invalid syscall: '{callee}' is not an exported kernel procedure")]
     #[diagnostic()]
@@ -49,7 +72,16 @@ pub enum LinkerError {
         span: SourceSpan,
         #[source_code]
         source_file: Option<Arc<SourceFile>>,
-        callee: Box<QualifiedProcedureName>,
+        callee: Arc<Path>,
+    },
+    #[error("invalid procedure reference: path refers to a non-procedure item")]
+    #[diagnostic()]
+    InvalidInvokeTarget {
+        #[label("this path resolves to {path}, which is not a procedure")]
+        span: SourceSpan,
+        #[source_code]
+        source_file: Option<Arc<SourceFile>>,
+        path: Arc<Path>,
     },
     #[error("value for key {} already present in the advice map", to_hex(Felt::elements_as_bytes(.key)))]
     #[diagnostic(help(
@@ -68,4 +100,34 @@ pub enum LinkerError {
         #[source_code]
         source_file: Option<Arc<SourceFile>>,
     },
+    #[error("invalid type reference")]
+    #[diagnostic(help("the item this path resolves to is not a type definition"))]
+    InvalidTypeRef {
+        #[label]
+        span: SourceSpan,
+        #[source_code]
+        source_file: Option<Arc<SourceFile>>,
+    },
+    #[error("invalid constant reference")]
+    #[diagnostic(help("the item this path resolves to is not a constant definition"))]
+    InvalidConstantRef {
+        #[label]
+        span: SourceSpan,
+        #[source_code]
+        source_file: Option<Arc<SourceFile>>,
+    },
+}
+
+impl From<SymbolResolutionError> for LinkerError {
+    #[inline]
+    fn from(value: SymbolResolutionError) -> Self {
+        Self::SymbolResolution(Box::new(value))
+    }
+}
+
+impl From<ConstEvalError> for LinkerError {
+    #[inline]
+    fn from(value: ConstEvalError) -> Self {
+        Self::ConstEval(Box::new(value))
+    }
 }

@@ -114,14 +114,11 @@ pub struct WordValue(pub [Felt; 4]);
 
 impl fmt::Display for WordValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:#08x}{:08x}{:08x}{:08x}",
-            &self.0[0].as_int(),
-            &self.0[1].as_int(),
-            &self.0[2].as_int(),
-            &self.0[3].as_int(),
-        )
+        let mut builder = f.debug_list();
+        for value in self.0 {
+            builder.entry(&value.as_int());
+        }
+        builder.finish()
     }
 }
 
@@ -170,8 +167,9 @@ impl proptest::arbitrary::Arbitrary for WordValue {
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
         use proptest::{array::uniform4, strategy::Strategy};
-        uniform4((0..=crate::FIELD_MODULUS).prop_map(Felt::new))
+        uniform4((0..crate::FIELD_MODULUS).prop_map(Felt::new))
             .prop_map(WordValue)
+            .no_shrink()  // Pure random values, no meaningful shrinking pattern
             .boxed()
     }
 
@@ -252,6 +250,22 @@ impl IntValue {
             Self::U32(value) => *value as u64,
             Self::Felt(value) => value.as_int(),
         }
+    }
+
+    pub fn checked_add(&self, rhs: Self) -> Option<Self> {
+        self.as_int().checked_add(rhs.as_int()).map(super::lexer::shrink_u64_hex)
+    }
+
+    pub fn checked_sub(&self, rhs: Self) -> Option<Self> {
+        self.as_int().checked_sub(rhs.as_int()).map(super::lexer::shrink_u64_hex)
+    }
+
+    pub fn checked_mul(&self, rhs: Self) -> Option<Self> {
+        self.as_int().checked_mul(rhs.as_int()).map(super::lexer::shrink_u64_hex)
+    }
+
+    pub fn checked_div(&self, rhs: Self) -> Option<Self> {
+        self.as_int().checked_div(rhs.as_int()).map(super::lexer::shrink_u64_hex)
     }
 }
 
@@ -382,12 +396,23 @@ impl proptest::arbitrary::Arbitrary for IntValue {
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
         use proptest::{num, prop_oneof, strategy::Strategy};
         prop_oneof![
+            // U8 values - full range
             num::u8::ANY.prop_map(IntValue::U8),
-            ((u8::MAX as u16 + 1)..=u16::MAX).prop_map(IntValue::U16),
-            ((u16::MAX as u32 + 1)..=u32::MAX).prop_map(IntValue::U32),
-            ((u32::MAX as u64 + 1)..=crate::FIELD_MODULUS)
-                .prop_map(|n| IntValue::Felt(Felt::new(n))),
+            // U16 values that don't overlap with U8 to preserve variant during serialization
+            (u8::MAX as u16 + 1..=u16::MAX).prop_map(IntValue::U16),
+            // U32 values - full range
+            num::u32::ANY.prop_map(IntValue::U32),
+            // Felt values - values that don't fit in u32 but are within field modulus
+            (num::u64::ANY)
+                .prop_filter_map("valid felt value", |n| {
+                    if n > u32::MAX as u64 && n < crate::FIELD_MODULUS {
+                        Some(IntValue::Felt(Felt::new(n)))
+                    } else {
+                        None
+                    }
+                }),
         ]
+        .no_shrink()  // Pure random values, no meaningful shrinking pattern
         .boxed()
     }
 
@@ -429,6 +454,7 @@ pub enum Token<'input> {
     AdvPush,
     AdvStack,
     PushMapval,
+    PushMapvalCount,
     PushMapvaln,
     PushMtnode,
     And,
@@ -446,6 +472,7 @@ pub enum Token<'input> {
     Cdropw,
     Clk,
     Const,
+    CryptoStream,
     Cswap,
     Cswapw,
     Debug,
@@ -654,6 +681,7 @@ impl fmt::Display for Token<'_> {
             Token::AdvPipe => write!(f, "adv_pipe"),
             Token::AdvPush => write!(f, "adv_push"),
             Token::PushMapval => write!(f, "push_mapval"),
+            Token::PushMapvalCount => write!(f, "push_mapval_count"),
             Token::PushMapvaln => write!(f, "push_mapvaln"),
             Token::PushMtnode => write!(f, "push_mtnode"),
             Token::And => write!(f, "and"),
@@ -671,6 +699,7 @@ impl fmt::Display for Token<'_> {
             Token::Cdropw => write!(f, "cdropw"),
             Token::Clk => write!(f, "clk"),
             Token::Const => write!(f, "const"),
+            Token::CryptoStream => write!(f, "crypto_stream"),
             Token::Cswap => write!(f, "cswap"),
             Token::Cswapw => write!(f, "cswapw"),
             Token::Debug => write!(f, "debug"),
@@ -885,6 +914,7 @@ impl<'input> Token<'input> {
                 | Token::AdvPush
                 | Token::AdvStack
                 | Token::PushMapval
+                | Token::PushMapvalCount
                 | Token::PushMapvaln
                 | Token::PushMtnode
                 | Token::And
@@ -899,6 +929,7 @@ impl<'input> Token<'input> {
                 | Token::Cdrop
                 | Token::Cdropw
                 | Token::Clk
+                | Token::CryptoStream
                 | Token::Cswap
                 | Token::Cswapw
                 | Token::Debug
@@ -929,6 +960,7 @@ impl<'input> Token<'input> {
                 | Token::Hmerge
                 | Token::HornerBase
                 | Token::HornerExt
+                | Token::LogPrecompile
                 | Token::ILog2
                 | Token::Inv
                 | Token::IsOdd
@@ -1046,6 +1078,8 @@ impl<'input> Token<'input> {
                 | Token::U32
                 | Token::U64
                 | Token::U128
+                | Token::Felt
+                | Token::Word
                 | Token::Struct
         )
     }
@@ -1066,6 +1100,7 @@ impl<'input> Token<'input> {
         ("adv_push", Token::AdvPush),
         ("adv_stack", Token::AdvStack),
         ("push_mapval", Token::PushMapval),
+        ("push_mapval_count", Token::PushMapvalCount),
         ("push_mapvaln", Token::PushMapvaln),
         ("push_mtnode", Token::PushMtnode),
         ("and", Token::And),
@@ -1082,6 +1117,7 @@ impl<'input> Token<'input> {
         ("cdropw", Token::Cdropw),
         ("clk", Token::Clk),
         ("const", Token::Const),
+        ("crypto_stream", Token::CryptoStream),
         ("cswap", Token::Cswap),
         ("cswapw", Token::Cswapw),
         ("debug", Token::Debug),

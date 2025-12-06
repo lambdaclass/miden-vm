@@ -2,8 +2,8 @@ use std::{path::PathBuf, time::Instant};
 
 use clap::Parser;
 use miden_assembly::diagnostics::{Report, WrapErr};
+use miden_core_lib::CoreLibrary;
 use miden_processor::{DefaultHost, ExecutionOptions, ExecutionOptionsError};
-use miden_stdlib::StdLibrary;
 use miden_vm::{HashFunction, ProvingOptions, internal::InputFile};
 
 use super::{
@@ -99,13 +99,12 @@ impl ProveCmd {
 
         let input_data = InputFile::read(&self.input_file, &self.program_file)?;
 
-        let host = DefaultHost::default().with_library(&StdLibrary::default())?;
+        let host = DefaultHost::default().with_library(&CoreLibrary::default())?;
         // Use a single match expression to load the program.
         let (program, mut host) = match ext.as_str() {
             "masp" => (get_masp_program(&self.program_file)?, host),
             "masm" => {
-                let (program, source_manager) =
-                    get_masm_program(&self.program_file, &libraries, true)?;
+                let (program, source_manager) = get_masm_program(&self.program_file, &libraries)?;
                 (program, host.with_source_manager(source_manager))
             },
             _ => return Err(Report::msg("The provided file must have a .masm or .masp extension")),

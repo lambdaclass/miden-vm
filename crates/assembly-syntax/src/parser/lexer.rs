@@ -190,7 +190,7 @@ impl<'input> Lexer<'input> {
     }
 
     #[inline]
-    #[allow(unused)]
+    #[expect(unused)]
     fn peek_next(&mut self) -> char {
         let (_, c) = self.scanner.peek_next();
         c
@@ -509,7 +509,7 @@ impl<'input> Lexer<'input> {
         }
 
         match self.slice() {
-            id @ ("$kernel" | "$exec" | "$anon") => Ok(Token::Ident(id)),
+            id @ ("$kernel" | "$exec") => Ok(Token::Ident(id)),
             _ => {
                 let start = self.span().start();
                 let span = SourceSpan::at(self.span().source_id(), start);

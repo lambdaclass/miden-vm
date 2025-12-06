@@ -3,7 +3,6 @@
 //! This module provides utilities for working with u32-indexed vectors in a type-safe manner,
 //! including the `IndexVec` type and related functionality.
 #![no_std]
-#![allow(clippy::arithmetic_side_effects)]
 
 extern crate alloc;
 
@@ -277,6 +276,16 @@ where
 {
     fn get(&self, id: K) -> Option<&V> {
         BTreeMap::get(self, &id)
+    }
+}
+
+impl<I, T> LookupByIdx<I, T> for DenseIdMap<I, T>
+where
+    I: Idx,
+    T: Idx,
+{
+    fn get(&self, id: I) -> Option<&T> {
+        IndexVec::get(&self.inner, id).and_then(Option::as_ref)
     }
 }
 

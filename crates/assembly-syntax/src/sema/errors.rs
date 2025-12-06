@@ -1,11 +1,13 @@
 // Allow unused assignments - required by miette::Diagnostic derive macro
 #![allow(unused_assignments)]
 
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::fmt;
 
 use miden_debug_types::{SourceFile, SourceSpan};
 use miden_utils_diagnostics::{Diagnostic, miette};
+
+use crate::ast::{SymbolResolutionError, constants::ConstEvalError};
 
 /// The high-level error type for all semantic analysis errors.
 ///
@@ -35,7 +37,7 @@ pub struct SyntaxError {
 #[derive(Debug, thiserror::Error, Diagnostic)]
 #[error("one or more warnings were emitted")]
 #[diagnostic(help("see below for details"))]
-#[cfg_attr(not(feature = "std"), allow(unused))]
+#[cfg_attr(not(feature = "std"), expect(unused))]
 pub struct SyntaxWarning {
     #[source_code]
     pub source_file: Arc<SourceFile>,
@@ -100,12 +102,6 @@ pub enum SemanticAnalysisError {
         #[label("previously defined here")]
         prev_span: SourceSpan,
     },
-    #[error("symbol undefined: no such name found in scope")]
-    #[diagnostic(help("are you missing an import?"))]
-    SymbolUndefined {
-        #[label]
-        span: SourceSpan,
-    },
     #[error("unused import")]
     #[diagnostic(severity(Warning), help("this import is never used and can be safely removed"))]
     UnusedImport {
@@ -148,6 +144,14 @@ pub enum SemanticAnalysisError {
     InvalidSyscallTarget {
         #[label]
         span: SourceSpan,
+    },
+    #[error("invalid procedure path: not an item")]
+    #[diagnostic()]
+    InvalidInvokeTargetViaImport {
+        #[label("call occurs here")]
+        span: SourceSpan,
+        #[label("expected this to resolve to a module, but got a module item")]
+        import: SourceSpan,
     },
     #[error("invalid recursive procedure call")]
     #[diagnostic(help(
@@ -199,25 +203,24 @@ pub enum SemanticAnalysisError {
         #[label]
         span: SourceSpan,
     },
-    #[error("invalid constant")]
-    #[diagnostic(help("this constant does not resolve to a value of the right type"))]
-    InvalidConstant {
-        #[label]
-        span: SourceSpan,
-    },
-    #[error("constant evaluation terminated due to infinite recursion")]
-    #[diagnostic(help("dependencies between constants must form an acyclic graph"))]
-    ConstEvalCycle {
-        #[label("occurs while evaluating this expression")]
-        start: SourceSpan,
-        #[label("cycle occurs because we attempt to eval this constant recursively")]
-        detected: SourceSpan,
-    },
     #[error("advmap key already defined")]
+    #[diagnostic()]
     AdvMapKeyAlreadyDefined {
         #[label]
         span: SourceSpan,
     },
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    ConstEvalError(#[from] ConstEvalError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    SymbolResolutionError(#[from] Box<SymbolResolutionError>),
+}
+
+impl From<SymbolResolutionError> for SemanticAnalysisError {
+    fn from(value: SymbolResolutionError) -> Self {
+        Self::SymbolResolutionError(Box::new(value))
+    }
 }
 
 /// Represents a system limit that was exceeded

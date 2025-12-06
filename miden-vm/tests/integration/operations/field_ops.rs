@@ -187,8 +187,8 @@ fn div_b() {
         test,
         "invalid constant expression: division by zero",
         regex!(r#",-\[test[\d]+:[\d]+:[\d]+\]"#),
-        "11 |",
-        "12 | begin div.0 exec.truncate_stack end",
+        "12 |",
+        "13 | begin div.0 exec.truncate_stack end",
         "   :       ^^^^^",
         "   `----"
     );
@@ -250,8 +250,8 @@ fn neg_fail() {
         test,
         "invalid syntax",
         regex!(r#",-\[test[\d]+:[\d]+:[\d]+\]"#),
-        "11 |",
-        "12 | begin neg.1 exec.truncate_stack end",
+        "12 |",
+        "13 | begin neg.1 exec.truncate_stack end",
         "   :          |",
         "   :          `-- found a . here",
         "   `----",
@@ -293,8 +293,8 @@ fn inv_fail() {
         test,
         "invalid syntax",
         regex!(r#",-\[test[\d]+:[\d]+:[\d]+\]"#),
-        "11 |",
-        "12 | begin inv.1 exec.truncate_stack end",
+        "12 |",
+        "13 | begin inv.1 exec.truncate_stack end",
         "   :          |",
         "   :          `-- found a . here",
         "   `----",
@@ -324,7 +324,7 @@ fn pow2_fail() {
 
     expect_exec_error_matches!(
         test,
-        ExecutionError::FailedAssertion{clk, err_code, err_msg, label: _, source_file: _ }
+        ExecutionError::FailedAssertion{clk, err_code, err_msg, .. }
         if clk == RowIndex::from(21) && err_code == ZERO && err_msg.is_none()
     );
 }
@@ -356,7 +356,7 @@ fn exp_bits_length_fail() {
 
     expect_exec_error_matches!(
         test,
-        ExecutionError::FailedAssertion{clk, err_code, err_msg, label: _, source_file: _ }
+        ExecutionError::FailedAssertion{clk, err_code, err_msg, .. }
         if clk == RowIndex::from(23) && err_code == ZERO && err_msg.is_none()
     );
 
@@ -371,8 +371,8 @@ fn exp_bits_length_fail() {
         test,
         "invalid literal: expected value to be a valid bit size, e.g. 0..63",
         regex!(r#",-\[test[\d]+:[\d]+:[\d]+\]"#),
-        "11 |",
-        "12 | begin exp.u65 exec.truncate_stack end",
+        "12 |",
+        "13 | begin exp.u65 exec.truncate_stack end",
         "   :            ^^",
         "   `----",
         r#" help: expected primitive opcode (e.g. "add"), or "end", or control flow opcode (e.g. "if.true")"#

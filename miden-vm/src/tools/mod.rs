@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use clap::Parser;
 use miden_assembly::diagnostics::Report;
 use miden_core::Program;
+use miden_core_lib::CoreLibrary;
 use miden_processor::{AsmOpInfo, RowIndex, TraceLenSummary};
 use miden_prover::AdviceInputs;
-use miden_stdlib::StdLibrary;
 use miden_vm::{DefaultHost, Operation, StackInputs, SyncHost, internal::InputFile};
 
 use super::cli::data::Libraries;
@@ -46,13 +46,12 @@ impl Analyze {
             .unwrap_or("")
             .to_lowercase();
 
-        let host = DefaultHost::default().with_library(&StdLibrary::default())?;
+        let host = DefaultHost::default().with_library(&CoreLibrary::default())?;
         // Use a single match expression to load the program.
         let (program, host) = match ext.as_str() {
             "masp" => (get_masp_program(&self.program_file)?, host),
             "masm" => {
-                let (program, source_manager) =
-                    get_masm_program(&self.program_file, &libraries, true)?;
+                let (program, source_manager) = get_masm_program(&self.program_file, &libraries)?;
                 (program, host.with_source_manager(source_manager))
             },
             _ => return Err(Report::msg("The provided file must have a .masm or .masp extension")),
@@ -181,7 +180,7 @@ impl ExecutionDetails {
 }
 
 impl fmt::Display for ExecutionDetails {
-    #[allow(clippy::write_literal)]
+    #[expect(clippy::write_literal)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // calculate the percentage of padded rows
         let padding_percentage = (self.trace_len_summary().padded_trace_len()
@@ -372,11 +371,11 @@ mod tests {
 
     #[test]
     fn analyze_test() {
-        let source = "proc.foo.1 loc_store.0 end begin mem_storew_be.4 dropw push.17 push.1 movdn.2 exec.foo drop end";
+        let source = "@locals(1) proc foo loc_store.0 end begin mem_storew_be.4 dropw push.17 push.1 movdn.2 exec.foo drop end";
         let stack_inputs = StackInputs::default();
         let advice_inputs = AdviceInputs::default();
         let host = DefaultHost::default();
-        let program = Assembler::default().with_debug_mode(true).assemble_program(source).unwrap();
+        let program = Assembler::default().assemble_program(source).unwrap();
         let execution_details = super::analyze(&program, stack_inputs, advice_inputs, host);
         let expected_details = ExecutionDetails {
             total_noops: 0,

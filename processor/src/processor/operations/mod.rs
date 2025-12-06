@@ -15,6 +15,11 @@ mod stack_ops;
 mod sys_ops;
 mod u32_ops;
 
+/// WORD_SIZE, but as a `Felt`.
+const WORD_SIZE_FELT: Felt = Felt::new(4);
+/// The size of a double-word.
+const DOUBLE_WORD_SIZE: Felt = Felt::new(8);
+
 /// Executes the provided synchronous operation.
 ///
 /// This excludes `Emit`, which must be executed asynchronously, as well as control flow
@@ -74,7 +79,7 @@ pub(super) fn execute_sync_op(
         Operation::Or => field_ops::op_or(processor, err_ctx, tracer)?,
         Operation::Not => field_ops::op_not(processor, err_ctx)?,
         Operation::Eq => {
-            let eq_helpers = field_ops::op_eq(processor, tracer);
+            let eq_helpers = field_ops::op_eq(processor, tracer)?;
             user_op_helpers = Some(eq_helpers);
         },
         Operation::Eqz => {
@@ -206,6 +211,7 @@ pub(super) fn execute_sync_op(
             let log_precompile_helpers = crypto_ops::op_log_precompile(processor, tracer);
             user_op_helpers = Some(log_precompile_helpers);
         },
+        Operation::CryptoStream => crypto_ops::op_crypto_stream(processor, err_ctx, tracer)?,
     }
 
     Ok(user_op_helpers)
