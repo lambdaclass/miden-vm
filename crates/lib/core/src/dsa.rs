@@ -130,7 +130,7 @@ pub mod falcon512_rpo {
     use alloc::vec::Vec;
 
     // Re-export signature type for users
-    pub use miden_core::crypto::dsa::falcon512_rpo::Signature;
+    pub use miden_core::crypto::dsa::falcon512_rpo::{SecretKey, Signature};
     use miden_core::{
         Felt, Word,
         crypto::{dsa::falcon512_rpo::Polynomial, hash::Rpo256},
@@ -143,31 +143,9 @@ pub mod falcon512_rpo {
     /// This is equivalent to calling [`encode_signature`] on the result of signing the message.
     ///
     /// See [`encode_signature`] for the encoding format.
-    #[cfg(feature = "std")]
-    pub fn sign(sk: &[Felt], msg: Word) -> Option<Vec<Felt>> {
-        use miden_core::{crypto::dsa::falcon512_rpo::SecretKey, utils::Deserializable};
-
-        // Create the corresponding secret key
-        let mut sk_bytes = Vec::with_capacity(sk.len());
-        for element in sk {
-            let value = element.as_int();
-            if value > u8::MAX as u64 {
-                return None;
-            }
-            sk_bytes.push(value as u8);
-        }
-
-        let sk = SecretKey::read_from_bytes(&sk_bytes).ok()?;
-
-        // We can now generate the signature
+    pub fn sign(sk: &SecretKey, msg: Word) -> Option<Vec<Felt>> {
         let sig = sk.sign(msg);
-
         Some(encode_signature(&sig))
-    }
-
-    #[cfg(not(feature = "std"))]
-    pub fn sign(_pk_sk: &[Felt], _msg: Word) -> Option<Vec<Felt>> {
-        None
     }
 
     /// Encodes the provided Falcon signature into a vector of field elements in the format

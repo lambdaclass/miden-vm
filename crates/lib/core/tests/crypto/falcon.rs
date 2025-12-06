@@ -5,8 +5,9 @@ use miden_assembly::{Assembler, utils::Serializable};
 use miden_core::{
     EventName, StarkField, ZERO,
     crypto::dsa::falcon512_rpo::{Polynomial, SecretKey},
+    utils::Deserializable,
 };
-use miden_core_lib::{CoreLibrary, dsa::falcon512_rpo::sign as falcon_sign};
+use miden_core_lib::{CoreLibrary, dsa::falcon512_rpo};
 use miden_processor::{
     AdviceInputs, AdviceMutation, DefaultHost, EventError, ExecutionError, ProcessState, Program,
     ProgramInfo, StackInputs, crypto::RpoRandomCoin,
@@ -63,12 +64,22 @@ pub fn push_falcon_signature(process: &ProcessState) -> Result<Vec<AdviceMutatio
     let pub_key = process.get_stack_word_be(1);
     let msg = process.get_stack_word_be(5);
 
-    let pk_sk = process
+    let sk = process
         .advice_provider()
         .get_mapped_values(&pub_key)
         .ok_or(FalconError::NoSecretKey { key: pub_key })?;
 
-    let signature_result = falcon_sign(pk_sk, msg)
+    // Create the corresponding secret key
+    let mut sk_bytes = Vec::with_capacity(sk.len());
+    for element in sk {
+        let value = element.as_int();
+        assert!(value <= u8::MAX as u64, "invalid secret key");
+        sk_bytes.push(value as u8);
+    }
+
+    let sk = SecretKey::read_from_bytes(&sk_bytes).expect("invalid secrete key");
+
+    let signature_result = falcon512_rpo::sign(&sk, msg)
         .ok_or(FalconError::MalformedSignatureKey { key_type: "RPO Falcon512" })?;
 
     Ok(vec![AdviceMutation::extend_stack(signature_result)])
@@ -228,12 +239,10 @@ fn test_move_sig_to_adv_stack() {
     ";
 
     let public_key = secret_key.public_key().to_commitment();
-    let secret_key_bytes = secret_key.to_bytes();
 
     let advice_map: Vec<(Word, Vec<Felt>)> = {
         let sig_key = Rpo256::merge(&[message, public_key]);
-        let sk_felts = secret_key_bytes.iter().map(|a| Felt::new(*a as u64)).collect::<Vec<Felt>>();
-        let signature = falcon_sign(&sk_felts, message).expect("failed to sign message");
+        let signature = falcon512_rpo::sign(&secret_key, message).expect("failed to sign message");
 
         vec![(sig_key, signature.iter().rev().cloned().collect())]
     };
