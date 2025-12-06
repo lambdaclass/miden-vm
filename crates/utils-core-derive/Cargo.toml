@@ -5,7 +5,6 @@ description = "Proc macro to derive enum dispatch trait implementations on miden
 readme = "README.md"
 categories = ["development-tools::procedural-macro-helpers", "no-std"]
 keywords = ["enum", "proc-macro", "derive", "enum_dispatch"]
-publish = false
 license.workspace = true
 authors.workspace = true
 homepage.workspace = true
