@@ -55,7 +55,7 @@ fn test_eddsa_verify_prehash_cases() {
                 {memory_stores}
 
                 push.{SIG_ADDR}.{K_DIGEST_ADDR}.{PK_ADDR}
-                exec.eddsa_ed25519::verify_with_unchecked_k_digest
+                exec.eddsa_ed25519::verify_prehash
 
                 exec.sys::truncate_stack
             end
@@ -83,7 +83,7 @@ fn test_eddsa_verify_prehash_cases() {
                 {memory_stores}
 
                 push.{SIG_ADDR}.{K_DIGEST_ADDR}.{PK_ADDR}
-                exec.eddsa_ed25519::verify_with_unchecked_k_digest
+                exec.eddsa_ed25519::verify_prehash
 
                 exec.sys::truncate_stack
             end
@@ -122,7 +122,7 @@ fn test_eddsa_verify_prehash_impl_commitment() {
                 {memory_stores}
 
                 push.{SIG_ADDR}.{K_DIGEST_ADDR}.{PK_ADDR}
-                exec.eddsa_ed25519::verify_with_unchecked_k_digest_impl
+                exec.eddsa_ed25519::verify_prehash_impl
 
                 exec.sys::truncate_stack
             end
@@ -150,7 +150,7 @@ fn test_eddsa_verify_prehash_impl_commitment() {
 
         assert!(
             output.advice_provider().stack().is_empty(),
-            "advice stack should be empty after verify_with_unchecked_k_digest_impl"
+            "advice stack should be empty after verify_prehash_impl"
         );
     }
 }

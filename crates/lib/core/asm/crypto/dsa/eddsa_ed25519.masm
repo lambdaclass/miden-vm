@@ -110,7 +110,7 @@ pub proc verify
     locaddr.16  # sig_ptr
     locaddr.56  # k_digest_ptr
     locaddr.0   # pk_ptr
-    exec.verify_with_unchecked_k_digest
+    exec.verify_prehash
     # => [result, ...]
 
     # Trap if verification failed
@@ -119,6 +119,9 @@ pub proc verify
 end
 
 #! Verifies an EdDSA (Ed25519) signature with a pre-computed nonce digest.
+#!
+#! This procedure is intended for manual signature verification where the caller
+#! has already computed the message digest.
 #!
 #! This procedure uses deferred verification via a precompile. The actual cryptographic
 #! verification is performed by the host, and the result is provided via the advice stack.
@@ -134,8 +137,8 @@ end
 #!
 #! All data must be stored in memory as packed u32 field elements (little-endian), with unused limbs
 #! in the final word set to zero.
-pub proc verify_with_unchecked_k_digest
-    exec.verify_with_unchecked_k_digest_impl
+pub proc verify_prehash
+    exec.verify_prehash_impl
     # => [COMM, TAG, result, ...]
 
     # Log the precompile request for deferred verification.
@@ -218,7 +221,7 @@ end
 #! - `COMM`: `Rpo256(Rpo256(Rpo256(pk) || Rpo256(k_digest)) || Rpo256(sig))`
 #! - `TAG`:  `[EDDSA_VERIFY_EVENT, result, 0, 0]`
 #! - `result`: host verification result (1 or 0)
-pub proc verify_with_unchecked_k_digest_impl
+pub proc verify_prehash_impl
     emit.EDDSA_VERIFY_EVENT
     # => [pk_ptr, k_digest_ptr, sig_ptr, ...]
 
