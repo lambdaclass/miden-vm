@@ -1,6 +1,3 @@
-// Allow unused assignments - required by miette::Diagnostic derive macro
-#![allow(unused_assignments)]
-
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::fmt;
 
