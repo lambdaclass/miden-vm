@@ -11,9 +11,9 @@
 - Added new `memcopy_elements` procedure for the `std::mem` module ([#2352](https://github.com/0xMiden/miden-vm/pull/2352)).
 - Added new `peek` procedure for the `std::collections::smt` module ([#2387](https://github.com/0xMiden/miden-vm/pull/2387)).
 - Added new `pad_and_hash_elements` procedure to the `std::crypto::hashes::rpo` module ([#2395](https://github.com/0xMiden/miden-vm/pull/2395)).
-- Add padding option for the `adv.push_mapvaln` instruction ([#2398](https://github.com/0xMiden/miden-vm/pull/2398)).
+- Added padding option for the `adv.push_mapvaln` instruction ([#2398](https://github.com/0xMiden/miden-vm/pull/2398)).
 - Added missing modules to libcore documentation ([#2416](https://github.com/0xMiden/miden-vm/pull/2416)).
-- Implemented link-time const evaluation; simplified linker implementation and improved consistency of symbol resolution and associated errors ([#2370](https://github.com/0xMiden/miden-vm/pull/2370))
+- Implemented link-time const evaluation; simplified linker implementation and improved consistency of symbol resolution and associated errors ([#2370](https://github.com/0xMiden/miden-vm/pull/2370)).
 
 #### Changes
 
@@ -33,15 +33,16 @@
 - Consolidate debug information into `DebugInfo` struct ([#2366](https://github.com/0xMiden/miden-vm/issues/2366)).
 - Wrapped `hperm` instruction in `rpo::permute` procedure ([#2392](https://github.com/0xMiden/miden-vm/pull/2392)).
 - `hash_memory_with_state`, `hash_memory_words`, and `hash_memory_double_words` procedures from the `std::crypto::hashes::rpo` module were renamed to the `hash_elements_with_state`, `hash_words`, and `hash_double_words` respectively ([#2395](https://github.com/0xMiden/miden-vm/pull/2395)).
-- [BREAKING] Updgrade `miden-crypto` to 0.19 ([#2399](https://github.com/0xMiden/miden-vm/pull/2399)).
+- [BREAKING] Upgraded `miden-crypto` to 0.19 ([#2399](https://github.com/0xMiden/miden-vm/pull/2399)).
 - Pre-allocate main trace buffer in trace generation ([#2345](https://github.com/0xMiden/miden-vm/pull/2345)).
-- Rename the MASM standard library to "miden::core", the crate to `miden-core-lib`, and various other MASM module refactors ([#2260](https://github.com/0xMiden/miden-vm/issues/2260)) ([#2427](https://github.com/0xMiden/miden-vm/pull/2427)).
-- Add a compaction function for achieving maximal sharing out of a `MastForest` with stripped decorators ([#2408](https://github.com/0xMiden/miden-vm/pull/2408)).
-- Refactor and remove tech debt from parallel trace generation ([#2382](https://github.com/0xMiden/miden-vm/pull/2382))
+- Renamed the MASM standard library to "miden::core", the crate to `miden-core-lib`, and various other MASM module refactors ([#2260](https://github.com/0xMiden/miden-vm/issues/2260)) ([#2427](https://github.com/0xMiden/miden-vm/pull/2427)).
+- Added a compaction function for achieving maximal sharing out of a `MastForest` with stripped decorators ([#2408](https://github.com/0xMiden/miden-vm/pull/2408)).
+- Refactored and remove tech debt from parallel trace generation ([#2382](https://github.com/0xMiden/miden-vm/pull/2382))
 - [BREAKING] Added `kind` field to `Package` struct to indicate package type (Executable, AccountComponent, NoteScript, TxScript, AuthComponent) ([#2403](https://github.com/0xMiden/miden-vm/pull/2403)).
-- [BREAKING] Make the Assembler work in debug mode, remove optionality ([#2396](https://github.com/0xMiden/miden-vm/pull/2396)).
-- [BREAKING] Normalize naming of `verify` procedures of ECDSA precompile ([#2413](https://github.com/0xMiden/miden-vm/issues/2413)).
-- refactor Blake3_256 fingerprints to allocate less ([#2375](https://github.com/0xMiden/miden-vm/pull/2375)).
+- [BREAKING] Made the Assembler work in debug mode, remove optionality ([#2396](https://github.com/0xMiden/miden-vm/pull/2396)).
+- [BREAKING] Normalized naming of `verify` procedures of ECDSA precompile ([#2413](https://github.com/0xMiden/miden-vm/issues/2413)).
+- Refactored Blake3_256 fingerprints to allocate less ([#2375](https://github.com/0xMiden/miden-vm/pull/2375)).
+- [BREAKING] Normalized signature encoding methods in the `dsa` module of the core library.
 
 ## 0.19.1 (2025-11-6)
 

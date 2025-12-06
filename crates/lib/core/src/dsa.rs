@@ -20,8 +20,8 @@ pub mod ecdsa_k256_keccak {
 
     use alloc::vec::Vec;
 
-    use miden_core::{Felt, utils::Serializable};
-    use miden_crypto::dsa::ecdsa_k256_keccak::{PublicKey, PublicKeyError, SecretKey, Signature};
+    use miden_core::{Felt, Word, utils::Serializable};
+    use miden_crypto::dsa::ecdsa_k256_keccak::{PublicKey, SecretKey, Signature};
 
     use crate::handlers::bytes_to_packed_u32_felts;
 
@@ -30,26 +30,10 @@ pub mod ecdsa_k256_keccak {
     /// `miden::core::crypto::dsa::ecdsa_k256_keccak::verify` procedure.
     ///
     /// See [`encode_signature()`] for more info.
-    pub fn sign(sk: &SecretKey, msg: miden_core::Word) -> Vec<Felt> {
+    pub fn sign(sk: &SecretKey, msg: Word) -> Vec<Felt> {
         let pk = sk.public_key();
         let sig = sk.sign(msg);
         encode_signature(&pk, &sig)
-    }
-
-    /// Infers the public key from the provided signature and message, and encodes this public key
-    /// and signature into a vector of field elements in the format expected by
-    /// `miden::core::crypto::dsa::ecdsa_k256_keccak::verify` procedure.
-    ///
-    /// See [`encode_signature()`] for more info.
-    ///
-    /// # Errors
-    /// Returns an error if key recovery from signature and message fails.
-    pub fn prepare_signature(
-        msg: miden_core::Word,
-        sig: &Signature,
-    ) -> Result<Vec<Felt>, PublicKeyError> {
-        let pk = PublicKey::recover_from(msg, sig)?;
-        Ok(encode_signature(&pk, sig))
     }
 
     /// Encodes the provided public key and signature into a vector of field elements in the format
@@ -82,7 +66,7 @@ pub mod eddsa_ed25519 {
 
     use alloc::vec::Vec;
 
-    use miden_core::{Felt, utils::Serializable};
+    use miden_core::{Felt, Word, utils::Serializable};
     use miden_crypto::dsa::eddsa_25519_sha512::{PublicKey, SecretKey, Signature};
 
     use crate::handlers::bytes_to_packed_u32_felts;
@@ -92,7 +76,7 @@ pub mod eddsa_ed25519 {
     /// `miden::core::crypto::dsa::eddsa_ed25519::verify` procedure.
     ///
     /// See [`encode_signature()`] for more info.
-    pub fn sign(sk: &SecretKey, msg: miden_core::Word) -> Vec<Felt> {
+    pub fn sign(sk: &SecretKey, msg: Word) -> Vec<Felt> {
         let pk = sk.public_key();
         let sig = sk.sign(msg);
         encode_signature(&pk, &sig)
@@ -130,7 +114,7 @@ pub mod falcon512_rpo {
     use alloc::vec::Vec;
 
     // Re-export signature type for users
-    pub use miden_core::crypto::dsa::falcon512_rpo::{SecretKey, Signature};
+    pub use miden_core::crypto::dsa::falcon512_rpo::{PublicKey, SecretKey, Signature};
     use miden_core::{
         Felt, Word,
         crypto::{dsa::falcon512_rpo::Polynomial, hash::Rpo256},
@@ -145,11 +129,11 @@ pub mod falcon512_rpo {
     /// See [`encode_signature`] for the encoding format.
     pub fn sign(sk: &SecretKey, msg: Word) -> Option<Vec<Felt>> {
         let sig = sk.sign(msg);
-        Some(encode_signature(&sig))
+        Some(encode_signature(sig.public_key(), &sig))
     }
 
-    /// Encodes the provided Falcon signature into a vector of field elements in the format
-    /// expected by `miden::core::crypto::dsa::falcon512rpo::verify` procedure.
+    /// Encodes the provided Falcon public key and signature into a vector of field elements in the
+    /// format expected by `miden::core::crypto::dsa::falcon512rpo::verify` procedure.
     ///
     /// The encoding format is (in reverse order on the advice stack):
     ///
@@ -164,7 +148,7 @@ pub mod falcon512_rpo {
     ///
     /// The result can be streamed straight to the advice provider before invoking
     /// `falcon512rpo::verify`.
-    pub fn encode_signature(sig: &Signature) -> Vec<Felt> {
+    pub fn encode_signature(pk: &PublicKey, sig: &Signature) -> Vec<Felt> {
         use alloc::vec;
 
         // The signature is composed of a nonce and a polynomial s2
@@ -175,23 +159,18 @@ pub mod falcon512_rpo {
         // We convert the signature to a polynomial
         let s2 = sig.sig_poly();
 
-        // We also need in the VM the expanded key corresponding to the public key that was
-        // provided via the operand stack
-        let h = sig.public_key();
-
         // Lastly, for the probabilistic product routine that is part of the verification
         // procedure, we need to compute the product of the expanded key and the signature
         // polynomial in the ring of polynomials with coefficients in the Miden field.
-        let pi = Polynomial::mul_modulo_p(h, s2);
+        let pi = Polynomial::mul_modulo_p(pk, s2);
 
         // We now push the expanded key, the signature polynomial, and the product of the
         // expanded key and the signature polynomial to the advice stack. We also push
         // the challenge point at which the previous polynomials will be evaluated.
         // Finally, we push the nonce needed for the hash-to-point algorithm.
 
-        let mut polynomials: Vec<Felt> =
-            h.coefficients.iter().map(|a| Felt::from(a.value() as u32)).collect();
-        polynomials.extend(s2.coefficients.iter().map(|a| Felt::from(a.value() as u32)));
+        let mut polynomials = pk.to_elements();
+        polynomials.extend(s2.to_elements());
         polynomials.extend(pi.iter().map(|a| Felt::new(*a)));
 
         let digest_polynomials = Rpo256::hash_elements(&polynomials);
