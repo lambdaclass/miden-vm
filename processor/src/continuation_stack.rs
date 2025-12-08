@@ -22,17 +22,42 @@ pub enum Continuation {
     FinishSplit(MastNodeId),
     /// Process the finish phase of a Loop node.
     FinishLoop(MastNodeId),
+    /// Process the finish phase of a Loop node that was never entered.
+    FinishLoopUnentered(MastNodeId),
     /// Process the finish phase of a Call node.
     FinishCall(MastNodeId),
     /// Process the finish phase of a Dyn node.
     FinishDyn(MastNodeId),
     /// Process the finish phase of an External node (execute after_exit decorators).
     FinishExternal(MastNodeId),
+    /// Resume execution at the specified operation of the specified batch in the given basic block
+    /// node.
+    ResumeBasicBlock {
+        node_id: MastNodeId,
+        batch_index: usize,
+        op_idx_in_batch: usize,
+    },
+    /// Resume execution at the RESPAN operation before the specific batch within a basic block
+    /// node.
+    Respan { node_id: MastNodeId, batch_index: usize },
+    /// Process the finish phase of a basic block node.
+    ///
+    /// This corresponds to incrementing the clock to account for the inserted END operation, and
+    /// then executing `AfterExitDecoratorsBasicBlock`.
+    FinishBasicBlock(MastNodeId),
     /// Enter a new MAST forest, where all subsequent `MastNodeId`s will be relative to this forest.
     ///
     /// When we encounter an `ExternalNode`, we enter the corresponding MAST forest directly, and
     /// push an `EnterForest` continuation to restore the previous forest when done.
     EnterForest(Arc<MastForest>),
+    /// Process the `after_exit` decorators of the given node.
+    AfterExitDecorators(MastNodeId),
+    /// Process the `after_exit` decorators of the basic block node.
+    ///
+    /// Similar to `AfterExitDecorators`, but also executes all operation-level decorators that
+    /// refer to after the last operation in the basic block. See [`BasicBlockNode`] for more
+    /// details.
+    AfterExitDecoratorsBasicBlock(MastNodeId),
 }
 
 /// [ContinuationStack] reifies the call stack used by the processor when executing a program made

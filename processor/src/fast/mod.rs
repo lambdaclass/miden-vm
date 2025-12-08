@@ -373,10 +373,9 @@ impl FastProcessor {
 
                     match node {
                         MastNode::Block(basic_block_node) => {
-                            self.execute_basic_block_node(
+                            self.execute_basic_block_node_from_start(
                                 basic_block_node,
                                 node_id,
-                                &current_forest,
                                 host,
                                 continuation_stack,
                                 &current_forest,
@@ -460,6 +459,13 @@ impl FastProcessor {
                     host,
                     tracer,
                 )?,
+                Continuation::FinishLoopUnentered(node_id) => self.finish_loop_node_unentered(
+                    node_id,
+                    &current_forest,
+                    continuation_stack,
+                    host,
+                    tracer,
+                )?,
                 Continuation::FinishCall(node_id) => self.finish_call_node(
                     node_id,
                     &current_forest,
@@ -479,9 +485,67 @@ impl FastProcessor {
                     // Note: current_forest should already be restored by EnterForest continuation
                     self.execute_after_exit_decorators(node_id, &current_forest, host)?;
                 },
+                Continuation::ResumeBasicBlock { node_id, batch_index, op_idx_in_batch } => {
+                    let basic_block_node =
+                        current_forest.get_node_by_id(node_id).unwrap().unwrap_basic_block();
+                    self.execute_basic_block_node_from_op_idx(
+                        basic_block_node,
+                        node_id,
+                        batch_index,
+                        op_idx_in_batch,
+                        host,
+                        continuation_stack,
+                        &current_forest,
+                        tracer,
+                    )
+                    .await?
+                },
+                Continuation::Respan { node_id, batch_index } => {
+                    let basic_block_node =
+                        current_forest.get_node_by_id(node_id).unwrap().unwrap_basic_block();
+
+                    self.execute_basic_block_node_from_batch(
+                        basic_block_node,
+                        node_id,
+                        batch_index,
+                        host,
+                        continuation_stack,
+                        &current_forest,
+                        tracer,
+                    )
+                    .await?
+                },
+                Continuation::FinishBasicBlock(node_id) => {
+                    let basic_block_node =
+                        current_forest.get_node_by_id(node_id).unwrap().unwrap_basic_block();
+
+                    self.finish_basic_block(
+                        basic_block_node,
+                        node_id,
+                        &current_forest,
+                        host,
+                        continuation_stack,
+                        tracer,
+                    )?
+                },
                 Continuation::EnterForest(previous_forest) => {
                     // Restore the previous forest
                     current_forest = previous_forest;
+                },
+                Continuation::AfterExitDecorators(node_id) => {
+                    self.execute_after_exit_decorators(node_id, &current_forest, host)?
+                },
+                Continuation::AfterExitDecoratorsBasicBlock(node_id) => {
+                    let basic_block_node =
+                        current_forest.get_node_by_id(node_id).unwrap().unwrap_basic_block();
+
+                    self.execute_end_of_block_decorators(
+                        basic_block_node,
+                        node_id,
+                        &current_forest,
+                        host,
+                    )?;
+                    self.execute_after_exit_decorators(node_id, &current_forest, host)?
                 },
             }
         }

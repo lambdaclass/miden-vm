@@ -56,18 +56,13 @@ impl FastProcessor {
             // Increment the clock, corresponding to the LOOP operation
             self.increment_clk(tracer);
 
-            tracer.start_clock_cycle(
-                self,
-                NodeExecutionState::End(current_node_id),
-                continuation_stack,
+            self.finish_loop_node_unentered(
+                current_node_id,
                 current_forest,
-            );
-
-            // Increment the clock, corresponding to the END operation added to the trace.
-            self.increment_clk(tracer);
-
-            // Execute decorators that should be executed after exiting the node
-            self.execute_after_exit_decorators(current_node_id, current_forest, host)?;
+                continuation_stack,
+                host,
+                tracer,
+            )?;
         } else {
             let err_ctx = err_ctx!(current_forest, current_node_id, host);
             return Err(ExecutionError::not_binary_value_loop(condition, &err_ctx));
@@ -124,6 +119,35 @@ impl FastProcessor {
             let err_ctx = err_ctx!(current_forest, current_node_id, host);
             return Err(ExecutionError::not_binary_value_loop(condition, &err_ctx));
         }
+        Ok(())
+    }
+
+    /// Executes the finish phase of a Loop node that was never entered.
+    ///
+    /// This corresponds to simply executing the after_exit decorators and incrementing the clock,
+    /// corresponding to the END operation added to the trace.
+    #[inline(always)]
+    pub(super) fn finish_loop_node_unentered(
+        &mut self,
+        current_node_id: MastNodeId,
+        current_forest: &Arc<MastForest>,
+        continuation_stack: &mut ContinuationStack,
+        host: &mut impl AsyncHost,
+        tracer: &mut impl Tracer,
+    ) -> Result<(), ExecutionError> {
+        tracer.start_clock_cycle(
+            self,
+            NodeExecutionState::End(current_node_id),
+            continuation_stack,
+            current_forest,
+        );
+
+        // Execute decorators that should be executed after exiting the node
+        self.execute_after_exit_decorators(current_node_id, current_forest, host)?;
+
+        // Increment the clock, corresponding to the END operation added to the trace.
+        self.increment_clk(tracer);
+
         Ok(())
     }
 }
