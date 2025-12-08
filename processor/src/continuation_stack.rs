@@ -83,6 +83,11 @@ impl ContinuationStack {
         Self { stack }
     }
 
+    /// Pushes a continuation onto the continuation stack.
+    pub fn push_continuation(&mut self, continuation: Continuation) {
+        self.stack.push(continuation);
+    }
+
     /// Pushes a continuation to enter the given MAST forest on the continuation stack.
     ///
     /// # Arguments
