@@ -1,7 +1,7 @@
 use alloc::{sync::Arc, vec::Vec};
 
 use miden_core::{
-    FMP_ADDR, FMP_INIT_VALUE, Program, ZERO,
+    FMP_ADDR, FMP_INIT_VALUE, Kernel, ZERO,
     mast::{CallNode, MastForest, MastNodeExt, MastNodeId},
     stack::MIN_STACK_DEPTH,
     utils::range,
@@ -24,7 +24,7 @@ impl FastProcessor {
         &mut self,
         call_node: &CallNode,
         current_node_id: MastNodeId,
-        program: &Program,
+        kernel: &Kernel,
         current_forest: &Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
         host: &mut impl AsyncHost,
@@ -48,7 +48,7 @@ impl FastProcessor {
 
         if call_node.is_syscall() {
             // check if the callee is in the kernel
-            if !program.kernel().contains_proc(callee_hash) {
+            if !kernel.contains_proc(callee_hash) {
                 return Err(ExecutionError::syscall_target_not_in_kernel(callee_hash, &err_ctx));
             }
             tracer.record_kernel_proc_access(callee_hash);

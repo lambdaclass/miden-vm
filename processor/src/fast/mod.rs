@@ -4,7 +4,7 @@ use core::cmp::min;
 use memory::Memory;
 use miden_air::{Felt, RowIndex};
 use miden_core::{
-    Decorator, EMPTY_WORD, Program, StackOutputs, WORD_SIZE, Word, ZERO,
+    Decorator, EMPTY_WORD, Kernel, Program, StackOutputs, WORD_SIZE, Word, ZERO,
     mast::{MastForest, MastNode, MastNodeExt, MastNodeId},
     precompile::PrecompileTranscript,
     stack::MIN_STACK_DEPTH,
@@ -333,7 +333,17 @@ impl FastProcessor {
         host: &mut impl AsyncHost,
         tracer: &mut impl Tracer,
     ) -> Result<ExecutionOutput, ExecutionError> {
-        let stack_outputs = self.execute_impl(program, host, tracer).await?;
+        let mut continuation_stack = ContinuationStack::new(program);
+        let current_forest = program.mast_forest().clone();
+
+        // Merge the program's advice map into the advice provider
+        self.advice
+            .extend_map(current_forest.advice_map())
+            .map_err(|err| ExecutionError::advice_error(err, self.clk, &()))?;
+
+        let stack_outputs = self
+            .execute_impl(&mut continuation_stack, current_forest, program.kernel(), host, tracer)
+            .await?;
 
         Ok(ExecutionOutput {
             stack: stack_outputs,
@@ -350,18 +360,12 @@ impl FastProcessor {
     /// second program using the same processor. This is mainly meant to be used in tests.
     async fn execute_impl(
         &mut self,
-        program: &Program,
+        continuation_stack: &mut ContinuationStack,
+        mut current_forest: Arc<MastForest>,
+        kernel: &Kernel,
         host: &mut impl AsyncHost,
         tracer: &mut impl Tracer,
     ) -> Result<StackOutputs, ExecutionError> {
-        let mut continuation_stack = ContinuationStack::new(program);
-        let mut current_forest = program.mast_forest().clone();
-
-        // Merge the program's advice map into the advice provider
-        self.advice
-            .extend_map(current_forest.advice_map())
-            .map_err(|err| ExecutionError::advice_error(err, self.clk, &()))?;
-
         while let Some(continuation) = continuation_stack.pop_continuation() {
             match continuation {
                 Continuation::StartNode(node_id) => {
@@ -374,7 +378,7 @@ impl FastProcessor {
                                 node_id,
                                 &current_forest,
                                 host,
-                                &mut continuation_stack,
+                                continuation_stack,
                                 &current_forest,
                                 tracer,
                             )
@@ -384,7 +388,7 @@ impl FastProcessor {
                             join_node,
                             node_id,
                             &current_forest,
-                            &mut continuation_stack,
+                            continuation_stack,
                             host,
                             tracer,
                         )?,
@@ -392,7 +396,7 @@ impl FastProcessor {
                             split_node,
                             node_id,
                             &current_forest,
-                            &mut continuation_stack,
+                            continuation_stack,
                             host,
                             tracer,
                         )?,
@@ -400,16 +404,16 @@ impl FastProcessor {
                             loop_node,
                             node_id,
                             &current_forest,
-                            &mut continuation_stack,
+                            continuation_stack,
                             host,
                             tracer,
                         )?,
                         MastNode::Call(call_node) => self.start_call_node(
                             call_node,
                             node_id,
-                            program,
+                            kernel,
                             &current_forest,
-                            &mut continuation_stack,
+                            continuation_stack,
                             host,
                             tracer,
                         )?,
@@ -417,7 +421,7 @@ impl FastProcessor {
                             self.start_dyn_node(
                                 node_id,
                                 &mut current_forest,
-                                &mut continuation_stack,
+                                continuation_stack,
                                 host,
                                 tracer,
                             )
@@ -427,7 +431,7 @@ impl FastProcessor {
                             self.execute_external_node(
                                 node_id,
                                 &mut current_forest,
-                                &mut continuation_stack,
+                                continuation_stack,
                                 host,
                                 tracer,
                             )
@@ -438,35 +442,35 @@ impl FastProcessor {
                 Continuation::FinishJoin(node_id) => self.finish_join_node(
                     node_id,
                     &current_forest,
-                    &mut continuation_stack,
+                    continuation_stack,
                     host,
                     tracer,
                 )?,
                 Continuation::FinishSplit(node_id) => self.finish_split_node(
                     node_id,
                     &current_forest,
-                    &mut continuation_stack,
+                    continuation_stack,
                     host,
                     tracer,
                 )?,
                 Continuation::FinishLoop(node_id) => self.finish_loop_node(
                     node_id,
                     &current_forest,
-                    &mut continuation_stack,
+                    continuation_stack,
                     host,
                     tracer,
                 )?,
                 Continuation::FinishCall(node_id) => self.finish_call_node(
                     node_id,
                     &current_forest,
-                    &mut continuation_stack,
+                    continuation_stack,
                     host,
                     tracer,
                 )?,
                 Continuation::FinishDyn(node_id) => self.finish_dyn_node(
                     node_id,
                     &current_forest,
-                    &mut continuation_stack,
+                    continuation_stack,
                     host,
                     tracer,
                 )?,
@@ -705,8 +709,21 @@ impl FastProcessor {
     ) -> Result<StackOutputs, ExecutionError> {
         // Create a new Tokio runtime and block on the async execution
         let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
+        let mut continuation_stack = ContinuationStack::new(program);
+        let current_forest = program.mast_forest().clone();
 
-        rt.block_on(self.execute_impl(program, host, &mut NoopTracer))
+        // Merge the program's advice map into the advice provider
+        self.advice
+            .extend_map(current_forest.advice_map())
+            .map_err(|err| ExecutionError::advice_error(err, self.clk, &()))?;
+
+        rt.block_on(self.execute_impl(
+            &mut continuation_stack,
+            current_forest,
+            program.kernel(),
+            host,
+            &mut NoopTracer,
+        ))
     }
 }
 
