@@ -21,7 +21,6 @@ impl FastProcessor {
     /// # Arguments
     /// * `node_id` - The ID of this basic block node in the `current_forest` MAST forest. This
     ///   should match the ID in `basic_block_node.decorators` when it's `Linked`.
-    #[expect(clippy::too_many_arguments)]
     #[inline(always)]
     pub(super) async fn execute_basic_block_node(
         &mut self,

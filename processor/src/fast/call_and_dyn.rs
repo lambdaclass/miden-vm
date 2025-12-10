@@ -19,7 +19,6 @@ use crate::{
 
 impl FastProcessor {
     /// Executes a Call node from the start.
-    #[expect(clippy::too_many_arguments)]
     #[inline(always)]
     pub(super) fn start_call_node(
         &mut self,
