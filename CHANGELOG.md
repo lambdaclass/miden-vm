@@ -7,6 +7,7 @@
 #### Changes
 
 - [BREAKING] Move `get_assembly_op` to the `MastForest`, remove trait `MastNodeErrorContext` ([#2430](https://github.com/0xMiden/miden-vm/pull/2430)).
+- Run batch inversion concurrently per fragment in parallel trace generation ([#2405](https://github.com/0xMiden/miden-vm/issues/2405)).
 
 ## 0.20.0 (2025-12-05)
 

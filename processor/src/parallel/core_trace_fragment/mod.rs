@@ -79,9 +79,10 @@ impl<'a> CoreTraceFragmentFiller<'a> {
         let execution_state = self.context.initial_execution_state.clone();
         // Execute fragment generation and always finalize at the end
         let _ = self.fill_fragment_impl(execution_state);
+
+        let num_rows_built = self.num_rows_built();
         let final_stack_rows = self.stack_rows.unwrap_or([ZERO; STACK_TRACE_WIDTH]);
         let final_system_rows = self.system_rows.unwrap_or([ZERO; SYS_TRACE_WIDTH]);
-        let num_rows_built = self.num_rows_built();
         (final_stack_rows, final_system_rows, num_rows_built)
     }
 
