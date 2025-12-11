@@ -18,9 +18,26 @@ use crate::{
 /// stopped.
 #[derive(Debug)]
 pub struct ResumeContext {
-    pub current_forest: Arc<MastForest>,
-    pub continuation_stack: ContinuationStack,
-    pub kernel: Kernel,
+    pub(crate) current_forest: Arc<MastForest>,
+    pub(crate) continuation_stack: ContinuationStack,
+    pub(crate) kernel: Kernel,
+}
+
+impl ResumeContext {
+    /// Returns a reference to the continuation stack.
+    pub fn continuation_stack(&self) -> &ContinuationStack {
+        &self.continuation_stack
+    }
+
+    /// Returns a reference to the MAST forest being currently executed.
+    pub fn current_forest(&self) -> &Arc<MastForest> {
+        &self.current_forest
+    }
+
+    /// Returns a reference to the kernel being currently executed.
+    pub fn kernel(&self) -> &Kernel {
+        &self.kernel
+    }
 }
 
 // STOPPER

@@ -60,6 +60,39 @@ pub enum Continuation {
     AfterExitDecoratorsBasicBlock(MastNodeId),
 }
 
+impl Continuation {
+    /// Returns true if executing this continuation increments the processor clock, and false
+    /// otherwise.
+    pub fn increments_clk(&self) -> bool {
+        use Continuation::*;
+
+        // Note: we prefer naming all the variants over using a wildcard arm to ensure that if new
+        // variants are added in the future, we consciously decide whether they should increment the
+        // clock or not.
+        match self {
+            StartNode(_)
+            | FinishJoin(_)
+            | FinishSplit(_)
+            | FinishLoop(_)
+            | FinishLoopUnentered(_)
+            | FinishCall(_)
+            | FinishDyn(_)
+            | ResumeBasicBlock {
+                node_id: _,
+                batch_index: _,
+                op_idx_in_batch: _,
+            }
+            | Respan { node_id: _, batch_index: _ }
+            | FinishBasicBlock(_) => true,
+
+            FinishExternal(_)
+            | EnterForest(_)
+            | AfterExitDecorators(_)
+            | AfterExitDecoratorsBasicBlock(_) => false,
+        }
+    }
+}
+
 /// [ContinuationStack] reifies the call stack used by the processor when executing a program made
 /// up of possibly multiple MAST forests.
 ///
@@ -138,5 +171,102 @@ impl ContinuationStack {
     /// associated MAST forest.
     pub fn pop_continuation(&mut self) -> Option<Continuation> {
         self.stack.pop()
+    }
+
+    // ACCESSORS
+    // ------------------------------------------------------------
+
+    /// Peeks at the next continuation to execute without removing it.
+    ///
+    /// Note that more than one continuation may execute in the same clock cycle. To get all
+    /// continuations that will execute in the next clock cycle, use
+    /// [`Self::iter_continuations_for_next_clock`].
+    pub fn peek_continuation(&self) -> Option<&Continuation> {
+        self.stack.last()
+    }
+
+    /// Returns an iterator over the continuations on the stack that will execute in the next clock
+    /// cycle.
+    ///
+    /// This includes all coming continuations up to and including the first continuation that
+    /// increments the clock.
+    ///
+    /// Note: for this iterator to function correctly, it must be the case that that executing a
+    /// continuation that doesn't increment the clock *does not* push new continuations on the
+    /// stack. This is currently the case, and is a reasonable invariant to maintain, as
+    /// continuations that don't increment the clock can be expected to be simple (e.g. run some
+    /// decorators, or enter a new mast forest).
+    pub fn iter_continuations_for_next_clock(&self) -> impl Iterator<Item = &Continuation> {
+        let mut found_incrementing_cont = false;
+
+        self.stack.iter().rev().take_while(move |continuation| {
+            if found_incrementing_cont {
+                // We have already found the first incrementing continuation, stop here.
+                false
+            } else if continuation.increments_clk() {
+                // This is the first incrementing continuation we have found.
+                found_incrementing_cont = true;
+                true
+            } else {
+                // This continuation does not increment the clock, continue.
+                true
+            }
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_next_clock_cycle_increment_empty_stack() {
+        let stack = ContinuationStack::default();
+        let result: Vec<_> = stack.iter_continuations_for_next_clock().collect();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn get_next_clock_cycle_increment_ends_with_incrementing() {
+        let mut stack = ContinuationStack::default();
+        // Push a continuation that increments the clock
+        stack.push_continuation(Continuation::StartNode(MastNodeId::new_unchecked(0)));
+
+        let result: Vec<_> = stack.iter_continuations_for_next_clock().collect();
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], Continuation::StartNode(_)));
+    }
+
+    #[test]
+    fn get_next_clock_cycle_increment_non_incrementing_after_incrementing() {
+        let mut stack = ContinuationStack::default();
+        // Push an incrementing continuation first (bottom of stack)
+        stack.push_continuation(Continuation::StartNode(MastNodeId::new_unchecked(0)));
+        // Push a non-incrementing continuation on top
+        stack.push_continuation(Continuation::AfterExitDecorators(MastNodeId::new_unchecked(0)));
+
+        let result: Vec<_> = stack.iter_continuations_for_next_clock().collect();
+        // Should return: AfterExitDecorators (non-incrementing), then StartNode (first
+        // incrementing)
+        assert_eq!(result.len(), 2);
+        assert!(matches!(result[0], Continuation::AfterExitDecorators(_)));
+        assert!(matches!(result[1], Continuation::StartNode(_)));
+    }
+
+    #[test]
+    fn get_next_clock_cycle_increment_two_non_incrementing_after_incrementing() {
+        let mut stack = ContinuationStack::default();
+        // Push an incrementing continuation first (bottom of stack)
+        stack.push_continuation(Continuation::StartNode(MastNodeId::new_unchecked(0)));
+        // Push two non-incrementing continuations on top
+        stack.push_continuation(Continuation::AfterExitDecorators(MastNodeId::new_unchecked(0)));
+        stack.push_continuation(Continuation::EnterForest(Arc::new(MastForest::new())));
+
+        let result: Vec<_> = stack.iter_continuations_for_next_clock().collect();
+        // Should return: EnterForest, AfterExitDecorators, StartNode
+        assert_eq!(result.len(), 3);
+        assert!(matches!(result[0], Continuation::EnterForest(_)));
+        assert!(matches!(result[1], Continuation::AfterExitDecorators(_)));
+        assert!(matches!(result[2], Continuation::StartNode(_)));
     }
 }
