@@ -189,6 +189,9 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                 Continuation::FinishLoop(node_id) => {
                     self.finish_loop_node(node_id, &current_forest, None)?;
                 },
+                Continuation::FinishLoopUnentered(_node_id) => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
+                },
                 Continuation::FinishCall(node_id) => {
                     let call_node = current_forest
                         .get_node_by_id(node_id)
@@ -210,9 +213,28 @@ impl<'a> CoreTraceFragmentFiller<'a> {
                     // External nodes don't generate END trace rows in the parallel processor
                     // as they only execute after_exit decorators
                 },
+                Continuation::ResumeBasicBlock {
+                    node_id: _,
+                    batch_index: _,
+                    op_idx_in_batch: _,
+                } => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
+                },
+                Continuation::Respan { node_id: _, batch_index: _ } => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
+                },
+                Continuation::FinishBasicBlock(_node_id) => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
+                },
                 Continuation::EnterForest(previous_forest) => {
                     // Restore the previous forest
                     current_forest = previous_forest;
+                },
+                Continuation::AfterExitDecorators(_node_id) => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
+                },
+                Continuation::AfterExitDecoratorsBasicBlock(_node_id) => {
+                    unimplemented!("`ExecutionTracer` doesn't generate this variant yet")
                 },
             }
         }
@@ -876,7 +898,6 @@ impl OperationHelperRegisters for TraceGenerationHelpers {
 
 /// Identical to `[chiplets::ace::eval_circuit]` but adapted for use with
 /// `[CoreTraceFragmentGenerator]`.
-#[expect(clippy::too_many_arguments)]
 fn eval_circuit_parallel_(
     ctx: ContextId,
     ptr: Felt,
