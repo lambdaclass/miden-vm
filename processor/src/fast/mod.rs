@@ -1,7 +1,6 @@
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{cmp::min, ops::ControlFlow};
 
-use memory::Memory;
 use miden_air::{Felt, RowIndex};
 use miden_core::{
     Decorator, EMPTY_WORD, Kernel, Program, StackOutputs, WORD_SIZE, Word, ZERO,
@@ -23,6 +22,8 @@ use crate::{
 
 pub mod execution_tracer;
 mod memory;
+pub use memory::Memory;
+
 mod operation;
 pub use operation::eval_circuit_fast_;
 
@@ -285,6 +286,11 @@ impl FastProcessor {
     #[inline(always)]
     pub fn stack_depth(&self) -> u32 {
         (self.stack_top_idx - self.stack_bot_idx) as u32
+    }
+
+    /// Returns a reference to the processor's memory.
+    pub fn memory(&self) -> &Memory {
+        &self.memory
     }
 
     // MUTATORS
