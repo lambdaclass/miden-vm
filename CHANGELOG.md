@@ -14,6 +14,10 @@
 - Removed undocumented `err_code` field from `ExecutionError::NotU32Values` ([#2419](https://github.com/0xMiden/miden-vm/pull/2419)).
 - Moved `bytes_to_packed_u32_elements` to `miden-core::utils` and added `packed_u32_elements_to_bytes` inverse function ([#2458](https://github.com/0xMiden/miden-vm/pull/2458)).
 
+## 0.20.1 (2025-12-14)
+
+- Fix issue where calling procedures from statically linked libraries did not import their decorators ([#2459](https://github.com/0xMiden/miden-vm/pull/2459)).
+
 ## 0.20.0 (2025-12-05)
 
 #### Enhancements
