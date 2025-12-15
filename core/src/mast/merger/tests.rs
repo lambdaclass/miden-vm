@@ -6,7 +6,6 @@ use crate::{
     Decorator, Operation,
     mast::{
         BasicBlockNodeBuilder, CallNodeBuilder, DecoratorId, ExternalNodeBuilder, LoopNodeBuilder,
-        MastNodeErrorContext,
         node::{MastForestContributor, MastNodeExt},
     },
 };
