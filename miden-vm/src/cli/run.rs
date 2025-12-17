@@ -3,7 +3,9 @@ use std::{path::PathBuf, time::Instant};
 use clap::Parser;
 use miden_assembly::diagnostics::{IntoDiagnostic, Report, WrapErr};
 use miden_core_lib::CoreLibrary;
-use miden_processor::{DefaultHost, ExecutionOptions, ExecutionTrace};
+use miden_processor::{
+    DefaultHost, ExecutionOptions, ExecutionTrace, fast::FastProcessor, parallel::build_trace,
+};
 use miden_vm::internal::InputFile;
 use tracing::instrument;
 
@@ -11,6 +13,9 @@ use super::{
     data::{Libraries, OutputFile},
     utils::{get_masm_program, get_masp_program},
 };
+
+/// Default fragment size for trace generation.
+const DEFAULT_FRAGMENT_SIZE: usize = 1 << 16;
 
 #[derive(Debug, Clone, Parser)]
 #[command(about = "Run a Miden program")]
@@ -138,25 +143,29 @@ fn run_masp_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
     let advice_inputs = input_data.parse_advice_inputs().map_err(Report::msg)?;
     let mut host = DefaultHost::default().with_library(&CoreLibrary::default())?;
 
-    let execution_options = ExecutionOptions::new(
-        Some(params.max_cycles),
-        params.expected_cycles,
-        params.trace,
-        !params.release,
-    )
-    .into_diagnostic()?;
-
     let program_hash: [u8; 32] = program.hash().into();
 
-    // execute program and generate outputs
-    let trace = miden_processor::execute(
-        &program,
-        stack_inputs,
-        advice_inputs,
-        &mut host,
-        execution_options,
-    )
-    .wrap_err("Failed to generate execution trace")?;
+    // Reverse stack inputs since FastProcessor expects them in reverse order
+    // (first element = bottom of stack, last element = top)
+    let stack_inputs_reversed: Vec<_> = stack_inputs.iter().copied().rev().collect();
+
+    // execute program using FastProcessor and generate trace
+    let processor = if params.release {
+        FastProcessor::new_with_advice_inputs(&stack_inputs_reversed, advice_inputs)
+    } else {
+        FastProcessor::new_debug(&stack_inputs_reversed, advice_inputs)
+    };
+
+    let (execution_output, trace_generation_context) = processor
+        .execute_for_trace_sync(&program, &mut host, DEFAULT_FRAGMENT_SIZE)
+        .wrap_err("Failed to execute program")?;
+
+    let trace = build_trace(
+        execution_output,
+        trace_generation_context,
+        program.hash(),
+        program.kernel().clone(),
+    );
 
     Ok((trace, program_hash))
 }
@@ -192,14 +201,6 @@ fn run_masm_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
     )?;
     let input_data = InputFile::read(&params.input_file, &params.program_file)?;
 
-    let execution_options = ExecutionOptions::new(
-        Some(params.max_cycles),
-        params.expected_cycles,
-        params.trace,
-        !params.release,
-    )
-    .into_diagnostic()?;
-
     // fetch the stack and program inputs from the arguments
     let stack_inputs = input_data.parse_stack_inputs().map_err(Report::msg)?;
     let advice_inputs = input_data.parse_advice_inputs().map_err(Report::msg)?;
@@ -215,14 +216,27 @@ fn run_masm_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
 
     let program_hash: [u8; 32] = program.hash().into();
 
-    let trace = miden_processor::execute(
-        &program,
-        stack_inputs,
-        advice_inputs,
-        &mut host,
-        execution_options,
-    )
-    .wrap_err("Failed to generate execution trace")?;
+    // Reverse stack inputs since FastProcessor expects them in reverse order
+    // (first element = bottom of stack, last element = top)
+    let stack_inputs_reversed: Vec<_> = stack_inputs.iter().copied().rev().collect();
+
+    // execute program using FastProcessor and generate trace
+    let processor = if params.release {
+        FastProcessor::new_with_advice_inputs(&stack_inputs_reversed, advice_inputs)
+    } else {
+        FastProcessor::new_debug(&stack_inputs_reversed, advice_inputs)
+    };
+
+    let (execution_output, trace_generation_context) = processor
+        .execute_for_trace_sync(&program, &mut host, DEFAULT_FRAGMENT_SIZE)
+        .wrap_err("Failed to execute program")?;
+
+    let trace = build_trace(
+        execution_output,
+        trace_generation_context,
+        program.hash(),
+        program.kernel().clone(),
+    );
 
     Ok((trace, program_hash))
 }
