@@ -742,7 +742,7 @@ impl FastProcessor {
 
     /// Increments the clock by 1.
     #[inline(always)]
-    fn increment_clk(
+    pub(crate) fn increment_clk(
         &mut self,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,

@@ -1596,6 +1596,7 @@ dependencies = [
  "miden-utils-indexing",
  "paste",
  "pretty_assertions",
+ "proptest",
  "rayon",
  "rstest",
  "thiserror",
