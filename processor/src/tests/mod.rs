@@ -1,4 +1,4 @@
-use alloc::string::ToString;
+use alloc::{string::ToString, sync::Arc};
 
 use miden_assembly::{
     Assembler, DefaultSourceManager, PathBuf,

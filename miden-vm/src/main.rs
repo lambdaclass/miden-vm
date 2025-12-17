@@ -9,10 +9,6 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::{EnvFilter, prelude::*};
 
 mod cli;
-mod repl;
-mod tools;
-
-pub(crate) mod utils;
 
 /// Root CLI struct
 #[derive(Parser, Debug)]
@@ -96,30 +92,22 @@ pub struct Cli {
 /// CLI actions
 #[derive(Debug, Parser)]
 pub enum Actions {
-    Analyze(tools::Analyze),
     Compile(cli::CompileCmd),
     Bundle(cli::BundleCmd),
-    Debug(cli::DebugCmd),
     Prove(cli::ProveCmd),
     Run(cli::RunCmd),
     Verify(cli::VerifyCmd),
-    #[cfg(feature = "std")]
-    Repl(cli::ReplCmd),
 }
 
 /// CLI entry point
 impl Cli {
     pub fn execute(&self) -> Result<(), Report> {
         match &self.action {
-            Actions::Analyze(analyze) => analyze.execute(),
             Actions::Compile(compile) => compile.execute(),
             Actions::Bundle(compile) => compile.execute(),
-            Actions::Debug(debug) => debug.execute(),
             Actions::Prove(prove) => prove.execute(),
             Actions::Run(run) => run.execute(),
             Actions::Verify(verify) => verify.execute(),
-            #[cfg(feature = "std")]
-            Actions::Repl(repl) => repl.execute(),
         }
     }
 
