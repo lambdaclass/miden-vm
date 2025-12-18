@@ -4,7 +4,7 @@ use core::ops::Range;
 
 use miden_air::trace::{
     AUX_TRACE_RAND_ELEMENTS, AUX_TRACE_WIDTH, DECODER_TRACE_OFFSET, PADDED_TRACE_WIDTH,
-    STACK_TRACE_OFFSET, TRACE_WIDTH,
+    STACK_TRACE_OFFSET,
     decoder::{NUM_USER_OP_HELPERS, USER_OP_HELPERS_OFFSET},
     main_trace::MainTrace,
 };
@@ -209,6 +209,8 @@ impl ExecutionTrace {
     // --------------------------------------------------------------------------------------------
     #[cfg(feature = "std")]
     pub fn print(&self) {
+        use miden_air::trace::TRACE_WIDTH;
+
         let mut row = [ZERO; PADDED_TRACE_WIDTH];
         for i in 0..self.length() {
             self.main_trace.read_row_into(i, &mut row);

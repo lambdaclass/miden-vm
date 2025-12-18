@@ -180,10 +180,10 @@ mod test {
 
     #[test]
     /// Check that the VM recognizes when it is being called under an alias.
-    fn test_mutlicall() {
+    fn test_multicall() {
         // Direct call
-        let miden_vm_command =
-            MidenVmCli::try_parse_from(["miden-vm", "repl"]).expect("failed to parse commands");
+        let miden_vm_command = MidenVmCli::try_parse_from(["miden-vm", "run", "my_file.masm"])
+            .expect("failed to parse commands");
 
         assert!(matches!(
             miden_vm_command.behavior,
@@ -196,8 +196,8 @@ mod test {
         // External call
 
         // This recreates how the vm would be called from midenup
-        let external =
-            MidenVmCli::try_parse_from(["miden vm", "repl"]).expect("failed to parse commands");
+        let external = MidenVmCli::try_parse_from(["miden vm", "run", "my_file.masm"])
+            .expect("failed to parse commands");
 
         assert!(matches!(external.behavior, Behavior::External(_)));
 
