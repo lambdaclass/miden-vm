@@ -5,9 +5,6 @@ use miden_air::RowIndex;
 
 use super::{EMPTY_WORD, ExecutionError, Felt, FieldElement, SysTrace, Word, ZERO};
 
-#[cfg(test)]
-mod tests;
-
 // SYSTEM INFO
 // ================================================================================================
 

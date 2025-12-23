@@ -1,5 +1,7 @@
 use alloc::vec::Vec;
 use core::mem;
+#[cfg(any(test, feature = "testing"))]
+use core::ops::Range;
 
 use miden_air::trace::{
     AUX_TRACE_RAND_ELEMENTS, AUX_TRACE_WIDTH, DECODER_TRACE_OFFSET, MIN_TRACE_LEN,
@@ -28,8 +30,6 @@ pub use utils::{AuxColumnBuilder, ChipletsLengths, TraceFragment, TraceLenSummar
 
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-use super::EMPTY_WORD;
 
 // CONSTANTS
 // ================================================================================================
@@ -255,12 +255,9 @@ impl ExecutionTrace {
         }
     }
 
-    #[cfg(test)]
-    pub fn test_finalize_trace(process: Process) -> (MainTrace, AuxTraceBuilders, TraceLenSummary) {
-        let rng = RpoRandomCoin::new(EMPTY_WORD);
-        let (main_trace, aux_trace_builders, trace_len_summary, _final_pc_transcript) =
-            finalize_trace(process, rng);
-        (main_trace, aux_trace_builders, trace_len_summary)
+    #[cfg(any(test, feature = "testing"))]
+    pub fn get_column_range(&self, range: Range<usize>) -> Vec<Vec<Felt>> {
+        self.main_trace.get_column_range(range)
     }
 
     pub fn build_aux_trace<E>(&self, rand_elements: &[E]) -> Option<ColMatrix<E>>
