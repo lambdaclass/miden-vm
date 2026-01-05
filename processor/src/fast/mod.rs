@@ -782,12 +782,14 @@ impl FastProcessor {
                 // do nothing
             },
             Decorator::Trace(id) => {
-                let clk = self.clk;
-                let process = &mut self.state();
-                if let Err(err) = host.on_trace(process, *id) {
-                    return ControlFlow::Break(BreakReason::Err(
-                        ExecutionError::TraceHandlerError { clk, trace_id: *id, err },
-                    ));
+                if self.options.enable_tracing() {
+                    let clk = self.clk;
+                    let process = &mut self.state();
+                    if let Err(err) = host.on_trace(process, *id) {
+                        return ControlFlow::Break(BreakReason::Err(
+                            ExecutionError::TraceHandlerError { clk, trace_id: *id, err },
+                        ));
+                    }
                 }
             },
         };
