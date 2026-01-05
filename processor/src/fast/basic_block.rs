@@ -232,7 +232,7 @@ impl FastProcessor {
         for (op_idx_in_batch, op) in batch.ops().iter().enumerate().skip(start_op_idx) {
             let op_idx_in_block = batch_offset_in_block + op_idx_in_batch;
 
-            if self.in_debug_mode {
+            if self.in_debug_mode() {
                 #[cfg(test)]
                 self.record_decorator_retrieval();
 
@@ -257,7 +257,7 @@ impl FastProcessor {
             // performance improvement).
             {
                 let err_ctx =
-                    err_ctx!(current_forest, node_id, host, self.in_debug_mode, op_idx_in_block);
+                    err_ctx!(current_forest, node_id, host, self.in_debug_mode(), op_idx_in_block);
                 match op {
                     Operation::Emit => self.op_emit(host, &err_ctx).await?,
                     _ => {
@@ -327,7 +327,7 @@ impl FastProcessor {
         current_forest: &Arc<MastForest>,
         host: &mut impl AsyncHost,
     ) -> ControlFlow<BreakReason> {
-        if self.in_debug_mode {
+        if self.in_debug_mode() {
             #[cfg(test)]
             self.record_decorator_retrieval();
 

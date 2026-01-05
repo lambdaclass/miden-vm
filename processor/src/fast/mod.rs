@@ -230,6 +230,12 @@ impl FastProcessor {
     // ACCESSORS
     // -------------------------------------------------------------------------------------------
 
+    /// Returns whether the processor is executing in debug mode.
+    #[inline(always)]
+    pub fn in_debug_mode(&self) -> bool {
+        self.in_debug_mode
+    }
+
     #[cfg(test)]
     #[inline(always)]
     fn record_decorator_retrieval(&self) {
@@ -692,7 +698,7 @@ impl FastProcessor {
         current_forest: &MastForest,
         host: &mut impl AsyncHost,
     ) -> ControlFlow<BreakReason> {
-        if !self.in_debug_mode {
+        if !self.in_debug_mode() {
             return ControlFlow::Continue(());
         }
 
@@ -717,7 +723,7 @@ impl FastProcessor {
         current_forest: &MastForest,
         host: &mut impl AsyncHost,
     ) -> ControlFlow<BreakReason> {
-        if !self.in_debug_mode {
+        if !self.in_debug_mode() {
             return ControlFlow::Continue(());
         }
 
@@ -743,7 +749,7 @@ impl FastProcessor {
     ) -> ControlFlow<BreakReason> {
         match decorator {
             Decorator::Debug(options) => {
-                if self.in_debug_mode {
+                if self.in_debug_mode() {
                     let clk = self.clk;
                     let process = &mut self.state();
                     if let Err(err) = host.on_debug(process, options) {
