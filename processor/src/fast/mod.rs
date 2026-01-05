@@ -131,8 +131,8 @@ pub struct FastProcessor {
     /// return. It is a stack since calls can be nested.
     call_stack: Vec<ExecutionContextInfo>,
 
-    /// Options for execution, including but not limited to whether debug or tracing is enabled, the
-    /// size of core trace fragments during execution, etc.
+    /// Options for execution, including but not limited to whether debug or tracing is enabled,
+    /// the size of core trace fragments during execution, etc.
     options: ExecutionOptions,
 
     /// Transcript used to record commitments via `log_precompile` instruction (implemented via RPO
@@ -148,37 +148,47 @@ impl FastProcessor {
     // CONSTRUCTORS
     // ----------------------------------------------------------------------------------------------
 
-    /// Creates a new `FastProcessor` instance with the given stack inputs.
+    /// Creates a new `FastProcessor` instance with the given stack inputs, where debug and tracing
+    /// are disabled.
     ///
     /// # Panics
     /// - Panics if the length of `stack_inputs` is greater than `MIN_STACK_DEPTH`.
     pub fn new(stack_inputs: &[Felt]) -> Self {
-        Self::initialize(stack_inputs, AdviceInputs::default(), false)
+        Self::new_with_options(stack_inputs, AdviceInputs::default(), ExecutionOptions::default())
     }
 
-    /// Creates a new `FastProcessor` instance with the given stack and advice inputs.
+    /// Creates a new `FastProcessor` instance with the given stack and advice inputs, where debug
+    /// and tracing are disabled.
     ///
     /// # Panics
     /// - Panics if the length of `stack_inputs` is greater than `MIN_STACK_DEPTH`.
     pub fn new_with_advice_inputs(stack_inputs: &[Felt], advice_inputs: AdviceInputs) -> Self {
-        Self::initialize(stack_inputs, advice_inputs, false)
+        Self::new_with_options(stack_inputs, advice_inputs, ExecutionOptions::default())
     }
 
-    /// Creates a new `FastProcessor` instance, set to debug mode, with the given stack
-    /// and advice inputs.
+    /// Creates a new `FastProcessor` instance with the given stack and advice inputs, where
+    /// debugging and tracing are enabled.
     ///
     /// # Panics
     /// - Panics if the length of `stack_inputs` is greater than `MIN_STACK_DEPTH`.
     pub fn new_debug(stack_inputs: &[Felt], advice_inputs: AdviceInputs) -> Self {
-        Self::initialize(stack_inputs, advice_inputs, true)
+        Self::new_with_options(
+            stack_inputs,
+            advice_inputs,
+            ExecutionOptions::default().with_debugging(true).with_tracing(),
+        )
     }
 
-    /// Generic constructor unifying the above public ones.
+    /// Most general constructor unifying all the other ones.
     ///
     /// The stack inputs are expected to be stored in reverse order. For example, if `stack_inputs =
     /// [1,2,3]`, then the stack will be initialized as `[3,2,1,0,0,...]`, with `3` being on
     /// top.
-    fn initialize(stack_inputs: &[Felt], advice_inputs: AdviceInputs, in_debug_mode: bool) -> Self {
+    pub fn new_with_options(
+        stack_inputs: &[Felt],
+        advice_inputs: AdviceInputs,
+        options: ExecutionOptions,
+    ) -> Self {
         assert!(stack_inputs.len() <= MIN_STACK_DEPTH);
 
         let stack_top_idx = INITIAL_STACK_TOP_IDX;
@@ -205,7 +215,7 @@ impl FastProcessor {
             memory: Memory::new(),
             call_stack: Vec::new(),
             ace: Ace::default(),
-            options: ExecutionOptions::default().with_debugging(in_debug_mode),
+            options,
             pc_transcript: PrecompileTranscript::new(),
             #[cfg(test)]
             decorator_retrieval_count: Rc::new(Cell::new(0)),
@@ -376,9 +386,8 @@ impl FastProcessor {
         self,
         program: &Program,
         host: &mut impl AsyncHost,
-        fragment_size: usize,
     ) -> Result<(ExecutionOutput, TraceGenerationContext), ExecutionError> {
-        let mut tracer = ExecutionTracer::new(fragment_size);
+        let mut tracer = ExecutionTracer::new(self.options.core_trace_fragment_size());
         let execution_output = self.execute_with_tracer(program, host, &mut tracer).await?;
 
         // Pass the final precompile transcript from execution output to the trace generation
@@ -994,7 +1003,6 @@ impl FastProcessor {
         self,
         program: &Program,
         host: &mut impl AsyncHost,
-        fragment_size: usize,
     ) -> Result<(ExecutionOutput, TraceGenerationContext), ExecutionError> {
         match tokio::runtime::Handle::try_current() {
             Ok(_handle) => {
@@ -1009,7 +1017,7 @@ impl FastProcessor {
             Err(_) => {
                 // No runtime exists - create one and use it
                 let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
-                rt.block_on(self.execute_for_trace(program, host, fragment_size))
+                rt.block_on(self.execute_for_trace(program, host))
             },
         }
     }
