@@ -5,7 +5,7 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::cell::Cell;
 use core::{cmp::min, ops::ControlFlow};
 
-use miden_air::{Felt, trace::RowIndex};
+use miden_air::{ExecutionOptions, Felt, trace::RowIndex};
 use miden_core::{
     Decorator, EMPTY_WORD, Kernel, Program, StackOutputs, WORD_SIZE, Word, ZERO,
     mast::{MastForest, MastNode, MastNodeExt, MastNodeId},
@@ -131,8 +131,9 @@ pub struct FastProcessor {
     /// return. It is a stack since calls can be nested.
     call_stack: Vec<ExecutionContextInfo>,
 
-    /// Whether to enable debug statements and tracing.
-    in_debug_mode: bool,
+    /// Options for execution, including but not limited to whether debug or tracing is enabled, the
+    /// size of core trace fragments during execution, etc.
+    options: ExecutionOptions,
 
     /// Transcript used to record commitments via `log_precompile` instruction (implemented via RPO
     /// sponge).
@@ -204,7 +205,7 @@ impl FastProcessor {
             memory: Memory::new(),
             call_stack: Vec::new(),
             ace: Ace::default(),
-            in_debug_mode,
+            options: ExecutionOptions::default().with_debugging(in_debug_mode),
             pc_transcript: PrecompileTranscript::new(),
             #[cfg(test)]
             decorator_retrieval_count: Rc::new(Cell::new(0)),
@@ -233,7 +234,16 @@ impl FastProcessor {
     /// Returns whether the processor is executing in debug mode.
     #[inline(always)]
     pub fn in_debug_mode(&self) -> bool {
-        self.in_debug_mode
+        self.options.enable_debugging()
+    }
+
+    /// Returns true if decorators should be executed.
+    ///
+    /// This corresponds to either being in debug mode (for debug decorators) or having tracing
+    /// enabled (for trace decorators).
+    #[inline(always)]
+    fn should_execute_decorators(&self) -> bool {
+        self.in_debug_mode() || self.options.enable_tracing()
     }
 
     #[cfg(test)]
@@ -698,7 +708,7 @@ impl FastProcessor {
         current_forest: &MastForest,
         host: &mut impl AsyncHost,
     ) -> ControlFlow<BreakReason> {
-        if !self.in_debug_mode() {
+        if !self.should_execute_decorators() {
             return ControlFlow::Continue(());
         }
 
