@@ -115,7 +115,7 @@ impl ExecutionOptions {
     /// Returns an error if:
     /// - `max_cycles` is outside the valid range
     /// - `expected_cycles` exceeds `max_cycles`
-    /// - `core_trace_fragment_size` is zero or not a power of two
+    /// - `core_trace_fragment_size` is zero
     pub fn new(
         max_cycles: Option<u32>,
         expected_cycles: u32,
@@ -156,11 +156,6 @@ impl ExecutionOptions {
         if core_trace_fragment_size == 0 {
             return Err(ExecutionOptionsError::CoreTraceFragmentSizeTooSmall);
         }
-        if !core_trace_fragment_size.is_power_of_two() {
-            return Err(ExecutionOptionsError::CoreTraceFragmentSizeNotPowerOfTwo(
-                core_trace_fragment_size,
-            ));
-        }
 
         Ok(ExecutionOptions {
             max_cycles,
@@ -173,16 +168,13 @@ impl ExecutionOptions {
 
     /// Sets the fragment size for core trace generation.
     ///
-    /// Returns an error if the size is zero or not a power of two.
+    /// Returns an error if the size is zero.
     pub fn with_core_trace_fragment_size(
         mut self,
         size: usize,
     ) -> Result<Self, ExecutionOptionsError> {
         if size == 0 {
             return Err(ExecutionOptionsError::CoreTraceFragmentSizeTooSmall);
-        }
-        if !size.is_power_of_two() {
-            return Err(ExecutionOptionsError::CoreTraceFragmentSizeNotPowerOfTwo(size));
         }
         self.core_trace_fragment_size = size;
         Ok(self)
@@ -267,21 +259,6 @@ mod tests {
     }
 
     #[test]
-    fn non_power_of_two_fragment_size_fails() {
-        let opts = ExecutionOptions::new(None, 64, 1000, false, false);
-        assert!(matches!(
-            opts,
-            Err(ExecutionOptionsError::CoreTraceFragmentSizeNotPowerOfTwo(1000))
-        ));
-
-        let opts = ExecutionOptions::new(None, 64, 3, false, false);
-        assert!(matches!(
-            opts,
-            Err(ExecutionOptionsError::CoreTraceFragmentSizeNotPowerOfTwo(3))
-        ));
-    }
-
-    #[test]
     fn with_core_trace_fragment_size_validates() {
         // Valid size should succeed
         let result = ExecutionOptions::default().with_core_trace_fragment_size(2048);
@@ -291,12 +268,5 @@ mod tests {
         // Zero should fail
         let result = ExecutionOptions::default().with_core_trace_fragment_size(0);
         assert!(matches!(result, Err(ExecutionOptionsError::CoreTraceFragmentSizeTooSmall)));
-
-        // Non-power-of-two should fail
-        let result = ExecutionOptions::default().with_core_trace_fragment_size(100);
-        assert!(matches!(
-            result,
-            Err(ExecutionOptionsError::CoreTraceFragmentSizeNotPowerOfTwo(100))
-        ));
     }
 }

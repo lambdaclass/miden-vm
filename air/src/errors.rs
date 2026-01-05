@@ -19,6 +19,4 @@ pub enum ExecutionOptionsError {
     InvalidHashFunction { hash_function: String },
     #[error("core trace fragment size must be greater than 0")]
     CoreTraceFragmentSizeTooSmall,
-    #[error("core trace fragment size {0} must be a power of two")]
-    CoreTraceFragmentSizeNotPowerOfTwo(usize),
 }
