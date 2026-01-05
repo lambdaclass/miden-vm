@@ -822,7 +822,11 @@ impl FastProcessor {
 
         tracer.increment_clk();
 
-        if stopper.should_stop(self) {
+        if self.clk >= self.options.max_cycles() as usize {
+            ControlFlow::Break(BreakReason::Err(ExecutionError::CycleLimitExceeded(
+                self.options.max_cycles(),
+            )))
+        } else if stopper.should_stop(self) {
             ControlFlow::Break(BreakReason::Stopped(continuation()))
         } else {
             ControlFlow::Continue(())
