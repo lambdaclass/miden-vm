@@ -9,6 +9,7 @@
 #### Fixes
 
 - `FastProcessor` now correctly returns an error if the maximum number of cycles was exceeded during execution ([#2537](https://github.com/0xMiden/miden-vm/pull/2537))
+- `FastProcessor` now correctly only executes `trace` decorators when tracing is enabled (with `ExecutionOptions`) ([#2539](https://github.com/0xMiden/miden-vm/pull/2539))
 
 #### Changes
 
