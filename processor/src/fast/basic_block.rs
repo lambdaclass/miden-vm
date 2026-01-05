@@ -44,12 +44,12 @@ impl FastProcessor {
         self.execute_before_enter_decorators(node_id, current_forest, host)?;
 
         // Corresponds to the row inserted for the BASIC BLOCK operation added to the trace.
-        self.increment_clk(tracer, stopper).map_break(|_| {
-            BreakReason::Stopped(Some(Continuation::ResumeBasicBlock {
+        self.increment_clk_with_continuation(tracer, stopper, || {
+            Some(Continuation::ResumeBasicBlock {
                 node_id,
                 batch_index: 0,
                 op_idx_in_batch: 0,
-            }))
+            })
         })?;
 
         // execute first batch
@@ -117,17 +117,17 @@ impl FastProcessor {
 
                 // Corresponds to the RESPAN operation added to the trace.
                 //
-                // Note: in `map_break()`, the continuation encodes resuming from the start of the
-                // batch *after* the RESPAN operation. This is because the continuation encodes what
-                // happens *after* the clock is incremented. In other words, if we were to put a
-                // `Continuation::Respan` here instead, the next call to `FastProcessor::step()`
-                // would re-execute the RESPAN (over, and over).
-                self.increment_clk(tracer, stopper).map_break(|_| {
-                    BreakReason::Stopped(Some(Continuation::ResumeBasicBlock {
+                // Note: in the continuation closure, the continuation encodes resuming from the
+                // start of the batch *after* the RESPAN operation. This is because the continuation
+                // encodes what happens *after* the clock is incremented. In other words, if we were
+                // to put a `Continuation::Respan` here instead, the next call to
+                // `FastProcessor::step()` would re-execute the RESPAN (over, and over).
+                self.increment_clk_with_continuation(tracer, stopper, || {
+                    Some(Continuation::ResumeBasicBlock {
                         node_id,
                         batch_index,
                         op_idx_in_batch: 0,
-                    }))
+                    })
                 })?;
             }
 
@@ -271,15 +271,13 @@ impl FastProcessor {
                 }
             }
 
-            self.increment_clk(tracer, stopper).map_break(|_| {
-                let continuation = get_continuation_after_executing_operation(
+            self.increment_clk_with_continuation(tracer, stopper, || {
+                Some(get_continuation_after_executing_operation(
                     basic_block,
                     node_id,
                     batch_index,
                     op_idx_in_batch,
-                );
-
-                BreakReason::Stopped(Some(continuation))
+                ))
             })?;
         }
 
@@ -306,8 +304,8 @@ impl FastProcessor {
         );
 
         // Corresponds to the row inserted for the END operation added to the trace.
-        self.increment_clk(tracer, stopper).map_break(|_| {
-            BreakReason::Stopped(Some(Continuation::AfterExitDecoratorsBasicBlock(node_id)))
+        self.increment_clk_with_continuation(tracer, stopper, || {
+            Some(Continuation::AfterExitDecoratorsBasicBlock(node_id))
         })?;
 
         self.execute_end_of_block_decorators(basic_block_node, node_id, current_forest, host)?;

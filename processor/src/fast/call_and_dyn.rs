@@ -81,7 +81,7 @@ impl FastProcessor {
         continuation_stack.push_start_node(call_node.callee());
 
         // Corresponds to the CALL or SYSCALL operation added to the trace.
-        self.increment_clk(tracer, stopper).map_break(BreakReason::stopped)
+        self.increment_clk(tracer, stopper)
     }
 
     /// Executes the finish phase of a Call node.
@@ -115,8 +115,8 @@ impl FastProcessor {
         self.restore_context(tracer, &err_ctx)?;
 
         // Corresponds to the row inserted for the END operation added to the trace.
-        self.increment_clk(tracer, stopper).map_break(|_| {
-            BreakReason::Stopped(Some(Continuation::AfterExitDecorators(node_id)))
+        self.increment_clk_with_continuation(tracer, stopper, || {
+            Some(Continuation::AfterExitDecorators(node_id))
         })?;
 
         self.execute_after_exit_decorators(node_id, current_forest, host)
@@ -226,7 +226,7 @@ impl FastProcessor {
 
         // Increment the clock, corresponding to the row inserted for the DYN or DYNCALL operation
         // added to the trace.
-        self.increment_clk(tracer, stopper).map_break(BreakReason::stopped)
+        self.increment_clk(tracer, stopper)
     }
 
     /// Executes the finish phase of a Dyn node.
@@ -256,8 +256,8 @@ impl FastProcessor {
 
         // Corresponds to the row inserted for the END operation added to
         // the trace.
-        self.increment_clk(tracer, stopper).map_break(|_| {
-            BreakReason::Stopped(Some(Continuation::AfterExitDecorators(node_id)))
+        self.increment_clk_with_continuation(tracer, stopper, || {
+            Some(Continuation::AfterExitDecorators(node_id))
         })?;
 
         self.execute_after_exit_decorators(node_id, current_forest, host)

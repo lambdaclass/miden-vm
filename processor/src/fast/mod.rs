@@ -798,18 +798,32 @@ impl FastProcessor {
     // ----------------------------------------------------------------------------------------------
 
     /// Increments the clock by 1.
+    ///
+    /// To provide a continuation in case the execution is stopped, use
+    /// [Self::increment_clk_with_continuation()].
     #[inline(always)]
     pub(crate) fn increment_clk(
         &mut self,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
-    ) -> ControlFlow<()> {
+    ) -> ControlFlow<BreakReason> {
+        self.increment_clk_with_continuation(tracer, stopper, || None)
+    }
+
+    /// Increments the clock by 1, and provides a closure to compute a continuation in case the
+    /// execution is stopped.
+    pub(crate) fn increment_clk_with_continuation(
+        &mut self,
+        tracer: &mut impl Tracer,
+        stopper: &impl Stopper,
+        continuation: impl FnOnce() -> Option<Continuation>,
+    ) -> ControlFlow<BreakReason> {
         self.clk += 1_u32;
 
         tracer.increment_clk();
 
         if stopper.should_stop(self) {
-            ControlFlow::Break(())
+            ControlFlow::Break(BreakReason::Stopped(continuation()))
         } else {
             ControlFlow::Continue(())
         }
