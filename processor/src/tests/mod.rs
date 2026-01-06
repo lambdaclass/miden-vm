@@ -21,6 +21,7 @@ use super::*;
 use crate::fast::FastProcessor;
 
 mod debug;
+mod debug_mode_decorator_tests;
 
 // AdviceMap inlined in the script
 // ------------------------------------------------------------------------------------------------
