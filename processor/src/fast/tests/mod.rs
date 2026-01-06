@@ -1,5 +1,6 @@
-use alloc::{string::ToString, sync::Arc};
+use alloc::{string::ToString, sync::Arc, vec};
 
+use miden_air::trace::MIN_TRACE_LEN;
 use miden_assembly::{Assembler, DefaultSourceManager};
 use miden_core::{
     ONE, Operation, assert_matches,
@@ -125,6 +126,33 @@ fn test_syscall_fail() {
         err,
         ExecutionError::SyscallTargetNotInKernel { label: _, source_file: _, proc_root: _ }
     );
+}
+
+/// Tests that `ExecutionError::CycleLimitExceeded` is correctly emitted when a program exceeds the
+/// number of allowed cycles.
+#[test]
+fn test_cycle_limit_exceeded() {
+    use miden_air::{DEFAULT_CORE_TRACE_FRAGMENT_SIZE, ExecutionOptions};
+
+    let mut host = DefaultHost::default();
+
+    let options = ExecutionOptions::new(
+        Some(MIN_TRACE_LEN as u32),
+        MIN_TRACE_LEN as u32,
+        DEFAULT_CORE_TRACE_FRAGMENT_SIZE,
+        false,
+        false,
+    )
+    .unwrap();
+
+    // Note: when executing, the processor executes `SPAN`, `END` and `HALT` operations, and hence
+    // the total number of operations is certain to be greater than `MIN_TRACE_LEN`.
+    let program = simple_program_with_ops(vec![Operation::Swap; MIN_TRACE_LEN]);
+
+    let processor = FastProcessor::new_with_options(&[], AdviceInputs::default(), options);
+    let err = processor.execute_sync(&program, &mut host).unwrap_err();
+
+    assert_matches!(err, ExecutionError::CycleLimitExceeded(max_cycles) if max_cycles == MIN_TRACE_LEN as u32);
 }
 
 #[test]
