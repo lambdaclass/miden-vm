@@ -37,7 +37,7 @@ use crate::PrimeField64;
 fn b_chip_trace_mem() {
     const FOUR: Felt = Felt::new(4);
 
-    let stack = [1, 2, 3, 4, 0];
+    let stack = [0, 1, 2, 3, 4];
     let word = [ONE, Felt::new(2), Felt::new(3), Felt::new(4)];
     let operations = vec![
         Operation::MStoreW, // store [1, 2, 3, 4]
@@ -195,7 +195,7 @@ fn build_expected_bus_element_msg(
     assert!(op_label == MEMORY_READ_ELEMENT_LABEL || op_label == MEMORY_WRITE_ELEMENT_LABEL);
 
     alphas[0]
-        + alphas[1] * Felt::from(op_label)
+        + alphas[1] * Felt::from_u8(op_label)
         + alphas[2] * ctx
         + alphas[3] * addr
         + alphas[4] * clk
@@ -213,7 +213,7 @@ fn build_expected_bus_word_msg(
     assert!(op_label == MEMORY_READ_WORD_LABEL || op_label == MEMORY_WRITE_WORD_LABEL);
 
     alphas[0]
-        + alphas[1] * Felt::from(op_label)
+        + alphas[1] * Felt::from_u8(op_label)
         + alphas[2] * ctx
         + alphas[3] * addr
         + alphas[4] * clk

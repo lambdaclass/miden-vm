@@ -47,7 +47,7 @@ pub fn build_ace_memory_read_word_request<E: ExtensionField<Felt>>(
     let addr = main_trace.chiplet_ace_ptr(row);
 
     let message = MemoryWordMessage {
-        op_label: Felt::from(op_label),
+        op_label: Felt::from_u8(op_label),
         ctx,
         addr,
         clk,
@@ -82,7 +82,7 @@ pub fn build_ace_memory_read_element_request<E: ExtensionField<Felt>>(
     let addr = main_trace.chiplet_ace_ptr(row);
 
     let message = MemoryElementMessage {
-        op_label: Felt::from(op_label),
+        op_label: Felt::from_u8(op_label),
         ctx,
         addr,
         clk,
@@ -106,12 +106,12 @@ pub(super) fn build_dyn_dyncall_callee_hash_read_request<E: ExtensionField<Felt>
     _debugger: &mut BusDebugger<E>,
 ) -> E {
     let memory_req = MemoryWordMessage {
-        op_label: Felt::from(MEMORY_READ_WORD_LABEL),
+        op_label: Felt::from_u8(MEMORY_READ_WORD_LABEL),
         ctx: main_trace.ctx(row),
         addr: main_trace.stack_element(0, row),
         clk: main_trace.clk(row),
         word: main_trace.decoder_hasher_state_first_half(row).into(),
-        source: if op_code_felt == OPCODE_DYNCALL.into() {
+        source: if op_code_felt == Felt::from_u8(OPCODE_DYNCALL) {
             "dyncall"
         } else {
             "dyn"
@@ -140,7 +140,7 @@ pub(super) fn build_fmp_initialization_write_request<E: ExtensionField<Felt>>(
     // initial FMP value to memory at the start of a new execution context, which happens
     // immediately after the current row.
     let memory_req = MemoryElementMessage {
-        op_label: Felt::from(MEMORY_WRITE_ELEMENT_LABEL),
+        op_label: Felt::from_u8(MEMORY_WRITE_ELEMENT_LABEL),
         ctx: main_trace.ctx(row + 1),
         addr: FMP_ADDR,
         clk: main_trace.clk(row),
@@ -163,11 +163,12 @@ pub(super) fn build_mem_mloadw_mstorew_request<E: ExtensionField<Felt>>(
     row: RowIndex,
     _debugger: &mut BusDebugger<E>,
 ) -> E {
+    // word[i] maps directly to stack position i.
     let word = [
-        main_trace.stack_element(3, row + 1),
-        main_trace.stack_element(2, row + 1),
-        main_trace.stack_element(1, row + 1),
         main_trace.stack_element(0, row + 1),
+        main_trace.stack_element(1, row + 1),
+        main_trace.stack_element(2, row + 1),
+        main_trace.stack_element(3, row + 1),
     ];
     let addr = main_trace.stack_element(0, row);
 
@@ -176,7 +177,7 @@ pub(super) fn build_mem_mloadw_mstorew_request<E: ExtensionField<Felt>>(
     let clk = main_trace.clk(row);
 
     let message = MemoryWordMessage {
-        op_label: Felt::from(op_label),
+        op_label: Felt::from_u8(op_label),
         ctx,
         addr,
         clk,
@@ -213,7 +214,7 @@ pub(super) fn build_mem_mload_mstore_request<E: ExtensionField<Felt>>(
     let clk = main_trace.clk(row);
 
     let message = MemoryElementMessage {
-        op_label: Felt::from(op_label),
+        op_label: Felt::from_u8(op_label),
         ctx,
         addr,
         clk,
@@ -235,21 +236,23 @@ pub(super) fn build_mstream_request<E: ExtensionField<Felt>>(
     row: RowIndex,
     _debugger: &mut BusDebugger<E>,
 ) -> E {
-    let op_label = Felt::from(MEMORY_READ_WORD_LABEL);
+    let op_label = Felt::from_u8(MEMORY_READ_WORD_LABEL);
     let addr = main_trace.stack_element(12, row);
     let ctx = main_trace.ctx(row);
     let clk = main_trace.clk(row);
 
+    // word[0] is at stack position 0 (top).
+    // MSTREAM loads two words: first word (from addr) to s0-s3, second word (from addr+4) to s4-s7.
     let mem_req_1 = MemoryWordMessage {
         op_label,
         ctx,
         addr,
         clk,
         word: [
-            main_trace.stack_element(7, row + 1),
-            main_trace.stack_element(6, row + 1),
-            main_trace.stack_element(5, row + 1),
-            main_trace.stack_element(4, row + 1),
+            main_trace.stack_element(0, row + 1),
+            main_trace.stack_element(1, row + 1),
+            main_trace.stack_element(2, row + 1),
+            main_trace.stack_element(3, row + 1),
         ],
         source: "mstream req 1",
     };
@@ -259,10 +262,10 @@ pub(super) fn build_mstream_request<E: ExtensionField<Felt>>(
         addr: addr + FOUR,
         clk,
         word: [
-            main_trace.stack_element(3, row + 1),
-            main_trace.stack_element(2, row + 1),
-            main_trace.stack_element(1, row + 1),
-            main_trace.stack_element(0, row + 1),
+            main_trace.stack_element(4, row + 1),
+            main_trace.stack_element(5, row + 1),
+            main_trace.stack_element(6, row + 1),
+            main_trace.stack_element(7, row + 1),
         ],
         source: "mstream req 2",
     };
@@ -285,21 +288,23 @@ pub(super) fn build_pipe_request<E: ExtensionField<Felt>>(
     row: RowIndex,
     _debugger: &mut BusDebugger<E>,
 ) -> E {
-    let op_label = Felt::from(MEMORY_WRITE_WORD_LABEL);
+    let op_label = Felt::from_u8(MEMORY_WRITE_WORD_LABEL);
     let addr = main_trace.stack_element(12, row);
     let ctx = main_trace.ctx(row);
     let clk = main_trace.clk(row);
 
+    // word[0] is at stack position 0 (top).
+    // PIPE writes two words: first word (from s0-s3) to addr, second word (from s4-s7) to addr+4.
     let mem_req_1 = MemoryWordMessage {
         op_label,
         ctx,
         addr,
         clk,
         word: [
-            main_trace.stack_element(7, row + 1),
-            main_trace.stack_element(6, row + 1),
-            main_trace.stack_element(5, row + 1),
-            main_trace.stack_element(4, row + 1),
+            main_trace.stack_element(0, row + 1),
+            main_trace.stack_element(1, row + 1),
+            main_trace.stack_element(2, row + 1),
+            main_trace.stack_element(3, row + 1),
         ],
         source: "pipe req 1",
     };
@@ -309,10 +314,10 @@ pub(super) fn build_pipe_request<E: ExtensionField<Felt>>(
         addr: addr + FOUR,
         clk,
         word: [
-            main_trace.stack_element(3, row + 1),
-            main_trace.stack_element(2, row + 1),
-            main_trace.stack_element(1, row + 1),
-            main_trace.stack_element(0, row + 1),
+            main_trace.stack_element(4, row + 1),
+            main_trace.stack_element(5, row + 1),
+            main_trace.stack_element(6, row + 1),
+            main_trace.stack_element(7, row + 1),
         ],
         source: "pipe req 2",
     };
@@ -338,7 +343,7 @@ pub(super) fn build_hornerbase_eval_request<E: ExtensionField<Felt>>(
     let eval_point_0 = main_trace.helper_register(0, row);
     let eval_point_1 = main_trace.helper_register(1, row);
     let eval_point_ptr = main_trace.stack_element(13, row);
-    let op_label = Felt::from(MEMORY_READ_ELEMENT_LABEL);
+    let op_label = Felt::from_u8(MEMORY_READ_ELEMENT_LABEL);
 
     let ctx = main_trace.ctx(row);
     let clk = main_trace.clk(row);
@@ -381,7 +386,7 @@ pub(super) fn build_hornerext_eval_request<E: ExtensionField<Felt>>(
     let mem_junk_0 = main_trace.helper_register(2, row);
     let mem_junk_1 = main_trace.helper_register(3, row);
     let eval_point_ptr = main_trace.stack_element(13, row);
-    let op_label = Felt::from(MEMORY_READ_WORD_LABEL);
+    let op_label = Felt::from_u8(MEMORY_READ_WORD_LABEL);
 
     let ctx = main_trace.ctx(row);
     let clk = main_trace.clk(row);
@@ -500,7 +505,7 @@ fn get_memory_op_label(is_read: Felt, is_word_access: Felt) -> Felt {
 
     let op_flag = is_read + 2 * is_word_access;
 
-    Felt::from(MEMORY_SELECTOR_FLAG_BASE + (op_flag << OP_FLAG_SHIFT))
+    Felt::from_u8(MEMORY_SELECTOR_FLAG_BASE + (op_flag << OP_FLAG_SHIFT))
 }
 
 // MESSAGES

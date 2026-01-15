@@ -5,7 +5,7 @@ use miden_air::trace::{
         bitwise::{BITWISE_AND, BITWISE_AND_LABEL, BITWISE_XOR, BITWISE_XOR_LABEL, OP_CYCLE_LEN},
     },
 };
-use miden_core::field::Field;
+use miden_core::field::{Field, PrimeCharacteristicRing};
 
 use super::{
     AUX_TRACE_RAND_ELEMENTS, CHIPLETS_BUS_AUX_TRACE_OFFSET, ExecutionTrace, Felt, HASH_CYCLE_LEN,
@@ -29,8 +29,8 @@ fn b_chip_trace_bitwise() {
     let stack = [a as u64, b as u64];
     let operations = vec![
         Operation::U32and,
-        Operation::Push(Felt::from(a)),
-        Operation::Push(Felt::from(b)),
+        Operation::Push(Felt::from_u32(a)),
+        Operation::Push(Felt::from_u32(b)),
         Operation::U32and,
         // Add 8 padding operations so that U32xor is requested by the stack in the same cycle when
         // U32and is provided by the Bitwise chiplet.
@@ -42,8 +42,8 @@ fn b_chip_trace_bitwise() {
         Operation::Drop,
         Operation::Drop,
         Operation::Drop,
-        Operation::Push(Felt::from(a)),
-        Operation::Push(Felt::from(b)),
+        Operation::Push(Felt::from_u32(a)),
+        Operation::Push(Felt::from_u32(b)),
         Operation::U32xor,
         // Drop 4 values to empty the stack's overflow table.
         Operation::Drop,
@@ -69,9 +69,9 @@ fn b_chip_trace_bitwise() {
     let value = build_expected_bitwise(
         &rand_elements,
         BITWISE_AND_LABEL,
-        Felt::from(a),
-        Felt::from(b),
-        Felt::from(a & b),
+        Felt::from_u32(a),
+        Felt::from_u32(b),
+        Felt::from_u32(a & b),
     );
     let mut expected = value.inverse();
     assert_eq!(expected, b_chip[2]);
@@ -83,12 +83,13 @@ fn b_chip_trace_bitwise() {
 
     // The second bitwise request from the stack is sent when the `U32and` operation is executed at
     // cycle 4, so the request is included in the next row.
+    // After Push(a) then Push(b), stack is [b, a, ...] so operands are (s0=b, s1=a).
     let value = build_expected_bitwise(
         &rand_elements,
         BITWISE_AND_LABEL,
-        Felt::from(a),
-        Felt::from(b),
-        Felt::from(a & b),
+        Felt::from_u32(b),
+        Felt::from_u32(a),
+        Felt::from_u32(a & b),
     );
     expected *= value.inverse();
     assert_eq!(expected, b_chip[5]);
@@ -118,12 +119,13 @@ fn b_chip_trace_bitwise() {
 
     // At cycle 15, `U32xor` is requested by the stack and `U32and` is provided by the bitwise
     // chiplet.
+    // After Push(a) then Push(b), stack is [b, a, ...] so operands are (s0=b, s1=a).
     let value = build_expected_bitwise(
         &rand_elements,
         BITWISE_XOR_LABEL,
-        Felt::from(a),
-        Felt::from(b),
-        Felt::from(a ^ b),
+        Felt::from_u32(b),
+        Felt::from_u32(a),
+        Felt::from_u32(a ^ b),
     );
     expected *= value.inverse();
     expected *=

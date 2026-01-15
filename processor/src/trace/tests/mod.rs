@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 
 use miden_core::{
-    Kernel, ONE, Operation, Program, Word, ZERO,
+    Kernel, Operation, Program,
     mast::{BasicBlockNodeBuilder, MastForest, MastForestContributor},
 };
 use miden_utils_testing::rand::rand_array;
@@ -73,15 +73,9 @@ pub fn build_trace_from_ops_with_inputs(
     mast_forest.make_root(basic_block_id);
 
     let program = Program::new(mast_forest.into(), basic_block_id);
-
-    // StackInputs stores elements in "top-first" order (after reversal in its constructor).
-    // FastProcessor expects "bottom-first" order where the last element becomes top of stack.
-    // So we need to reverse the StackInputs elements.
-    let stack_values: Vec<Felt> = stack_inputs.iter().rev().copied().collect();
-
     let mut host = DefaultHost::default();
     let processor = FastProcessor::new_with_options(
-        &stack_values,
+        stack_inputs.as_ref(),
         advice_inputs,
         ExecutionOptions::default()
             .with_core_trace_fragment_size(TEST_TRACE_FRAGMENT_SIZE)

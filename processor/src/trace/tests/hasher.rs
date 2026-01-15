@@ -2,12 +2,13 @@ use alloc::vec::Vec;
 
 use miden_air::trace::{AUX_TRACE_RAND_ELEMENTS, MainTrace, chiplets::hasher::P1_COL_IDX};
 use miden_core::{
+    ONE, Operation, Word, ZERO,
     crypto::merkle::{MerkleStore, MerkleTree, NodeIndex},
     field::{ExtensionField, Field},
 };
 use rstest::rstest;
 
-use super::{Felt, ONE, Operation, Word, ZERO, build_trace_from_ops_with_inputs, rand_array};
+use super::{Felt, build_trace_from_ops_with_inputs, rand_array};
 use crate::{AdviceInputs, PrimeField64, StackInputs};
 
 // SIBLING TABLE TESTS
@@ -27,7 +28,6 @@ fn hasher_p1_mp_verify(#[case] index: u64) {
     append_word(&mut init_stack, node);
     init_stack.extend_from_slice(&[depth, index]);
     append_word(&mut init_stack, tree.root());
-    init_stack.reverse();
     let stack_inputs = StackInputs::try_from_ints(init_stack).unwrap();
     let advice_inputs = AdviceInputs::default().with_merkle_store(store);
 
@@ -60,8 +60,6 @@ fn hasher_p1_mr_update(#[case] index: u64) {
     init_stack.extend_from_slice(&[3, index]);
     append_word(&mut init_stack, tree.root());
     append_word(&mut init_stack, new_node);
-
-    init_stack.reverse();
     let stack_inputs = StackInputs::try_from_ints(init_stack).unwrap();
     let store = MerkleStore::from(&tree);
     let advice_inputs = AdviceInputs::default().with_merkle_store(store);
@@ -165,7 +163,7 @@ fn init_leaf(value: u64) -> Word {
 }
 
 fn append_word(target: &mut Vec<u64>, word: Word) {
-    word.iter().rev().for_each(|v| target.push(v.as_canonical_u64()));
+    word.iter().for_each(|v| target.push(v.as_canonical_u64()));
 }
 
 /// Describes a single entry in the sibling table which consists of a tuple `(index, node)` where

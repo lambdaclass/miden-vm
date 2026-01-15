@@ -10,7 +10,7 @@ use core::array;
 
 use miden_core::{
     EventName, Felt, Word, ZERO,
-    field::PrimeField64,
+    field::{PrimeCharacteristicRing, PrimeField64},
     precompile::{PrecompileCommitment, PrecompileError, PrecompileRequest, PrecompileVerifier},
     utils::bytes_to_packed_u32_elements,
 };
@@ -44,11 +44,9 @@ impl EventHandler for Sha512Precompile {
         let input_bytes = read_memory_packed_u32(process, ptr, len_bytes as usize)?;
         let preimage = Sha512Preimage::new(input_bytes);
         let digest = preimage.digest();
-        let mut rev = digest.0;
-        rev.reverse();
 
         Ok(vec![
-            AdviceMutation::extend_stack(rev),
+            AdviceMutation::extend_stack(digest.0),
             AdviceMutation::extend_precompile_requests([preimage.into()]),
         ])
     }
@@ -75,7 +73,7 @@ impl Sha512FeltDigest {
             let limbs = array::from_fn(|j| bytes[BYTES_PER_U32 * i + j]);
             u32::from_le_bytes(limbs)
         });
-        Self(packed.map(Felt::from))
+        Self(packed.map(Felt::from_u32))
     }
 
     pub fn to_commitment(&self) -> Word {

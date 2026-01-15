@@ -14,6 +14,7 @@ use miden_air::{
 };
 use miden_core::{
     EMPTY_WORD, EventName, Felt, Kernel, ONE, Operation, Program, WORD_SIZE, ZERO,
+    field::PrimeCharacteristicRing,
     mast::{
         BasicBlockNodeBuilder, CallNodeBuilder, DynNodeBuilder, JoinNodeBuilder, LoopNodeBuilder,
         MastForest, MastForestContributor, MastNodeExt, OP_BATCH_SIZE, SplitNodeBuilder,
@@ -646,7 +647,8 @@ fn test_loop_node_decoding() {
         (loop_body, Program::new(mast_forest.into(), loop_node_id))
     };
 
-    let (trace, trace_len) = build_trace_helper(&[0, 1], &program);
+    // Input [1, 0]: position 0 (top) = 1 (loop enters), position 1 = 0 (loop exits after body)
+    let (trace, trace_len) = build_trace_helper(&[1, 0], &program);
 
     // --- check block address, op_bits, group count, op_index, and in_span columns ---------------
     let body_addr = INIT_ADDR + EIGHT;
@@ -750,7 +752,10 @@ fn test_loop_node_repeat_decoding() {
         (loop_body, Program::new(mast_forest.into(), loop_node_id))
     };
 
-    let (trace, trace_len) = build_trace_helper(&[0, 1, 1], &program);
+    // Input [1, 1, 0]: position 0 (top) = 1 (1st iteration enters)
+    // After Pad+Drop: position 0 = 1 (2nd iteration enters)
+    // After Pad+Drop: position 0 = 0 (loop exits)
+    let (trace, trace_len) = build_trace_helper(&[1, 1, 0], &program);
 
     // --- check block address, op_bits, group count, op_index, and in_span columns ---------------
     let iter1_addr = INIT_ADDR + EIGHT;
@@ -1456,11 +1461,11 @@ fn test_dyn_node_decoding() {
 
     let (trace, trace_len) = build_dyn_trace_helper(
         &[
+            FOO_ROOT_NODE_ADDR,
             foo_root_node.digest()[0].as_canonical_u64(),
             foo_root_node.digest()[1].as_canonical_u64(),
             foo_root_node.digest()[2].as_canonical_u64(),
             foo_root_node.digest()[3].as_canonical_u64(),
-            FOO_ROOT_NODE_ADDR,
         ],
         &program,
     );
@@ -1567,7 +1572,7 @@ fn set_user_op_helpers_many() {
     let a = rand_value::<u32>();
     let b = rand_value::<u32>();
     let (dividend, divisor) = if a > b { (a, b) } else { (b, a) };
-    let (trace, ..) = build_trace_helper(&[dividend as u64, divisor as u64], &program);
+    let (trace, ..) = build_trace_helper(&[divisor as u64, dividend as u64], &program);
     let hasher_state = get_hasher_state(&trace, 1);
 
     // Check the hasher state of the user operation which was executed.
@@ -1716,9 +1721,9 @@ fn check_op_decoding(
     }
 
     // make sure the op bit extra columns for degree reduction are set correctly
-    let bit6 = Felt::from((opcode >> 6) & 1);
-    let bit5 = Felt::from((opcode >> 5) & 1);
-    let bit4 = Felt::from((opcode >> 4) & 1);
+    let bit6 = Felt::from_u8((opcode >> 6) & 1);
+    let bit5 = Felt::from_u8((opcode >> 5) & 1);
+    let bit4 = Felt::from_u8((opcode >> 4) & 1);
     assert_eq!(
         trace[OP_BITS_EXTRA_COLS_RANGE.start][row_idx],
         bit6 * (ONE - bit5) * bit4,

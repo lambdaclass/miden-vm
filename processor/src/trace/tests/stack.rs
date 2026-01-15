@@ -1,9 +1,9 @@
 use alloc::vec::Vec;
 
 use miden_air::trace::{AUX_TRACE_RAND_ELEMENTS, STACK_AUX_TRACE_OFFSET};
-use miden_core::field::Field;
+use miden_core::{ONE, Operation, ZERO, field::Field};
 
-use super::{Felt, ONE, Operation, ZERO, build_trace_from_ops, rand_array};
+use super::{Felt, build_trace_from_ops, rand_array};
 use crate::stack::OverflowTableRow;
 
 // CONSTANTS
@@ -31,7 +31,7 @@ fn p1_trace() {
         Operation::Pad,    // right shift, clk 10
         Operation::Drop,   // left shift, clk 11
     ];
-    let init_stack = (1..17).collect::<Vec<_>>();
+    let init_stack = (1..17).rev().collect::<Vec<_>>();
     let trace = build_trace_from_ops(ops, &init_stack);
     let alphas = rand_array::<Felt, AUX_TRACE_RAND_ELEMENTS>();
     let aux_columns = trace.build_aux_trace(&alphas).unwrap();
