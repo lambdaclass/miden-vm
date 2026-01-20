@@ -10,7 +10,7 @@ use crate::{
     AsyncHost,
     continuation_stack::{Continuation, ContinuationStack},
     errors::OperationError,
-    fast::{BreakReason, FastProcessor, Tracer, step::Stopper, trace_state::NodeExecutionState},
+    fast::{BreakReason, FastProcessor, Tracer, step::Stopper},
 };
 
 impl FastProcessor {
@@ -28,7 +28,7 @@ impl FastProcessor {
     ) -> ControlFlow<BreakReason> {
         tracer.start_clock_cycle(
             self,
-            NodeExecutionState::Start(node_id),
+            Continuation::StartNode(node_id),
             continuation_stack,
             current_forest,
         );
@@ -74,7 +74,7 @@ impl FastProcessor {
     ) -> ControlFlow<BreakReason> {
         tracer.start_clock_cycle(
             self,
-            NodeExecutionState::End(node_id),
+            Continuation::FinishSplit(node_id),
             continuation_stack,
             current_forest,
         );
