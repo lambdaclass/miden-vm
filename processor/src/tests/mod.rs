@@ -702,8 +702,7 @@ fn test_diagnostic_merkle_store_lookup_failed() {
 // -------------------------------------------------------------------------------------------------
 
 #[test]
-#[ignore = "issue #2476"]
-fn test_diagnostic_no_mast_forest_with_procedure() {
+fn test_diagnostic_no_mast_forest_with_procedure_call() {
     let source_manager = Arc::new(DefaultSourceManager::default());
 
     let lib_module = {
@@ -747,13 +746,135 @@ fn test_diagnostic_no_mast_forest_with_procedure() {
     let err = processor.execute_sync(&program, &mut host).unwrap_err();
     assert_diagnostic_lines!(
         err,
-        "no MAST forest contains the procedure with root digest 0x1b0a6d4b3976737badf180f3df558f45e06e6d1803ea5ad3b95fa7428caccd02",
+        "no MAST forest contains the procedure with root digest 0xc85d62dad9e9a4195dcd2d75f1deb32116ee4d6ed3d8cc3948c6e7cf1142c7f4",
         regex!(r#",-\[::\$exec:5:13\]"#),
         " 4 |         begin",
         " 5 |             call.bar::dummy_proc",
         "   :             ^^^^^^^^^^^^^^^^^^^^",
         " 6 |         end",
         "   `----"
+    );
+}
+
+#[test]
+fn test_diagnostic_no_mast_forest_with_procedure_loop() {
+    let source_manager = Arc::new(DefaultSourceManager::default());
+
+    let lib_module = {
+        let module_name = "foo::bar";
+        let src = "
+        pub proc dummy_proc
+            push.1
+        end
+    ";
+        let uri = Uri::from("src.masm");
+        let content = SourceContent::new(SourceLanguage::Masm, uri.clone(), src);
+        let source_file = source_manager.load_from_raw_parts(uri.clone(), content);
+        Module::parse(
+            PathBuf::new(module_name).unwrap(),
+            miden_assembly::ast::ModuleKind::Library,
+            source_file,
+            source_manager.clone(),
+        )
+        .unwrap()
+    };
+
+    let program_source = "
+        use foo::bar
+
+        begin
+            push.1
+            while.true
+                exec.bar::dummy_proc
+            end
+        end
+    ";
+
+    let library = Assembler::new(source_manager.clone()).assemble_library([lib_module]).unwrap();
+
+    let program = Assembler::new(source_manager.clone())
+        .with_dynamic_library(&library)
+        .unwrap()
+        .assemble_program(program_source)
+        .unwrap();
+
+    let mut host = DefaultHost::default().with_source_manager(source_manager);
+
+    let processor = FastProcessor::new_debug(&[], AdviceInputs::default());
+    let err = processor.execute_sync(&program, &mut host).unwrap_err();
+    assert_diagnostic_lines!(
+        err,
+        "no MAST forest contains the procedure with root digest 0xc85d62dad9e9a4195dcd2d75f1deb32116ee4d6ed3d8cc3948c6e7cf1142c7f4",
+        regex!(r#",-\[::\$exec:6:13\]"#),
+        "  5 |                 push.1",
+        "  6 | ,->             while.true",
+        "  7 | |                   exec.bar::dummy_proc",
+        "  8 | `->             end",
+        "  9 |             end",
+        "    `----"
+    );
+}
+
+#[test]
+fn test_diagnostic_no_mast_forest_with_procedure_split() {
+    let source_manager = Arc::new(DefaultSourceManager::default());
+
+    let lib_module = {
+        let module_name = "foo::bar";
+        let src = "
+        pub proc dummy_proc
+            push.1
+        end
+    ";
+        let uri = Uri::from("src.masm");
+        let content = SourceContent::new(SourceLanguage::Masm, uri.clone(), src);
+        let source_file = source_manager.load_from_raw_parts(uri.clone(), content);
+        Module::parse(
+            PathBuf::new(module_name).unwrap(),
+            miden_assembly::ast::ModuleKind::Library,
+            source_file,
+            source_manager.clone(),
+        )
+        .unwrap()
+    };
+
+    let program_source = "
+        use foo::bar
+
+        begin
+            push.1
+            if.true
+                exec.bar::dummy_proc
+            else
+                push.2
+            end
+        end
+    ";
+
+    let library = Assembler::new(source_manager.clone()).assemble_library([lib_module]).unwrap();
+
+    let program = Assembler::new(source_manager.clone())
+        .with_dynamic_library(&library)
+        .unwrap()
+        .assemble_program(program_source)
+        .unwrap();
+
+    let mut host = DefaultHost::default().with_source_manager(source_manager);
+
+    let processor = FastProcessor::new_debug(&[], AdviceInputs::default());
+    let err = processor.execute_sync(&program, &mut host).unwrap_err();
+    assert_diagnostic_lines!(
+        err,
+        "no MAST forest contains the procedure with root digest 0xc85d62dad9e9a4195dcd2d75f1deb32116ee4d6ed3d8cc3948c6e7cf1142c7f4",
+        regex!(r#",-\[::\$exec:6:13\]"#),
+        "  5 |                 push.1",
+        "  6 | ,->             if.true",
+        "  7 | |                   exec.bar::dummy_proc",
+        "  8 | |               else",
+        "  9 | |                   push.2",
+        " 10 | `->             end",
+        " 11 |             end",
+        "    `----"
     );
 }
 
@@ -935,7 +1056,6 @@ fn test_diagnostic_not_u32_value() {
 // -------------------------------------------------------------------------------------------------
 
 #[test]
-#[ignore = "issue #2476"]
 fn test_diagnostic_syscall_target_not_in_kernel() {
     let source_manager = Arc::new(DefaultSourceManager::default());
 
@@ -954,18 +1074,22 @@ fn test_diagnostic_syscall_target_not_in_kernel() {
     let kernel_library =
         Assembler::new(source_manager.clone()).assemble_kernel(kernel_source).unwrap();
 
-    let program = Assembler::with_kernel(source_manager.clone(), kernel_library)
-        .assemble_program(program_source)
-        .unwrap();
+    let program = {
+        let program = Assembler::with_kernel(source_manager.clone(), kernel_library)
+            .assemble_program(program_source)
+            .unwrap();
+
+        // Note: we do not provide the kernel to trigger the error
+        Program::with_kernel(program.mast_forest().clone(), program.entrypoint(), Kernel::default())
+    };
 
     let mut host = DefaultHost::default().with_source_manager(source_manager);
 
-    // Note: we do not provide the kernel to trigger the error
     let processor = FastProcessor::new_debug(&[], AdviceInputs::default());
     let err = processor.execute_sync(&program, &mut host).unwrap_err();
     assert_diagnostic_lines!(
         err,
-        "syscall failed: procedure with root d754f5422c74afd0b094889be6b288f9ffd2cc630e3c44d412b1408b2be3b99c was not found in the kernel",
+        "syscall failed: procedure with root 0x90b881ddd998a6d2212b04620e312285df8fadec251aebb3f3096da501ca8f78 was not found in the kernel",
         regex!(r#",-\[::\$exec:3:13\]"#),
         " 2 |         begin",
         " 3 |             syscall.dummy_proc",
