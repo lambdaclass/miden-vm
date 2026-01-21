@@ -28,8 +28,8 @@ pub use miden_core::{
 };
 use miden_core::{EventName, ProgramInfo, chiplets::hasher::apply_permutation};
 pub use miden_processor::{
-    AdviceInputs, AdviceProvider, AdviceStackBuilder, BaseHost, ContextId, ExecutionError,
-    ExecutionTrace, ProcessState,
+    AdviceInputs, AdviceProvider, AdviceStackBuilder, ContextId, ExecutionError, ExecutionTrace,
+    ProcessState,
 };
 use miden_processor::{
     DefaultDebugHandler, DefaultHost, EventHandler, Program,

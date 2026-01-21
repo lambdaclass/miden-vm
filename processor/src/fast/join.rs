@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 use miden_core::mast::{JoinNode, MastForest, MastNodeId};
 
 use crate::{
-    AsyncHost,
+    Host,
     continuation_stack::{Continuation, ContinuationStack},
     fast::{BreakReason, FastProcessor, Tracer, step::Stopper},
 };
@@ -18,7 +18,7 @@ impl FastProcessor {
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
     ) -> ControlFlow<BreakReason> {
@@ -48,7 +48,7 @@ impl FastProcessor {
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
     ) -> ControlFlow<BreakReason> {

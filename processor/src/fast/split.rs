@@ -7,7 +7,7 @@ use miden_core::{
 };
 
 use crate::{
-    AsyncHost,
+    Host,
     continuation_stack::{Continuation, ContinuationStack},
     errors::OperationError,
     fast::{BreakReason, FastProcessor, Tracer, step::Stopper},
@@ -22,7 +22,7 @@ impl FastProcessor {
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
     ) -> ControlFlow<BreakReason> {
@@ -68,7 +68,7 @@ impl FastProcessor {
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
     ) -> ControlFlow<BreakReason> {

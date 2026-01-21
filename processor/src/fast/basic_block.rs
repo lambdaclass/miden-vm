@@ -8,7 +8,7 @@ use miden_core::{
 };
 
 use crate::{
-    AsyncHost,
+    Host,
     continuation_stack::{Continuation, ContinuationStack},
     errors::{MapExecErr, advice_error_with_context, event_error_with_context},
     fast::{BreakReason, FastProcessor, Tracer, step::Stopper},
@@ -27,7 +27,7 @@ impl FastProcessor {
         &mut self,
         basic_block_node: &BasicBlockNode,
         node_id: MastNodeId,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         continuation_stack: &mut ContinuationStack,
         current_forest: &Arc<MastForest>,
         tracer: &mut impl Tracer,
@@ -89,7 +89,7 @@ impl FastProcessor {
         basic_block_node: &BasicBlockNode,
         node_id: MastNodeId,
         start_batch_index: usize,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         continuation_stack: &mut ContinuationStack,
         current_forest: &Arc<MastForest>,
         tracer: &mut impl Tracer,
@@ -165,7 +165,7 @@ impl FastProcessor {
         node_id: MastNodeId,
         start_batch_index: usize,
         start_op_idx_in_batch: usize,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         continuation_stack: &mut ContinuationStack,
         current_forest: &Arc<MastForest>,
         tracer: &mut impl Tracer,
@@ -215,7 +215,7 @@ impl FastProcessor {
         batch_index: usize,
         start_op_idx: usize,
         batch_offset_in_block: usize,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         continuation_stack: &mut ContinuationStack,
         current_forest: &Arc<MastForest>,
         tracer: &mut impl Tracer,
@@ -294,7 +294,7 @@ impl FastProcessor {
         basic_block_node: &BasicBlockNode,
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         continuation_stack: &mut ContinuationStack,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
@@ -326,7 +326,7 @@ impl FastProcessor {
         basic_block_node: &BasicBlockNode,
         node_id: MastNodeId,
         current_forest: &Arc<MastForest>,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> ControlFlow<BreakReason> {
         if self.should_execute_decorators() {
             #[cfg(test)]
@@ -344,7 +344,7 @@ impl FastProcessor {
     #[inline(always)]
     async fn op_emit(
         &mut self,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         current_forest: &MastForest,
         node_id: MastNodeId,
     ) -> ControlFlow<BreakReason> {

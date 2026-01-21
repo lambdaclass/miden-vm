@@ -4,7 +4,7 @@ use core::ops::ControlFlow;
 use miden_core::mast::{ExternalNode, MastForest, MastNodeExt, MastNodeId};
 
 use crate::{
-    AsyncHost, ExecutionError,
+    ExecutionError, Host,
     continuation_stack::{Continuation, ContinuationStack},
     errors::OperationError,
     fast::{BreakReason, FastProcessor, Tracer},
@@ -18,7 +18,7 @@ impl FastProcessor {
         external_node_id: MastNodeId,
         current_forest: &mut Arc<MastForest>,
         continuation_stack: &mut ContinuationStack,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
     ) -> ControlFlow<BreakReason> {
         // Execute decorators that should be executed before entering the node
@@ -63,7 +63,7 @@ impl FastProcessor {
         external_node: &ExternalNode,
         external_node_id: MastNodeId,
         current_forest: &MastForest,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<(MastNodeId, Arc<MastForest>), ExecutionError> {
         let (root_id, mast_forest) = self
             .load_mast_forest(
@@ -118,7 +118,7 @@ fn maybe_use_caller_error_context(
     original_err: ExecutionError,
     current_forest: &MastForest,
     continuation_stack: &ContinuationStack,
-    host: &mut impl AsyncHost,
+    host: &mut impl Host,
 ) -> ExecutionError {
     // We only care about operation errors...
     let ExecutionError::OperationError { label: _, source_file: _, err: inner_err } = &original_err

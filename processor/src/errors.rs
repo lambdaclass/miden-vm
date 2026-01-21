@@ -13,7 +13,7 @@ use miden_core::{
 use miden_debug_types::{SourceFile, SourceSpan};
 use miden_utils_diagnostics::{Diagnostic, miette};
 
-use crate::{AdviceError, BaseHost, DebugError, EventError, MemoryError, TraceError};
+use crate::{AdviceError, DebugError, EventError, Host, MemoryError, TraceError};
 
 // EXECUTION ERROR
 // ================================================================================================
@@ -311,7 +311,7 @@ impl OperationError {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> ExecutionError {
         let (label, source_file) = get_label_and_source_file(None, mast_forest, node_id, host);
         ExecutionError::OperationError { label, source_file, err: self }
@@ -342,7 +342,7 @@ fn get_label_and_source_file(
     op_idx: Option<usize>,
     mast_forest: &MastForest,
     node_id: MastNodeId,
-    host: &impl BaseHost,
+    host: &impl Host,
 ) -> (SourceSpan, Option<Arc<SourceFile>>) {
     mast_forest
         .get_assembly_op(node_id, op_idx)
@@ -361,7 +361,7 @@ pub fn advice_error_with_context(
     err: AdviceError,
     mast_forest: &MastForest,
     node_id: MastNodeId,
-    host: &impl BaseHost,
+    host: &impl Host,
 ) -> ExecutionError {
     let (label, source_file) = get_label_and_source_file(None, mast_forest, node_id, host);
     ExecutionError::AdviceError { label, source_file, err }
@@ -375,7 +375,7 @@ pub fn event_error_with_context(
     error: EventError,
     mast_forest: &MastForest,
     node_id: MastNodeId,
-    host: &impl BaseHost,
+    host: &impl Host,
     event_id: EventId,
     event_name: Option<EventName>,
 ) -> ExecutionError {
@@ -406,7 +406,7 @@ pub trait MapExecErr<T> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> Result<T, ExecutionError>;
 }
 
@@ -419,7 +419,7 @@ pub trait MapExecErrWithOpIdx<T> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError>;
 }
@@ -439,7 +439,7 @@ impl<T> MapExecErr<T> for Result<T, OperationError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> Result<T, ExecutionError> {
         match self {
             Ok(v) => Ok(v),
@@ -458,7 +458,7 @@ impl<T> MapExecErrWithOpIdx<T> for Result<T, OperationError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError> {
         match self {
@@ -479,7 +479,7 @@ impl<T> MapExecErr<T> for Result<T, AdviceError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> Result<T, ExecutionError> {
         match self {
             Ok(v) => Ok(v),
@@ -509,7 +509,7 @@ impl<T> MapExecErr<T> for Result<T, MemoryError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> Result<T, ExecutionError> {
         match self {
             Ok(v) => Ok(v),
@@ -528,7 +528,7 @@ impl<T> MapExecErrWithOpIdx<T> for Result<T, MemoryError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError> {
         match self {
@@ -551,7 +551,7 @@ impl<T> MapExecErr<T>
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
     ) -> Result<T, ExecutionError> {
         use crate::operations::sys_ops::sys_event_handlers::SystemEventError;
         match self {
@@ -582,7 +582,7 @@ impl<T> MapExecErrWithOpIdx<T> for Result<T, IoError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError> {
         match self {
@@ -608,7 +608,7 @@ impl<T> MapExecErrWithOpIdx<T> for Result<T, CryptoError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError> {
         match self {
@@ -636,7 +636,7 @@ impl<T> MapExecErrWithOpIdx<T> for Result<T, AceEvalError> {
         self,
         mast_forest: &MastForest,
         node_id: MastNodeId,
-        host: &impl BaseHost,
+        host: &impl Host,
         op_idx: usize,
     ) -> Result<T, ExecutionError> {
         match self {
