@@ -13,12 +13,13 @@ use tracing::instrument;
 // Trace conversion utilities
 mod trace_adapter;
 
+mod proving_options;
+
 // EXPORTS
 // ================================================================================================
 
-pub use miden_air::{DeserializationError, ExecutionProof, HashFunction, ProcessorAir, config};
-
-mod proving_options;
+pub use miden_air::{DeserializationError, ProcessorAir, config};
+pub use miden_core::{ExecutionProof, HashFunction};
 pub use miden_crypto::{
     stark,
     stark::{Commitments, OpenedValues, Proof},
@@ -123,7 +124,7 @@ pub async fn prove(
         },
     };
 
-    let proof = miden_air::ExecutionProof::new(proof_bytes, hash_fn, precompile_requests);
+    let proof = ExecutionProof::new(proof_bytes, hash_fn, precompile_requests);
 
     Ok((stack_outputs, proof))
 }

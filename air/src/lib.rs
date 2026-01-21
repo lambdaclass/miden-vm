@@ -17,12 +17,6 @@ use miden_core::{
 pub mod config;
 mod constraints;
 
-mod errors;
-pub use errors::HashFunctionError;
-
-mod proof;
-pub use proof::{ExecutionProof, HashFunction};
-
 pub mod trace;
 use trace::{AUX_TRACE_WIDTH, AuxTraceBuilder, MainTraceRow, TRACE_WIDTH};
 
