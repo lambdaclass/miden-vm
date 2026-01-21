@@ -1,6 +1,6 @@
 use std::{sync::Arc, vec};
 
-use miden_air::{Felt, ProvingOptions};
+use miden_air::Felt;
 use miden_assembly::{Assembler, utils::Serializable};
 use miden_core::{EventName, ZERO, field::PrimeField64};
 use miden_core_lib::{CoreLibrary, dsa::falcon512_rpo};
@@ -8,6 +8,7 @@ use miden_processor::{
     AdviceInputs, AdviceMutation, DefaultHost, EventError, ExecutionError, OperationError,
     ProcessState, Program, ProgramInfo, StackInputs, crypto::RpoRandomCoin,
 };
+use miden_prover::ProvingOptions;
 use miden_utils_testing::{
     AdviceStackBuilder, Word,
     crypto::{

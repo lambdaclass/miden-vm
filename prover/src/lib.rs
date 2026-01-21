@@ -16,10 +16,9 @@ mod trace_adapter;
 // EXPORTS
 // ================================================================================================
 
-pub use miden_air::{
-    DEFAULT_CORE_TRACE_FRAGMENT_SIZE, DeserializationError, ExecutionProof, HashFunction,
-    ProcessorAir, ProvingOptions, config,
-};
+pub use miden_air::{DeserializationError, ExecutionProof, HashFunction, ProcessorAir, config};
+
+mod proving_options;
 pub use miden_crypto::{
     stark,
     stark::{Commitments, OpenedValues, Proof},
@@ -28,6 +27,7 @@ pub use miden_processor::{
     AdviceInputs, ExecutionError, Host, InputError, StackInputs, StackOutputs, Word, crypto, math,
     utils,
 };
+pub use proving_options::ProvingOptions;
 pub use trace_adapter::{aux_trace_to_row_major, execution_trace_to_row_major};
 
 // PROVER

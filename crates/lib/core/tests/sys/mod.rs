@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use miden_air::ProvingOptions;
 use miden_assembly::Assembler;
 use miden_core::{
     EventId, EventName, Felt, ProgramInfo, Word,
@@ -14,6 +13,7 @@ use miden_processor::{
     AdviceInputs, AdviceMutation, DefaultHost, EventError, EventHandler, ProcessState, Program,
     StackInputs,
 };
+use miden_prover::ProvingOptions;
 use miden_utils_testing::{MIN_STACK_DEPTH, proptest::prelude::*, rand::rand_vector};
 
 #[test]

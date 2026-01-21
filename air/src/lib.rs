@@ -18,10 +18,7 @@ pub mod config;
 mod constraints;
 
 mod errors;
-pub use errors::ExecutionOptionsError;
-
-mod options;
-pub use options::{DEFAULT_CORE_TRACE_FRAGMENT_SIZE, ExecutionOptions, ProvingOptions};
+pub use errors::HashFunctionError;
 
 mod proof;
 pub use proof::{ExecutionProof, HashFunction};

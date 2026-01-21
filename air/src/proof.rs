@@ -143,7 +143,7 @@ impl TryFrom<u8> for HashFunction {
 }
 
 impl TryFrom<&str> for HashFunction {
-    type Error = super::ExecutionOptionsError;
+    type Error = super::HashFunctionError;
 
     fn try_from(hash_fn_str: &str) -> Result<Self, Self::Error> {
         match hash_fn_str {
@@ -152,7 +152,7 @@ impl TryFrom<&str> for HashFunction {
             "rpx" => Ok(Self::Rpx256),
             "poseidon2" => Ok(Self::Poseidon2),
             "keccak" => Ok(Self::Keccak),
-            _ => Err(super::ExecutionOptionsError::InvalidHashFunction {
+            _ => Err(super::HashFunctionError::InvalidHashFunction {
                 hash_function: hash_fn_str.to_string(),
             }),
         }
