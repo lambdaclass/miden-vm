@@ -435,8 +435,7 @@ pub struct ExecutionContextSystemInfo {
 // MAST FOREST RESOLUTION REPLAY
 // ================================================================================================
 
-/// Records and replays the resolutions of [`crate::host::AsyncHost::get_mast_forest`] or
-/// [`crate::host::SyncHost::get_mast_forest`].
+/// Records and replays the resolutions of [`crate::host::Host::get_mast_forest`].
 ///
 /// These calls are made when encountering an [`miden_core::mast::ExternalNode`], or when
 /// encountering a [`miden_core::mast::DynNode`] where the procedure hash on the stack refers to

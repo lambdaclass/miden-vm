@@ -5,7 +5,7 @@ use miden_core::{
 };
 
 use crate::{
-    BaseHost, ExecutionError,
+    ExecutionError, Host,
     errors::MapExecErrWithOpIdx,
     fast::Tracer,
     processor::{Processor, StackInterface},
@@ -38,7 +38,7 @@ pub(super) fn execute_sync_op(
     op: &Operation,
     current_forest: &MastForest,
     node_id: MastNodeId,
-    host: &mut impl BaseHost,
+    host: &mut impl Host,
     tracer: &mut impl Tracer,
     op_idx: usize,
 ) -> Result<Option<[Felt; NUM_USER_OP_HELPERS]>, ExecutionError> {

@@ -16,7 +16,7 @@ use miden_core::{
 use tracing::instrument;
 
 use crate::{
-    AdviceInputs, AdviceProvider, AsyncHost, ContextId, ExecutionError, ProcessState,
+    AdviceInputs, AdviceProvider, ContextId, ExecutionError, Host, ProcessState,
     chiplets::Ace,
     continuation_stack::{Continuation, ContinuationStack},
     errors::{MapExecErr, MapExecErrNoCtx, OperationError},
@@ -379,7 +379,7 @@ impl FastProcessor {
     pub async fn execute(
         self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<ExecutionOutput, ExecutionError> {
         self.execute_with_tracer(program, host, &mut NoopTracer).await
     }
@@ -390,7 +390,7 @@ impl FastProcessor {
     pub async fn execute_for_trace(
         self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<(ExecutionOutput, TraceGenerationContext), ExecutionError> {
         let mut tracer = ExecutionTracer::new(self.options.core_trace_fragment_size());
         let execution_output = self.execute_with_tracer(program, host, &mut tracer).await?;
@@ -407,7 +407,7 @@ impl FastProcessor {
     pub async fn execute_with_tracer(
         mut self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
     ) -> Result<ExecutionOutput, ExecutionError> {
         let mut continuation_stack = ContinuationStack::new(program);
@@ -445,7 +445,7 @@ impl FastProcessor {
     /// Executes a single clock cycle
     pub async fn step(
         &mut self,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         resume_ctx: ResumeContext,
     ) -> Result<Option<ResumeContext>, ExecutionError> {
         let ResumeContext {
@@ -493,7 +493,7 @@ impl FastProcessor {
         continuation_stack: &mut ContinuationStack,
         current_forest: &mut Arc<MastForest>,
         kernel: &Kernel,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         stopper: &impl Stopper,
     ) -> ControlFlow<BreakReason, StackOutputs> {
@@ -711,7 +711,7 @@ impl FastProcessor {
         &mut self,
         node_id: MastNodeId,
         current_forest: &MastForest,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> ControlFlow<BreakReason> {
         if !self.should_execute_decorators() {
             return ControlFlow::Continue(());
@@ -736,7 +736,7 @@ impl FastProcessor {
         &mut self,
         node_id: MastNodeId,
         current_forest: &MastForest,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> ControlFlow<BreakReason> {
         if !self.in_debug_mode() {
             return ControlFlow::Continue(());
@@ -760,7 +760,7 @@ impl FastProcessor {
     fn execute_decorator(
         &mut self,
         decorator: &Decorator,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> ControlFlow<BreakReason> {
         match decorator {
             Decorator::Debug(options) => {
@@ -832,7 +832,7 @@ impl FastProcessor {
     async fn load_mast_forest(
         &mut self,
         node_digest: Word,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         get_mast_forest_failed: impl Fn(Word) -> OperationError,
         current_forest: &MastForest,
         node_id: MastNodeId,
@@ -925,7 +925,7 @@ impl FastProcessor {
     /// Convenience sync wrapper to [Self::step].
     pub fn step_sync(
         &mut self,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
         resume_ctx: ResumeContext,
     ) -> Result<Option<ResumeContext>, ExecutionError> {
         // Create a new Tokio runtime and block on the async execution
@@ -941,7 +941,7 @@ impl FastProcessor {
     pub fn execute_by_step_sync(
         mut self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<StackOutputs, ExecutionError> {
         // Create a new Tokio runtime and block on the async execution
         let rt = tokio::runtime::Builder::new_current_thread().build().unwrap();
@@ -986,7 +986,7 @@ impl FastProcessor {
     pub fn execute_sync(
         self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<ExecutionOutput, ExecutionError> {
         match tokio::runtime::Handle::try_current() {
             Ok(_handle) => {
@@ -1019,7 +1019,7 @@ impl FastProcessor {
     pub fn execute_for_trace_sync(
         self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<(ExecutionOutput, TraceGenerationContext), ExecutionError> {
         match tokio::runtime::Handle::try_current() {
             Ok(_handle) => {
@@ -1051,7 +1051,7 @@ impl FastProcessor {
     pub fn execute_sync_mut(
         &mut self,
         program: &Program,
-        host: &mut impl AsyncHost,
+        host: &mut impl Host,
     ) -> Result<StackOutputs, ExecutionError> {
         let mut continuation_stack = ContinuationStack::new(program);
         let mut current_forest = program.mast_forest().clone();

@@ -1,7 +1,7 @@
 use miden_core::{Felt, ONE, field::PrimeCharacteristicRing, mast::MastForest};
 
 use crate::{
-    BaseHost, ExecutionError,
+    ExecutionError, Host,
     errors::OperationError,
     fast::Tracer,
     processor::{Processor, StackInterface, SystemInterface},
@@ -18,7 +18,7 @@ mod tests;
 pub(super) fn op_assert<P: Processor>(
     processor: &mut P,
     err_code: Felt,
-    host: &mut impl BaseHost,
+    host: &mut impl Host,
     program: &MastForest,
     tracer: &mut impl Tracer,
 ) -> Result<(), OperationError> {

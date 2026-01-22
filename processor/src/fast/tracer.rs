@@ -43,8 +43,7 @@ pub trait Tracer {
         current_forest: &Arc<MastForest>,
     );
 
-    /// Records and replays the resolutions of [crate::host::AsyncHost::get_mast_forest] or
-    /// [crate::host::SyncHost::get_mast_forest].
+    /// Records and replays the resolutions of [crate::host::Host::get_mast_forest].
     ///
     /// Note that when execution encounters a [miden_core::mast::ExternalNode], the external node
     /// gets resolved to the MAST node it refers to in the new MAST forest, without consuming the

@@ -12,9 +12,8 @@ pub use miden_assembly::{
 #[cfg(not(target_arch = "wasm32"))]
 pub use miden_processor::execute_sync;
 pub use miden_processor::{
-    AdviceInputs, AdviceProvider, AsyncHost, BaseHost, DefaultHost, ExecutionError, ExecutionTrace,
-    Kernel, Operation, PrimeField64, Program, ProgramInfo, StackInputs, SyncHost, ZERO, crypto,
-    execute, utils,
+    AdviceInputs, AdviceProvider, DefaultHost, ExecutionError, ExecutionTrace, Host, Kernel,
+    Operation, PrimeField64, Program, ProgramInfo, StackInputs, ZERO, crypto, execute, utils,
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use miden_prover::prove_sync;

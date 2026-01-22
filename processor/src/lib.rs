@@ -50,8 +50,7 @@ use range::RangeChecker;
 mod host;
 
 pub use host::{
-    AdviceMutation, AsyncHost, BaseHost, FutureMaybeSend, MastForestStore, MemMastForestStore,
-    SyncHost,
+    AdviceMutation, FutureMaybeSend, Host, MastForestStore, MemMastForestStore,
     advice::{AdviceError, AdviceInputs, AdviceProvider, AdviceStackBuilder},
     debug::DefaultDebugHandler,
     default::{DefaultHost, HostLibrary},
@@ -174,7 +173,7 @@ pub async fn execute(
     program: &Program,
     stack_inputs: StackInputs,
     advice_inputs: AdviceInputs,
-    host: &mut impl AsyncHost,
+    host: &mut impl Host,
     options: ExecutionOptions,
 ) -> Result<ExecutionTrace, ExecutionError> {
     let stack_inputs: Vec<Felt> = stack_inputs.into_iter().collect();
@@ -207,7 +206,7 @@ pub fn execute_sync(
     program: &Program,
     stack_inputs: StackInputs,
     advice_inputs: AdviceInputs,
-    host: &mut impl AsyncHost,
+    host: &mut impl Host,
     options: ExecutionOptions,
 ) -> Result<ExecutionTrace, ExecutionError> {
     match tokio::runtime::Handle::try_current() {

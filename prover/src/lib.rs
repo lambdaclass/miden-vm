@@ -25,8 +25,8 @@ pub use miden_crypto::{
     stark::{Commitments, OpenedValues, Proof},
 };
 pub use miden_processor::{
-    AdviceInputs, AsyncHost, BaseHost, ExecutionError, InputError, StackInputs, StackOutputs,
-    SyncHost, Word, crypto, math, utils,
+    AdviceInputs, ExecutionError, Host, InputError, StackInputs, StackOutputs, Word, crypto, math,
+    utils,
 };
 pub use trace_adapter::{aux_trace_to_row_major, execution_trace_to_row_major};
 
@@ -50,7 +50,7 @@ pub async fn prove(
     program: &Program,
     stack_inputs: StackInputs,
     advice_inputs: AdviceInputs,
-    host: &mut impl AsyncHost,
+    host: &mut impl Host,
     options: ProvingOptions,
 ) -> Result<(StackOutputs, ExecutionProof), ExecutionError> {
     // execute the program to create an execution trace using FastProcessor
@@ -142,7 +142,7 @@ pub fn prove_sync(
     program: &Program,
     stack_inputs: StackInputs,
     advice_inputs: AdviceInputs,
-    host: &mut impl AsyncHost,
+    host: &mut impl Host,
     options: ProvingOptions,
 ) -> Result<(StackOutputs, ExecutionProof), ExecutionError> {
     match tokio::runtime::Handle::try_current() {

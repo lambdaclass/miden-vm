@@ -8,7 +8,7 @@ use miden_core::{
 };
 
 use crate::{
-    AdviceError, BaseHost, ContextId, ExecutionError, MemoryError, ProcessState,
+    AdviceError, ContextId, ExecutionError, Host, MemoryError, ProcessState,
     errors::{AceEvalError, OperationError},
     fast::Tracer,
     processor::operations::execute_sync_op,
@@ -97,7 +97,7 @@ pub trait Processor: Sized {
         op: &Operation,
         current_forest: &MastForest,
         node_id: MastNodeId,
-        host: &mut impl BaseHost,
+        host: &mut impl Host,
         tracer: &mut impl Tracer,
         op_idx: usize,
     ) -> Result<Option<[Felt; NUM_USER_OP_HELPERS]>, ExecutionError> {
