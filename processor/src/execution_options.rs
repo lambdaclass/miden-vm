@@ -118,8 +118,8 @@ impl ExecutionOptions {
     }
 
     /// Enables execution of the `trace` instructions.
-    pub fn with_tracing(mut self) -> Self {
-        self.enable_tracing = true;
+    pub fn with_tracing(mut self, enable_tracing: bool) -> Self {
+        self.enable_tracing = enable_tracing;
         self
     }
 

@@ -176,7 +176,7 @@ impl FastProcessor {
         Self::new_with_options(
             stack_inputs,
             advice_inputs,
-            ExecutionOptions::default().with_debugging(true).with_tracing(),
+            ExecutionOptions::default().with_debugging(true).with_tracing(true),
         )
     }
 
