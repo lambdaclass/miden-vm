@@ -391,7 +391,7 @@ impl Test {
             let fast_processor = FastProcessor::new_with_options(
                 &stack_inputs,
                 advice_inputs,
-                miden_air::ExecutionOptions::default()
+                miden_processor::ExecutionOptions::default()
                     .with_debugging(self.in_debug_mode)
                     .with_core_trace_fragment_size(FRAGMENT_SIZE)
                     .unwrap(),

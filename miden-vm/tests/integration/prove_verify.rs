@@ -3,9 +3,9 @@
 use alloc::sync::Arc;
 
 use miden_assembly::{Assembler, DefaultSourceManager};
-use miden_prover::{AdviceInputs, HashFunction, ProvingOptions, StackInputs, prove_sync};
+use miden_prover::{AdviceInputs, ProvingOptions, StackInputs, prove_sync};
 use miden_verifier::verify;
-use miden_vm::DefaultHost;
+use miden_vm::{DefaultHost, HashFunction};
 
 #[test]
 fn test_blake3_256_prove_verify() {
@@ -200,13 +200,11 @@ mod fast_parallel {
     use alloc::sync::Arc;
 
     use miden_assembly::{Assembler, DefaultSourceManager};
-    use miden_core::Felt;
+    use miden_core::{ExecutionProof, Felt, HashFunction};
     use miden_processor::{
         AdviceInputs, ExecutionOptions, StackInputs, fast::FastProcessor, parallel::build_trace,
     };
-    use miden_prover::{
-        ExecutionProof, HashFunction, ProcessorAir, config, execution_trace_to_row_major, stark,
-    };
+    use miden_prover::{ProcessorAir, config, execution_trace_to_row_major, stark};
     use miden_verifier::verify;
     use miden_vm::DefaultHost;
 

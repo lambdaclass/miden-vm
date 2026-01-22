@@ -130,7 +130,7 @@ fn test_syscall_fail() {
 /// number of allowed cycles.
 #[test]
 fn test_cycle_limit_exceeded() {
-    use miden_air::{DEFAULT_CORE_TRACE_FRAGMENT_SIZE, ExecutionOptions};
+    use crate::{DEFAULT_CORE_TRACE_FRAGMENT_SIZE, ExecutionOptions};
 
     let mut host = DefaultHost::default();
 

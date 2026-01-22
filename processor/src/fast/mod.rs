@@ -5,7 +5,7 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::cell::Cell;
 use core::{cmp::min, ops::ControlFlow};
 
-use miden_air::{ExecutionOptions, Felt, trace::RowIndex};
+use miden_air::{Felt, trace::RowIndex};
 use miden_core::{
     Decorator, EMPTY_WORD, Kernel, Program, StackOutputs, WORD_SIZE, Word, ZERO,
     mast::{MastForest, MastNode, MastNodeExt, MastNodeId},
@@ -16,7 +16,7 @@ use miden_core::{
 use tracing::instrument;
 
 use crate::{
-    AdviceInputs, AdviceProvider, ContextId, ExecutionError, Host, ProcessState,
+    AdviceInputs, AdviceProvider, ContextId, ExecutionError, ExecutionOptions, Host, ProcessState,
     chiplets::Ace,
     continuation_stack::{Continuation, ContinuationStack},
     errors::{MapExecErr, MapExecErrNoCtx, OperationError},
@@ -176,7 +176,7 @@ impl FastProcessor {
         Self::new_with_options(
             stack_inputs,
             advice_inputs,
-            ExecutionOptions::default().with_debugging(true).with_tracing(),
+            ExecutionOptions::default().with_debugging(true).with_tracing(true),
         )
     }
 
