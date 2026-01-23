@@ -143,9 +143,9 @@ fn run_masp_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
     let program_hash: [u8; 32] = program.hash().into();
 
     let processor = if params.release {
-        FastProcessor::new_with_advice_inputs(&*stack_inputs, advice_inputs)
+        FastProcessor::new_with_advice_inputs(stack_inputs, advice_inputs)
     } else {
-        FastProcessor::new_debug(&*stack_inputs, advice_inputs)
+        FastProcessor::new_debug(stack_inputs, advice_inputs)
     };
 
     let (execution_output, trace_generation_context) = processor
@@ -209,9 +209,9 @@ fn run_masm_program(params: &RunCmd) -> Result<(ExecutionTrace, [u8; 32]), Repor
     let program_hash: [u8; 32] = program.hash().into();
 
     let processor = if params.release {
-        FastProcessor::new_with_advice_inputs(&*stack_inputs, advice_inputs)
+        FastProcessor::new_with_advice_inputs(stack_inputs, advice_inputs)
     } else {
-        FastProcessor::new_debug(&*stack_inputs, advice_inputs)
+        FastProcessor::new_debug(stack_inputs, advice_inputs)
     };
 
     let (execution_output, trace_generation_context) = processor

@@ -3,6 +3,7 @@ use alloc::{sync::Arc, vec::Vec};
 use miden_core::{
     Decorator, Operation,
     mast::{BasicBlockNodeBuilder, MastForest, MastForestContributor},
+    stack::StackInputs,
 };
 use miden_debug_types::{Location, SourceFile, SourceSpan};
 
@@ -100,7 +101,7 @@ fn test_decorators_only_execute_in_debug_mode() {
 
     // Test with debug mode OFF - decorator should NOT execute
     let mut host_debug_off = TestHost { decorator_executed: false };
-    let process_debug_off = FastProcessor::new(&[]);
+    let process_debug_off = FastProcessor::new(StackInputs::default());
 
     let result = process_debug_off.execute_sync(&program, &mut host_debug_off);
     assert!(result.is_ok(), "Execution failed: {:?}", result);
@@ -111,7 +112,8 @@ fn test_decorators_only_execute_in_debug_mode() {
 
     // Test with debug mode ON - decorator should execute
     let mut host_debug_on = TestHost { decorator_executed: false };
-    let process_debug_on = FastProcessor::new_debug(&[], AdviceInputs::default());
+    let process_debug_on =
+        FastProcessor::new_debug(StackInputs::default(), AdviceInputs::default());
 
     let result = process_debug_on.execute_sync(&program, &mut host_debug_on);
     assert!(result.is_ok(), "Execution failed: {:?}", result);
@@ -131,7 +133,7 @@ fn test_decorators_only_execute_in_debug_mode_off() {
     let mut host = TestConsistencyHost::new();
 
     // Create process with debug mode OFF (no tracing)
-    let processor = FastProcessor::new(&[]);
+    let processor = FastProcessor::new(StackInputs::default());
 
     // Execute the program
     let result = processor.execute_sync(&program, &mut host);
@@ -159,7 +161,7 @@ fn test_decorators_only_execute_in_debug_mode_on() {
     let mut host = TestConsistencyHost::new();
 
     // Create processor with debug mode ON (tracing enabled)
-    let processor = FastProcessor::new_debug(&[], AdviceInputs::default());
+    let processor = FastProcessor::new_debug(StackInputs::default(), AdviceInputs::default());
 
     // Execute the program
     let result = processor.execute_sync(&program, &mut host);
@@ -208,7 +210,7 @@ fn test_zero_overhead_when_debug_off() {
 
     // Test with debug mode OFF
     let mut host_off = TestConsistencyHost::new();
-    let processor_off = FastProcessor::new(&[]);
+    let processor_off = FastProcessor::new(StackInputs::default());
 
     let result_off = processor_off.execute_sync(&program, &mut host_off);
     assert!(result_off.is_ok());
@@ -220,7 +222,7 @@ fn test_zero_overhead_when_debug_off() {
 
     // Test with debug mode ON
     let mut host_on = TestConsistencyHost::new();
-    let processor_on = FastProcessor::new_debug(&[], AdviceInputs::default());
+    let processor_on = FastProcessor::new_debug(StackInputs::default(), AdviceInputs::default());
 
     let result_on = processor_on.execute_sync(&program, &mut host_on);
     assert!(result_on.is_ok());
