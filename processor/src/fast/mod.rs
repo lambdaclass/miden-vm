@@ -1113,18 +1113,14 @@ pub struct ExecutionOutput {
     pub final_pc_transcript: PrecompileTranscript,
 }
 
-// FAST PROCESS STATE
+// PROCESS STATE
 // ===============================================================================================
 
-#[derive(Debug)]
-pub struct FastProcessState<'a> {
-    pub(super) processor: &'a mut FastProcessor,
-}
-
+/// Processor state accessor.
 impl FastProcessor {
     #[inline(always)]
     pub fn state(&mut self) -> ProcessState<'_> {
-        ProcessState::Fast(FastProcessState { processor: self })
+        ProcessState { processor: self }
     }
 }
 
