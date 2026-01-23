@@ -7,7 +7,7 @@ use miden_core::{
 use miden_debug_types::{Location, SourceFile, SourceSpan};
 
 use crate::{
-    AdviceInputs, AdviceMutation, DebugError, EventError, FutureMaybeSend, Host, ProcessState,
+    AdviceInputs, AdviceMutation, DebugError, EventError, FutureMaybeSend, Host, ProcessorState,
     Program, TraceError, Word, fast::FastProcessor,
     test_utils::test_consistency_host::TestConsistencyHost,
 };
@@ -73,14 +73,14 @@ fn test_decorators_only_execute_in_debug_mode() {
 
         fn on_event(
             &mut self,
-            _process: &ProcessState<'_>,
+            _process: &ProcessorState<'_>,
         ) -> impl FutureMaybeSend<Result<Vec<AdviceMutation>, EventError>> {
             async { Ok(Vec::new()) }
         }
 
         fn on_debug(
             &mut self,
-            _process: &mut ProcessState,
+            _process: &mut ProcessorState,
             _options: &miden_core::DebugOptions,
         ) -> Result<(), DebugError> {
             Ok(())
@@ -88,7 +88,7 @@ fn test_decorators_only_execute_in_debug_mode() {
 
         fn on_trace(
             &mut self,
-            _process: &mut ProcessState,
+            _process: &mut ProcessorState,
             trace_id: u32,
         ) -> Result<(), TraceError> {
             if trace_id == 999 {

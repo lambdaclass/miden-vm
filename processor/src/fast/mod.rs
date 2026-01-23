@@ -16,7 +16,8 @@ use miden_core::{
 use tracing::instrument;
 
 use crate::{
-    AdviceInputs, AdviceProvider, ContextId, ExecutionError, ExecutionOptions, Host, ProcessState,
+    AdviceInputs, AdviceProvider, ContextId, ExecutionError, ExecutionOptions, Host,
+    ProcessorState,
     chiplets::Ace,
     continuation_stack::{Continuation, ContinuationStack},
     errors::{MapExecErr, MapExecErrNoCtx, OperationError},
@@ -1113,14 +1114,14 @@ pub struct ExecutionOutput {
     pub final_pc_transcript: PrecompileTranscript,
 }
 
-// PROCESS STATE
+// PROCESSOR STATE
 // ===============================================================================================
 
 /// Processor state accessor.
 impl FastProcessor {
     #[inline(always)]
-    pub fn state(&mut self) -> ProcessState<'_> {
-        ProcessState { processor: self }
+    pub fn state(&mut self) -> ProcessorState<'_> {
+        ProcessorState { processor: self }
     }
 }
 

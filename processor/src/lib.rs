@@ -230,7 +230,7 @@ pub fn execute_sync(
     }
 }
 
-// PROCESS STATE
+// PROCESSOR STATE
 // ===============================================================================================
 
 /// A view into the current state of the processor.
@@ -238,11 +238,11 @@ pub fn execute_sync(
 /// This struct provides read access to the processor's state, including the stack, memory,
 /// advice provider, and execution context information.
 #[derive(Debug)]
-pub struct ProcessState<'a> {
+pub struct ProcessorState<'a> {
     processor: &'a mut FastProcessor,
 }
 
-impl<'a> ProcessState<'a> {
+impl<'a> ProcessorState<'a> {
     /// Returns a reference to the advice provider.
     #[inline(always)]
     pub fn advice_provider(&self) -> &AdviceProvider {

@@ -7,10 +7,10 @@ use miden_debug_types::{
 
 use crate::{
     AdviceMutation, DebugError, DebugHandler, EventError, FutureMaybeSend, Host, MastForest,
-    MastForestStore, MemMastForestStore, ProcessState, TraceError, Word,
+    MastForestStore, MemMastForestStore, ProcessorState, TraceError, Word,
 };
 
-/// A snapshot of the process state for consistency checking between processors.
+/// A snapshot of the processor state for consistency checking between processors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProcessStateSnapshot {
     clk: u32,
@@ -20,8 +20,8 @@ pub struct ProcessStateSnapshot {
     mem_state: Vec<(crate::MemoryAddress, Felt)>,
 }
 
-impl From<&ProcessState<'_>> for ProcessStateSnapshot {
-    fn from(state: &ProcessState) -> Self {
+impl From<&ProcessorState<'_>> for ProcessStateSnapshot {
+    fn from(state: &ProcessorState) -> Self {
         ProcessStateSnapshot {
             clk: state.clk().into(),
             ctx: state.ctx().into(),
@@ -64,7 +64,7 @@ impl TraceCollector {
 }
 
 impl DebugHandler for TraceCollector {
-    fn on_trace(&mut self, process: &ProcessState, trace_id: u32) -> Result<(), TraceError> {
+    fn on_trace(&mut self, process: &ProcessorState, trace_id: u32) -> Result<(), TraceError> {
         // Count the trace event
         *self.trace_counts.entry(trace_id).or_insert(0) += 1;
 
@@ -156,20 +156,20 @@ where
 
     fn on_event(
         &mut self,
-        _process: &ProcessState,
+        _process: &ProcessorState,
     ) -> impl FutureMaybeSend<Result<Vec<AdviceMutation>, EventError>> {
         async move { Ok(Vec::new()) } // For testing, return empty mutations
     }
 
     fn on_debug(
         &mut self,
-        _process: &mut ProcessState,
+        _process: &mut ProcessorState,
         _options: &DebugOptions,
     ) -> Result<(), DebugError> {
         Ok(())
     }
 
-    fn on_trace(&mut self, process: &mut ProcessState, trace_id: u32) -> Result<(), TraceError> {
+    fn on_trace(&mut self, process: &mut ProcessorState, trace_id: u32) -> Result<(), TraceError> {
         // Forward to trace collector for counting
         self.trace_collector.on_trace(process, trace_id)?;
 
