@@ -473,7 +473,7 @@ impl Test {
 
         let program_info = ProgramInfo::from(program);
         if test_fail {
-            stack_outputs.stack_mut()[0] += ONE;
+            stack_outputs.as_mut()[0] += ONE;
             assert!(
                 miden_verifier::verify(program_info, stack_inputs, stack_outputs, proof).is_err()
             );

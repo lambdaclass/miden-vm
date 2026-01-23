@@ -57,7 +57,7 @@ fn test_mloadw_success() {
 
         // Memory word[i] maps to stack position i (word[0] at top)
         assert_eq!(
-            stack_outputs.stack_truncated(4),
+            stack_outputs.get_num_elements(4),
             &[word_at_addr[0], word_at_addr[1], word_at_addr[2], word_at_addr[3]]
         );
     }
@@ -70,7 +70,7 @@ fn test_mloadw_success() {
         let program = simple_program_with_ops(vec![Operation::MLoadW]);
         let stack_outputs = processor.execute_sync_mut(&program, &mut host).unwrap();
 
-        assert_eq!(stack_outputs.stack_truncated(16), &vec![ZERO; 16]);
+        assert_eq!(stack_outputs.get_num_elements(16), &vec![ZERO; 16]);
     }
 }
 
@@ -150,7 +150,7 @@ fn test_mload_success(#[case] addr_to_access: u32) {
 
     // Ensure that Operation::MLoad correctly reads the value on the stack
     assert_eq!(
-        stack_outputs.stack_truncated(1)[0],
+        stack_outputs.get_num_elements(1)[0],
         word_at_addr[addr_to_access as usize % WORD_SIZE]
     );
 }
@@ -187,7 +187,7 @@ fn test_mstream() {
     // Word at addr 40 goes to positions 0-3, word at addr 44 goes to positions 4-7
     // word[0] at lowest position (top of stack)
     assert_eq!(
-        stack_outputs.stack_truncated(8),
+        stack_outputs.get_num_elements(8),
         &[
             word_at_addr_40[0],
             word_at_addr_40[1],

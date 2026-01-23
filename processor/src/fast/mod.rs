@@ -676,11 +676,11 @@ impl FastProcessor {
         }
 
         match StackOutputs::new(
-            self.stack[self.stack_bot_idx..self.stack_top_idx]
+            &self.stack[self.stack_bot_idx..self.stack_top_idx]
                 .iter()
                 .rev()
                 .copied()
-                .collect(),
+                .collect::<Vec<_>>(),
         ) {
             Ok(stack_outputs) => ControlFlow::Continue(stack_outputs),
             Err(_) => ControlFlow::Break(BreakReason::Err(ExecutionError::OutputStackOverflow(
@@ -943,11 +943,11 @@ impl FastProcessor {
                         None => {
                             // End of program was reached
                             break Ok(StackOutputs::new(
-                                self.stack[self.stack_bot_idx..self.stack_top_idx]
+                                &self.stack[self.stack_bot_idx..self.stack_top_idx]
                                     .iter()
                                     .rev()
                                     .copied()
-                                    .collect(),
+                                    .collect::<Vec<_>>(),
                             )
                             .unwrap());
                         },

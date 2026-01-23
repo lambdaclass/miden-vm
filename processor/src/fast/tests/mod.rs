@@ -206,7 +206,7 @@ fn test_valid_combinations_and(#[case] stack_inputs: Vec<Felt>, #[case] expected
     let processor = FastProcessor::new(StackInputs::new(&stack_inputs).unwrap());
     let stack_outputs = processor.execute_sync(&program, &mut host).unwrap().stack;
 
-    assert_eq!(stack_outputs.stack_truncated(1)[0], expected_output);
+    assert_eq!(stack_outputs.get_num_elements(1)[0], expected_output);
 }
 
 /// Tests all valid inputs for the `Or` operation.
@@ -225,7 +225,7 @@ fn test_valid_combinations_or(#[case] stack_inputs: Vec<Felt>, #[case] expected_
     let processor = FastProcessor::new(StackInputs::new(&stack_inputs).unwrap());
     let stack_outputs = processor.execute_sync(&program, &mut host).unwrap().stack;
 
-    assert_eq!(stack_outputs.stack_truncated(1)[0], expected_output);
+    assert_eq!(stack_outputs.get_num_elements(1)[0], expected_output);
 }
 
 /// Tests a valid set of inputs for the `Frie2f4` operation. This test reuses most of the logic of
@@ -355,7 +355,7 @@ fn test_call_node_preserves_stack_overflow_table() {
     let result = processor.execute_sync_mut(&program, &mut host).unwrap();
 
     assert_eq!(
-        result.stack_truncated(16),
+        result.get_num_elements(16),
         &[
             // the sum from the call to foo
             Felt::from_u32(30),

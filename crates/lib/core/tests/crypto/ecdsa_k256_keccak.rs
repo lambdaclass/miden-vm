@@ -65,7 +65,7 @@ fn test_ecdsa_verify_cases() {
         let output = test.execute().unwrap();
 
         // Assert result
-        let result = output.stack_outputs().get_stack_item(0).unwrap();
+        let result = output.stack_outputs().get_element(0).unwrap();
         assert_eq!(result, Felt::from_bool(expected_valid));
 
         // Verify the precompile request was logged with the right event ID
@@ -112,8 +112,8 @@ fn test_ecdsa_verify_impl_commitment() {
         // Verify stack layout: [COMM (0-3), TAG (4-7), result (at position 8), ...]
         // TAG = [event_id, result, 0, 0] where TAG[1]=result is at position 5
         // Use get_stack_word to match LE stack convention
-        let commitment = stack.get_stack_word(0).unwrap();
-        let tag = stack.get_stack_word(4).unwrap();
+        let commitment = stack.get_word(0).unwrap();
+        let tag = stack.get_word(4).unwrap();
         // Commitment and tag must match verifier output
         let precompile_commitment = PrecompileCommitment::new(tag, commitment);
         let verifier_commitment =
@@ -124,7 +124,7 @@ fn test_ecdsa_verify_impl_commitment() {
         );
 
         // Verify result - TAG[1] is at position 5 (TAG is at positions 4-7)
-        let result = stack.get_stack_item(5).unwrap();
+        let result = stack.get_element(5).unwrap();
         assert_eq!(
             result,
             Felt::from_bool(expected_valid),

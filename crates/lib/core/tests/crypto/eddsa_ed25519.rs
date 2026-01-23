@@ -63,7 +63,7 @@ fn test_eddsa_verify_prehash_cases() {
     let test = build_debug_test!(source, &[]);
     let output = test.execute().unwrap();
 
-    let result = output.stack_outputs().get_stack_item(0).unwrap();
+    let result = output.stack_outputs().get_element(0).unwrap();
     assert_eq!(result, Felt::ONE, "verification result mismatch");
 
     let deferred = output.advice_provider().precompile_requests().to_vec();
@@ -91,7 +91,7 @@ fn test_eddsa_verify_prehash_cases() {
     let test = build_debug_test!(source, &[]);
     let output = test.execute().unwrap();
 
-    let result = output.stack_outputs().get_stack_item(0).unwrap();
+    let result = output.stack_outputs().get_element(0).unwrap();
     assert_eq!(result, Felt::ZERO, "verification result mismatch");
 
     let deferred = output.advice_provider().precompile_requests().to_vec();
@@ -131,8 +131,8 @@ fn test_eddsa_verify_prehash_impl_commitment() {
         let output = test.execute().unwrap();
         let stack = output.stack_outputs();
 
-        let commitment = stack.get_stack_word(0).unwrap();
-        let tag = stack.get_stack_word(4).unwrap();
+        let commitment = stack.get_word(0).unwrap();
+        let tag = stack.get_word(4).unwrap();
         let precompile_commitment = PrecompileCommitment::new(tag, commitment);
 
         let verifier_commitment =
@@ -140,7 +140,7 @@ fn test_eddsa_verify_prehash_impl_commitment() {
         assert_eq!(precompile_commitment, verifier_commitment);
 
         // Verify result - TAG[1] is at position 5 (TAG is at positions 4-7)
-        let result = stack.get_stack_item(5).unwrap();
+        let result = stack.get_element(5).unwrap();
         assert_eq!(result, Felt::from_bool(expected_valid));
 
         let deferred = output.advice_provider().precompile_requests().to_vec();

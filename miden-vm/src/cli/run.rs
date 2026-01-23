@@ -92,7 +92,7 @@ impl RunCmd {
             OutputFile::write(trace.stack_outputs(), output_path).map_err(Report::msg)?;
         } else {
             // write the stack outputs to the terminal
-            println!("Output: {:?}", trace.stack_outputs().stack_truncated(self.num_outputs));
+            println!("Output: {:?}", trace.stack_outputs().get_num_elements(self.num_outputs));
         }
 
         // calculate the percentage of padded rows
