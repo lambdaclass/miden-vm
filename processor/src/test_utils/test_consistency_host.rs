@@ -12,7 +12,7 @@ use crate::{
 
 /// A snapshot of the processor state for consistency checking between processors.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProcessStateSnapshot {
+pub struct ProcessorStateSnapshot {
     clk: u32,
     ctx: u32,
     stack_state: Vec<Felt>,
@@ -20,9 +20,9 @@ pub struct ProcessStateSnapshot {
     mem_state: Vec<(crate::MemoryAddress, Felt)>,
 }
 
-impl From<&ProcessorState<'_>> for ProcessStateSnapshot {
+impl From<&ProcessorState<'_>> for ProcessorStateSnapshot {
     fn from(state: &ProcessorState) -> Self {
-        ProcessStateSnapshot {
+        ProcessorStateSnapshot {
             clk: state.clk().into(),
             ctx: state.ctx().into(),
             stack_state: state.get_stack_state(),
@@ -82,7 +82,7 @@ pub struct TestConsistencyHost<S: SourceManager = DefaultSourceManager> {
     trace_collector: TraceCollector,
 
     /// Process state snapshots for consistency checking
-    snapshots: BTreeMap<u32, Vec<ProcessStateSnapshot>>,
+    snapshots: BTreeMap<u32, Vec<ProcessorStateSnapshot>>,
 
     /// MAST forest store for external node resolution
     store: MemMastForestStore,
@@ -125,7 +125,7 @@ impl TestConsistencyHost {
     }
 
     /// Gets mutable access to all snapshots.
-    pub fn snapshots(&self) -> &BTreeMap<u32, Vec<ProcessStateSnapshot>> {
+    pub fn snapshots(&self) -> &BTreeMap<u32, Vec<ProcessorStateSnapshot>> {
         &self.snapshots
     }
 }
@@ -174,7 +174,7 @@ where
         self.trace_collector.on_trace(process, trace_id)?;
 
         // Also collect process state snapshot for consistency checking
-        let snapshot = ProcessStateSnapshot::from(&*process);
+        let snapshot = ProcessorStateSnapshot::from(&*process);
         self.snapshots.entry(trace_id).or_default().push(snapshot);
 
         Ok(())
