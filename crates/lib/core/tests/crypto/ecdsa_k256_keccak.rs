@@ -16,7 +16,7 @@ use miden_core_lib::{
     handlers::ecdsa::{EcdsaPrecompile, EcdsaRequest},
 };
 use miden_crypto::{dsa::ecdsa_k256_keccak::SecretKey, hash::rpo::Rpo256};
-use miden_processor::{AdviceMutation, EventError, EventHandler, ProcessState};
+use miden_processor::{AdviceMutation, EventError, EventHandler, ProcessorState};
 use rand::{SeedableRng, rngs::StdRng};
 
 use crate::helpers::masm_store_felts;
@@ -156,7 +156,7 @@ impl EcdsaSignatureHandler {
 }
 
 impl EventHandler for EcdsaSignatureHandler {
-    fn on_event(&self, process: &ProcessState) -> Result<Vec<AdviceMutation>, EventError> {
+    fn on_event(&self, process: &ProcessorState) -> Result<Vec<AdviceMutation>, EventError> {
         // Stack layout: [event_id, pk_commitment(1-4), message(5-8), ...]
         // Position 0 has the event ID, so pk_commitment starts at position 1
         let provided_pk_rpo = process.get_stack_word(1);

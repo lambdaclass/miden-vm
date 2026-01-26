@@ -22,7 +22,7 @@ use miden_crypto::{
     dsa::eddsa_25519_sha512::{PublicKey, SecretKey, Signature},
     hash::rpo::Rpo256,
 };
-use miden_processor::{AdviceMutation, EventError, EventHandler, ProcessState};
+use miden_processor::{AdviceMutation, EventError, EventHandler, ProcessorState};
 use rand::{SeedableRng, rngs::StdRng};
 use sha2::{Digest, Sha512};
 
@@ -207,7 +207,7 @@ impl EddsaSignatureHandler {
 }
 
 impl EventHandler for EddsaSignatureHandler {
-    fn on_event(&self, process: &ProcessState) -> Result<Vec<AdviceMutation>, EventError> {
+    fn on_event(&self, process: &ProcessorState) -> Result<Vec<AdviceMutation>, EventError> {
         // Stack layout: [event_id, pk_commitment(1-4), message(5-8), ...]
         // Position 0 has the event ID, so pk_commitment starts at position 1
         let provided_pk_rpo = process.get_stack_word(1);
