@@ -180,8 +180,7 @@ pub async fn execute(
     host: &mut impl Host,
     options: ExecutionOptions,
 ) -> Result<ExecutionTrace, ExecutionError> {
-    let stack_inputs: Vec<Felt> = stack_inputs.into_iter().collect();
-    let processor = FastProcessor::new_with_options(&stack_inputs, advice_inputs, options);
+    let processor = FastProcessor::new_with_options(stack_inputs, advice_inputs, options);
     let (execution_output, trace_generation_context) =
         processor.execute_for_trace(program, host).await?;
 
