@@ -45,6 +45,7 @@
 - [BREAKING] Renamed `u32overflowing_mul` to `u32widening_mul`, `u32overflowing_madd` to `u32widening_madd`, and `math::u64::overflowing_mul` to `math::u64::widening_mul` ([#2584](https://github.com/0xMiden/miden-vm/pull/2584)).
 - [BREAKING] Removed `SyncHost` and `BaseHost`, and renamed `AsyncHost` to `Host` ([#2595](https://github.com/0xMiden/miden-vm/pull/2595)).
 - [BREAKING] Moved `ExecutionOptions` to `miden-processor`, `ProvingOptions` to `miden-prove`, and `ExecutionProof` to `miden-core` (all out of `miden-air`) ([#2597](https://github.com/0xMiden/miden-vm/pull/2597)).
+- Documented `push.[a,b,c,d]` word literal syntax ([#2556](https://github.com/0xMiden/miden-vm/issues/2556)).
 - [BREAKING] Removed `on_assert_failed` method from `Host` trait ([#2600](https://github.com/0xMiden/miden-vm/pull/2600)).
 - Added malicious advice provider tests for MASM validation using advice stack initialization ([#2583](https://github.com/0xMiden/miden-vm/pull/2583)).
 - [BREAKING] Convert `ProcessState` to a struct wrapping `FastProcessor`, and rename it to `ProcessorState` ([#2604](https://github.com/0xMiden/miden-vm/pull/2604)).
