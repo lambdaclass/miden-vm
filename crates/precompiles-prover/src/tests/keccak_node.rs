@@ -11,7 +11,7 @@ use std::vec;
 use miden_core::{
     Felt,
     deferred::{Digest, Node},
-    field::QuadFelt,
+    field::{Field, QuadFelt},
 };
 use miden_lifted_air::{BaseAir, LiftedAir};
 use miden_precompiles::Keccak256Precompile;
@@ -23,10 +23,11 @@ use crate::{
         keccak::{
             node::{
                 COL_ACT, COL_CHUNK_SEQ_ID_HEAD, COL_D_BEGIN, COL_H_DIGEST_CHUNKS_BEGIN,
-                COL_H_INPUT_CHUNKS_BEGIN, COL_H_KECCAK_BEGIN, COL_LEN_BYTES, COL_N_CHUNKS,
+                COL_H_INPUT_CHUNKS_BEGIN, COL_H_KECCAK_BEGIN, COL_IS_EMPTY,
+                COL_LAST_CHUNK_REM_BEGIN, COL_LEN_BYTES, COL_N_CHUNKS, COL_N_CHUNKS_INV,
                 COL_N_SPONGE_PERMS, COL_PERM_SEQ_ID_CHUNKS, COL_PERM_SEQ_ID_DIGEST_CHUNKS,
                 COL_PERM_SEQ_ID_KECCAK, COL_SPONGE_SEQ_ID_HEAD, KeccakNodeAir, NUM_AUX_COLS,
-                NUM_HASH, NUM_MAIN_COLS,
+                NUM_HASH, NUM_LAST_CHUNK_REM_BITS, NUM_MAIN_COLS,
                 trace::{KeccakNodeInvocation, generate_trace_from_invocations},
             },
             sponge::trace::SpongeSeqId,
@@ -93,7 +94,7 @@ fn next_inv(prev: &KeccakNodeInvocation, seed: u64, len_bytes: u32) -> KeccakNod
 // ================================================================================================
 
 #[test]
-fn main_column_layout_partitions_30_indices() {
+fn main_column_layout_partitions_37_indices() {
     use crate::hash::keccak::node::COL_OUT_MULT;
     assert_eq!(COL_ACT, 0);
     assert_eq!(COL_SPONGE_SEQ_ID_HEAD, 1);
@@ -109,7 +110,10 @@ fn main_column_layout_partitions_30_indices() {
     assert_eq!(COL_H_DIGEST_CHUNKS_BEGIN, 21);
     assert_eq!(COL_H_KECCAK_BEGIN, 25);
     assert_eq!(COL_OUT_MULT, 29);
-    assert_eq!(NUM_MAIN_COLS, 30);
+    assert_eq!(COL_LAST_CHUNK_REM_BEGIN, 30);
+    assert_eq!(COL_IS_EMPTY, 35);
+    assert_eq!(COL_N_CHUNKS_INV, 36);
+    assert_eq!(NUM_MAIN_COLS, 37);
     assert_eq!(<KeccakNodeAir as BaseAir<Felt>>::width(&KeccakNodeAir), NUM_MAIN_COLS,);
 }
 
@@ -171,6 +175,91 @@ fn generated_row_uses_vm_chunk_and_keccak_node_digests() {
 #[test]
 fn constraints_hold_on_single_invocation() {
     check_with_invocations(0x01, &[anchored_inv(0x11, 50)]);
+}
+
+#[test]
+fn chunk_count_accepts_empty_and_boundary_lengths() {
+    for len_bytes in [0, 1, 31, 32, 33, 64] {
+        check_with_invocations(0x11, &[anchored_inv(0x11, len_bytes)]);
+    }
+}
+
+fn assert_chunk_length_equation(row: &[Felt]) {
+    let remainder = (0..NUM_LAST_CHUNK_REM_BITS).fold(Felt::ZERO, |sum, bit| {
+        sum + Felt::from(1u32 << bit) * row[COL_LAST_CHUNK_REM_BEGIN + bit]
+    });
+    assert_eq!(
+        row[COL_LEN_BYTES],
+        Felt::from(32u8) * (row[COL_N_CHUNKS] - Felt::ONE) + remainder + Felt::ONE
+            - row[COL_IS_EMPTY]
+    );
+}
+
+#[test]
+fn chunk_remainder_bit_must_be_binary() {
+    let mut main = generate_trace_from_invocations(&[anchored_inv(0x11, 1)]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    main.values[COL_LAST_CHUNK_REM_BEGIN] = Felt::from(2u8);
+    main.values[COL_LEN_BYTES] = Felt::from(3u8);
+    assert_chunk_length_equation(&main.values[..NUM_MAIN_COLS]);
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
+}
+
+#[test]
+fn empty_flag_must_be_binary() {
+    let mut main = generate_trace_from_invocations(&[anchored_inv(0x11, 0)]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    let n_chunks = Felt::ONE + Felt::from(32u8).inverse();
+    main.values[COL_IS_EMPTY] = Felt::from(2u8);
+    main.values[COL_N_CHUNKS] = n_chunks;
+    main.values[COL_N_CHUNKS_INV] = n_chunks.inverse();
+    assert_chunk_length_equation(&main.values[..NUM_MAIN_COLS]);
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
+}
+
+#[test]
+fn empty_flag_cannot_cover_nonempty_input() {
+    let mut main = generate_trace_from_invocations(&[anchored_inv(0x11, 33)]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    main.values[COL_IS_EMPTY] = Felt::ONE;
+    main.values[COL_LEN_BYTES] = Felt::from(32u8);
+    assert_chunk_length_equation(&main.values[..NUM_MAIN_COLS]);
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
+}
+
+#[test]
+fn empty_flag_cannot_cover_a_remainder() {
+    let mut main = generate_trace_from_invocations(&[anchored_inv(0x11, 0)]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    let n_chunks = Felt::ONE - Felt::from(32u8).inverse();
+    main.values[COL_LAST_CHUNK_REM_BEGIN] = Felt::ONE;
+    main.values[COL_N_CHUNKS] = n_chunks;
+    main.values[COL_N_CHUNKS_INV] = n_chunks.inverse();
+    assert_chunk_length_equation(&main.values[..NUM_MAIN_COLS]);
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
+}
+
+#[test]
+fn chunk_count_inverse_must_match() {
+    let mut main = generate_trace_from_invocations(&[anchored_inv(0x11, 1)]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    main.values[COL_N_CHUNKS_INV] = Felt::ZERO;
+    assert_chunk_length_equation(&main.values[..NUM_MAIN_COLS]);
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
+}
+
+#[test]
+fn final_node_cannot_redirect_chunk_tail() {
+    let first = anchored_inv(0x11, 32);
+    let last = next_inv(&first, 0x12, 32);
+    let mut main = generate_trace_from_invocations(&[first, last]);
+    crate::tests::check_local(KeccakNodeAir, &main);
+    assert_eq!(main.values[NUM_MAIN_COLS + COL_ACT], Felt::ONE);
+    assert_eq!(main.values[NUM_MAIN_COLS + COL_N_CHUNKS], Felt::ONE);
+
+    main.values[NUM_MAIN_COLS + COL_N_CHUNKS] = Felt::from(2u8);
+    main.values[NUM_MAIN_COLS + COL_N_CHUNKS_INV] = Felt::from(2u8).inverse();
+    crate::tests::assert_constraint_failure(|| crate::tests::check_local(KeccakNodeAir, &main));
 }
 
 #[test]
