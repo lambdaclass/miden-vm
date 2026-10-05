@@ -741,6 +741,33 @@ mod public_key_parsing {
     }
 
     #[test]
+    fn from_sec1_bytes_rejects_unsupported_tags() {
+        let with_tag = |hex: &str, tag: u8| {
+            let mut bytes = hex_to_bytes::<65>(hex).unwrap();
+            bytes[0] = tag;
+            bytes
+        };
+        let mut compact = hex_to_bytes::<33>(GEN_COMPRESSED).unwrap();
+        compact[0] = 0x05;
+
+        // Encodings that k256 or other libraries accept, but this function does not.
+        let cases: [(&str, &[u8]); 3] = [
+            // 0x05 followed by the x coordinate only.
+            ("compact", &compact),
+            // X9.62 hybrid: both coordinates, and the parity of y in the tag (0x06 even, 0x07
+            // odd).
+            ("hybrid, even y", &with_tag(GEN_UNCOMPRESSED, 0x06)),
+            ("hybrid, odd y", &with_tag(SIX_GEN_UNCOMPRESSED, 0x07)),
+        ];
+
+        for (case, bytes) in cases {
+            let err = PublicKey::from_sec1_bytes(bytes)
+                .expect_err(&format!("the {case} encoding should be rejected"));
+            assert!(format!("{err}").contains("tag"), "{case}: unexpected error: {err}");
+        }
+    }
+
+    #[test]
     fn from_sec1_bytes_rejects_invalid_lengths() {
         let uncompressed = hex_to_bytes::<65>(GEN_UNCOMPRESSED).unwrap();
 

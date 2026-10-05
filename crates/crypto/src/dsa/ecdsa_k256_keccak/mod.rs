@@ -312,14 +312,29 @@ impl PublicKey {
 
     /// Creates a public key from SEC1-encoded bytes.
     ///
-    /// Accepts the 33-byte compressed and the 65-byte uncompressed encoding. The point is fully
-    /// validated: an uncompressed key whose coordinates do not lie on the curve is rejected.
+    /// Accepts only the 33-byte compressed encoding (tag byte `0x02` or `0x03`) and the 65-byte
+    /// uncompressed encoding (tag byte `0x04`). Any other tag byte is rejected, including the
+    /// identity (`0x00`) and the compact encoding (`0x05`). The point is fully validated: an
+    /// uncompressed key whose coordinates do not lie on the curve is rejected.
     pub fn from_sec1_bytes(bytes: &[u8]) -> Result<Self, DeserializationError> {
         if bytes.len() != PUBLIC_KEY_BYTES && bytes.len() != PUBLIC_KEY_UNCOMPRESSED_BYTES {
             return Err(DeserializationError::InvalidValue(format!(
                 "unsupported ECDSA public key length: expected {PUBLIC_KEY_BYTES} (compressed) or \
                 {PUBLIC_KEY_UNCOMPRESSED_BYTES} (uncompressed) bytes, got {}",
                 bytes.len()
+            )));
+        }
+
+        // The length check above guarantees that `bytes` is not empty.
+        let tag = bytes[0];
+        if !matches!(
+            (bytes.len(), tag),
+            (PUBLIC_KEY_BYTES, 0x02 | 0x03) | (PUBLIC_KEY_UNCOMPRESSED_BYTES, 0x04)
+        ) {
+            return Err(DeserializationError::InvalidValue(format!(
+                "unsupported ECDSA public key tag byte {tag:#04x}: expected 0x02 or 0x03 \
+                ({PUBLIC_KEY_BYTES}-byte compressed) or 0x04 \
+                ({PUBLIC_KEY_UNCOMPRESSED_BYTES}-byte uncompressed)"
             )));
         }
 
@@ -331,7 +346,8 @@ impl PublicKey {
     /// Creates a public key from a `0x`-prefixed hex string in SEC1 format.
     ///
     /// Accepts the 33-byte compressed and the 65-byte uncompressed encoding (the form Ledger and
-    /// other Ethereum-style signers export). See [`Self::from_sec1_bytes`] for validation.
+    /// other Ethereum-style signers export). See [`Self::from_sec1_bytes`] for the accepted tag
+    /// bytes and for validation.
     pub fn from_hex(encoded: &str) -> Result<Self, DeserializationError> {
         let invalid_hex = |err: HexParseError| DeserializationError::InvalidValue(err.to_string());
 
